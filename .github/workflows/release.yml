@@ -63,7 +63,7 @@ jobs:
           REPO="${{ github.event.repository.name }}"
           # dist/module.json must already exist from your build script
           jq --arg tag "$TAG" --arg owner "$OWNER" --arg repo "$REPO" '
-            .manifest = "https://raw.githubusercontent.com/\($owner)/\($repo)/\($tag)/module.json" |
+            .manifest = "https://raw.githubusercontent.com/\($owner)/\($repo)/main/module.json" |
             .download = "https://github.com/\($owner)/\($repo)/releases/download/\($tag)/\($repo)-\($tag).zip"
           ' dist/module.json > dist/module.json.tmp
           mv dist/module.json.tmp dist/module.json
