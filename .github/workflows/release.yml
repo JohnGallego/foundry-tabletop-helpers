@@ -3,19 +3,19 @@ name: Release
 on:
   push:
     tags:
-      - "v*.*.*"   
+      - "v*.*.*"         
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write 
+      contents: write    # needed for pushing to main and creating releases
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Ensure tag commit is on main
         run: |
@@ -25,6 +25,16 @@ jobs:
             exit 1
           fi
           echo "✅ Tag is on main."
+
+      - name: Validate tag matches package.json version
+        run: |
+          PKG_VER=$(node -p "require('./package.json').version")
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VER" != "$TAG_VER" ]; then
+            echo "package.json version ($PKG_VER) != tag ($TAG_VER)"
+            exit 1
+          fi
+          echo "✅ package.json version matches tag."
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -38,13 +48,42 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Make manifest URLs tag-specific so installs are reproducible.
+      - name: Stamp manifest URLs to tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          # dist/module.json must already exist from your build script
+          jq --arg tag "$TAG" --arg owner "$OWNER" --arg repo "$REPO" '
+            .manifest = "https://raw.githubusercontent.com/\($owner)/\($repo)/\($tag)/module.json" |
+            .download = "https://github.com/\($owner)/\($repo)/releases/download/\($tag)/\($repo)-\($tag).zip"
+          ' dist/module.json > dist/module.json.tmp
+          mv dist/module.json.tmp dist/module.json
+          cat dist/module.json
+
       - name: Create zip artifact
         run: |
-          ZIP_NAME="foundry-tabletop-helpers-${GITHUB_REF_NAME}.zip"
+          ZIP_NAME="${{ github.event.repository.name }}-${GITHUB_REF_NAME}.zip"
           cd dist
           zip -r "../${ZIP_NAME}" .
           cd ..
           sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256"
+
+      # Sync dist/module.json back to repo root and commit to main
+      - name: Sync root module.json (commit to main)
+        run: |
+          cp dist/module.json module.json
+          if ! git diff --quiet -- module.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add module.json
+            git commit -m "chore: sync module.json for ${GITHUB_REF_NAME}"
+            git push origin HEAD:main
+            echo "✅ Pushed updated module.json to main."
+          else
+            echo "ℹ️ module.json unchanged; nothing to push."
+          fi
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -53,6 +92,6 @@ jobs:
           name: Release ${{ github.ref_name }}
           generate_release_notes: true
           files: |
-            foundry-tabletop-helpers-${{ github.ref_name }}.zip
-            foundry-tabletop-helpers-${{ github.ref_name }}.zip.sha256
+            ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
+            ${{ github.event.repository.name }}-${{ github.ref_name }}.zip.sha256
             dist/module.json
