@@ -32,14 +32,26 @@ function safe(fn: () => void, where: string) {
 
 // Try to resolve the actual window root element for both V1 and V2 apps
 function resolveAppRoot(app: any): HTMLElement | undefined {
+  // Prefer V2 window.element when available
+  const winEl: any = app?.window?.element;
+  if (winEl instanceof HTMLElement) return winEl;
+
+  // Try explicit id lookup (V2 appId is usually the element id)
+  const byId = (app?.appId && document.getElementById(String(app.appId)))
+    || (app?.id && document.getElementById(String(app.id)));
+  if (byId) return byId.closest?.(".app, .application, .window-app, .document-sheet, .sheet") || byId;
+
+  // Fallback to app.element / _element (could be jQuery)
   let el: any = app?.element ?? app?._element;
   if (el && el[0]) el = el[0];
   if (el?.closest) {
-    const root = el.closest?.(".app, .window-app");
+    const root = el.closest?.(".app, .application, .window-app, .document-sheet, .sheet");
     if (root) el = root;
   }
+
+  // Last resort: climb from header to the window root
   if (!el && app?.window?.header?.closest) {
-    const root2 = app.window.header.closest(".app, .window-app");
+    const root2 = app.window.header.closest(".app, .application, .window-app, .document-sheet, .sheet");
     if (root2) el = root2;
   }
   return el as HTMLElement | undefined;
@@ -94,7 +106,7 @@ Hooks.on("init", () => {
 
   (game!.settings as any).register(MOD, "supportV1", {
     name: "Add header button to V1 windows (legacy)",
-    hint: "Enable only if you need the rotate button on V1 applications (deprecated since V13).",
+    hint: "Enable only if you need the Flip 180° button on V1 applications (deprecated since V13).",
     scope: "client",
     config: true,
     type: Boolean,
@@ -123,7 +135,7 @@ Hooks.on("ready", () => {
 /* ---------- your rotation hooks (V2) ---------- */
 const rotationByAppId = new Map<number, 0 | 90 | 180 | 270>();
 const nextRotation = (d: 0 | 90 | 180 | 270) =>
-  d === 0 ? 90 : d === 90 ? 180 : d === 180 ? 270 : 0;
+  d === 180 ? 0 : 180; // flip between up (0) and down (180)
 
 function applyRotation(el: HTMLElement | undefined, deg: 0 | 90 | 180 | 270) {
   if (!el) {
@@ -167,7 +179,7 @@ onGetHeaderControlsApplicationV2((app, controls) =>
   safe(() => {
     (controls as any).unshift?.({
       icon: "fa-solid fa-arrows-rotate",
-      label: "Rotate 90°",
+      label: "Flip 180°",
       action: "fth-rotate",
       visible: true,
       onClick: () => toggleRotation(app as any),
@@ -185,10 +197,9 @@ Hooks.on("renderApplicationV2", (app: AppV2) =>
     // Wire our V2 header control action to the toggle handler
     const btn: HTMLElement | null = el?.querySelector?.('[data-action="fth-rotate"]') ?? null;
     if (btn && !(btn as any).dataset?.fthRotateBound) {
-      btn.addEventListener("click", (ev) => {
-        ev.preventDefault();
+      btn.addEventListener("click", () => {
         toggleRotation(app as any);
-      }, { passive: true });
+      });
       (btn as any).dataset.fthRotateBound = "1";
     }
     const appId = (app as any)?.appId;
@@ -196,8 +207,9 @@ Hooks.on("renderApplicationV2", (app: AppV2) =>
     if (deg === undefined) {
       const p = readPersistedRotation(app as any);
       if (p !== undefined) {
-        deg = p;
-        rotationByAppId.set(appId as any, p);
+        const norm = p === 0 ? 0 : 180;
+        deg = norm;
+        rotationByAppId.set(appId as any, norm);
       }
     }
     if (deg !== undefined) applyRotation(el ?? undefined, deg);
@@ -217,7 +229,7 @@ onGetApplicationV1HeaderButtons((app, buttons) =>
   safe(() => {
     if (!supportV1()) return;
     buttons.unshift({
-      label: "Rotate 90°",
+      label: "Flip 180°",
       class: "fth-rotate",
       icon: "fa-solid fa-arrows-rotate",
       onclick: () => toggleRotation(app as any),
@@ -237,8 +249,9 @@ onRenderApplicationV1((app, html) =>
     if (deg === undefined) {
       const p = readPersistedRotation(app as any);
       if (p !== undefined) {
-        deg = p;
-        rotationByAppId.set(appId as any, p);
+        const norm = p === 0 ? 0 : 180;
+        deg = norm;
+        rotationByAppId.set(appId as any, norm);
       }
     }
     if (deg !== undefined) applyRotation(resolveAppRoot(app as any), deg);
