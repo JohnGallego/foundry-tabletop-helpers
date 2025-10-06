@@ -1,26 +1,26 @@
 {
-    "id": "foundry-tabletop-helpers",
-    "title": "Foundry Tabletop Helpers",
-    "description": "Small QoL helpers for tabletop/touchscreen play. Adds a Rotate button to every window.",
-    "version": "0.1.2-alpha",
-    "authors": [
-        {
-            "name": "John Gallego",
-            "url": "https://github.com/JohnGallego"
-        }
-    ],
-    "url": "https://github.com/JohnGallego/foundry-tabletop-helpers",
-    "license": "MIT",
-    "compatibility": {
-        "minimum": "13",
-        "verified": "13"
-    },
-    "esmodules": [
-        "index.js"
-    ],
-    "styles": [
-        "style.css"
-    ],
-    "manifest": "https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/main/module.json",
-    "download": "https://github.com/JohnGallego/foundry-tabletop-helpers/releases/latest/download/foundry-tabletop-helpers.zip"
+  "id": "foundry-tabletop-helpers",
+  "title": "Foundry Tabletop Helpers",
+  "description": "QoL helpers for touchscreen tables. Adds Rotate 90° to windows.",
+  "version": "0.1.4-alpha",
+  "authors": [
+    {
+      "name": "Your Name",
+      "url": "https://github.com/yourname"
+    }
+  ],
+  "url": "https://github.com/yourname/foundry-tabletop-helpers",
+  "license": "MIT",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13"
+  },
+  "esmodules": [
+    "index.js"
+  ],
+  "styles": [
+    "style.css"
+  ],
+  "manifest": "https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/v0.1.4-alpha/module.json",
+  "download": "https://github.com/JohnGallego/foundry-tabletop-helpers/releases/download/v0.1.4-alpha/foundry-tabletop-helpers-v0.1.4-alpha.zip"
 }
