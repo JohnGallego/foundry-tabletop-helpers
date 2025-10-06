@@ -1,11 +1,13 @@
 {
     "name": "foundry-tabletop-helpers",
+    "version": "0.1.0",
     "private": true,
     "type": "module",
     "scripts": {
+        "build": "vite build && node scripts/build-manifest.mjs",
         "dev": "vite build --watch",
-        "build": "vite build",
-        "zip": "npm run build && cd dist && zip -r ../foundry-tabletop-helpers.zip ."
+        "zip": "npm run build && cd dist && zip -r ../foundry-tabletop-helpers.zip .",
+        "link:foundry": "node -e \"const p=require('node:path'); const os=require('node:os'); const fs=require('node:fs'); const mod=p.resolve('dist'); const data=p.join(os.homedir(), 'AppData','Local','FoundryVTT','Data','modules'); if(!fs.existsSync(data)) fs.mkdirSync(data,{recursive:true}); const link=p.join(data,'foundry-tabletop-helpers'); try{fs.rmSync(link,{recursive:true,force:true});}catch{}; fs.symlinkSync(mod, link, 'junction'); console.log('Linked:', link, '->', mod);\""
     },
     "devDependencies": {
         "typescript": "^5.6.0",

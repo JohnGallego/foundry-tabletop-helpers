@@ -1,0 +1,19 @@
+/* A class placed on the entire application element */
+.fth-rot-90  { transform: rotate(90deg);  transform-origin: top left; }
+.fth-rot-180 { transform: rotate(180deg); transform-origin: center center; }
+.fth-rot-270 { transform: rotate(270deg); transform-origin: top left; }
+
+/* Keep it above other UI after rotation so it doesn’t slide under siblings */
+.app.fth-rot-90,
+.app.fth-rot-180,
+.app.fth-rot-270 {
+  will-change: transform;
+}
+
+/* Optional: help avoid accidental text selection when rotated */
+.app.fth-rot-90 *,
+.app.fth-rot-180 *,
+.app.fth-rot-270 * {
+  -webkit-user-select: none;
+  user-select: none;
+}

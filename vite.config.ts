@@ -11,7 +11,16 @@ export default defineConfig({
       fileName: () => "index.js",
     },
     rollupOptions: {
-      output: { compact: true },
+      output: {
+        // ensure asset names are stable (no hashes)
+        assetFileNames: (chunkInfo) => {
+          // keep css as 'style.css'
+          if (chunkInfo.name === "style.css") return "style.css";
+          // keep everything else in place, no hashing
+          return "[name][extname]";
+        },
+      },
     },
   },
+  publicDir: "public", // copies verbatim to dist/
 });
