@@ -38,4 +38,11 @@ Then, start Foundry → Manage Modules → enable "Foundry Tabletop Helpers".
 ### Packaging (optional)
 - Create a development zip from the built `dist/` contents: `npm run zip`
 
+### Troubleshooting / Debug logs
+If you run into issues (e.g., the rotate button not appearing or not rotating):
+- In Foundry, go to Module Settings → Foundry Tabletop Helpers → set "Log Level" to "debug".
+- Try the action again, then open your browser console and copy the logs prefixed with "foundry-tabletop-helpers".
+- Alternatively, in the console you can run `fth.setLevel('debug')` to enable verbose logs.
+- Please include which window you were using (screenshot or name) and the Foundry core version.
+
 > Note: Releases are produced by CI when you push a version tag (e.g., `v0.1.10-alpha`). The published manifest always points to the stable URL above, while downloads point to the exact tagged release.

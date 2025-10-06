@@ -10,6 +10,7 @@
     "link:foundry": "node -e \"const p=require('node:path'); const os=require('node:os'); const fs=require('node:fs'); const mod=p.resolve('dist'); const data=p.join(os.homedir(), 'AppData','Local','FoundryVTT','Data','modules'); if(!fs.existsSync(data)) fs.mkdirSync(data,{recursive:true}); const link=p.join(data,'foundry-tabletop-helpers'); try{fs.rmSync(link,{recursive:true,force:true});}catch{}; fs.symlinkSync(mod, link, 'junction'); console.log('Linked:', link, '->', mod);\""
   },
   "devDependencies": {
+    "fvtt-types": "github:League-of-Foundry-Developers/foundry-vtt-types#main",
     "typescript": "^5.6.0",
     "vite": "^5.3.0"
   }

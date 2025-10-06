@@ -1,6 +1,26 @@
 import "./styles.css";
 import { Log, MOD } from "./logger"; // ⬅️ THIS IMPORT IS REQUIRED
 
+type AppV2 = foundry.applications.api.ApplicationV2.Any;
+// Legacy ApplicationV1 API
+type AppV1 = foundry.appv1.api.Application;
+
+type V1Button = { label?: string; class?: string; icon?: string; onclick?: (e: MouseEvent) => void };
+
+// Strongly-typed wrapper helpers to hook specific events without casting at call sites
+const onGetHeaderControlsApplicationV2 = (
+  fn: (app: AppV2, controls: any[]) => void
+) => (Hooks as any).on("getHeaderControlsApplicationV2", fn);
+const onGetApplicationV1HeaderButtons = (
+  fn: (app: AppV1, buttons: V1Button[]) => void
+) => (Hooks as any).on("getApplicationV1HeaderButtons", fn);
+const onRenderApplicationV1 = (
+  fn: (app: AppV1, html: JQuery<HTMLElement>) => void
+) => (Hooks as any).on("renderApplicationV1", fn);
+const onCloseApplicationV1 = (
+  fn: (app: AppV1) => void
+) => (Hooks as any).on("closeApplicationV1", fn);
+
 // Small helper so we never break other modules if something throws
 function safe(fn: () => void, where: string) {
   try {
@@ -10,9 +30,24 @@ function safe(fn: () => void, where: string) {
   }
 }
 
+// Try to resolve the actual window root element for both V1 and V2 apps
+function resolveAppRoot(app: any): HTMLElement | undefined {
+  let el: any = app?.element ?? app?._element;
+  if (el && el[0]) el = el[0];
+  if (el?.closest) {
+    const root = el.closest?.(".app, .window-app");
+    if (root) el = root;
+  }
+  if (!el && app?.window?.header?.closest) {
+    const root2 = app.window.header.closest(".app, .window-app");
+    if (root2) el = root2;
+  }
+  return el as HTMLElement | undefined;
+}
+
 Hooks.on("init", () => {
   // settings for log level + optional legacy support toggle
-  game.settings.register(MOD, "logLevel", {
+  (game!.settings as any).register(MOD, "logLevel", {
     name: "Log Level",
     hint: "Controls verbosity of console logs for Foundry Tabletop Helpers.",
     scope: "client",
@@ -29,7 +64,7 @@ Hooks.on("init", () => {
     onChange: (v: string) => Log.setLevel(v as any),
   });
 
-  game.settings.register(MOD, "supportV1", {
+  (game!.settings as any).register(MOD, "supportV1", {
     name: "Add header button to V1 windows (legacy)",
     hint: "Enable only if you need the rotate button on V1 applications (deprecated since V13).",
     scope: "client",
@@ -38,7 +73,7 @@ Hooks.on("init", () => {
     default: false,
   });
 
-  Log.setLevel(game.settings.get(MOD, "logLevel") as any);
+  Log.setLevel((game!.settings as any).get(MOD, "logLevel") as any);
   Log.info("init");
 });
 
@@ -52,7 +87,7 @@ Hooks.on("ready", () => {
   // Optional: simple debug API in console -> fth.setLevel('debug')
   (globalThis as any).fth = {
     setLevel: (lvl: any) => Log.setLevel(lvl),
-    version: game.modules.get(MOD)?.version,
+    version: game!.modules!.get(MOD)?.version,
   };
   Log.debug("debug API attached to window.fth");
 });
@@ -67,86 +102,101 @@ function applyRotation(el: HTMLElement | undefined, deg: 0 | 90 | 180 | 270) {
     Log.warn("applyRotation: element missing");
     return;
   }
+  const before = { className: el.className, rotation: (el as any).dataset?.fthRotation };
   el.classList.remove("fth-rot-90", "fth-rot-180", "fth-rot-270");
   if (deg === 90) el.classList.add("fth-rot-90");
   if (deg === 180) el.classList.add("fth-rot-180");
   if (deg === 270) el.classList.add("fth-rot-270");
   (el as any).dataset.fthRotation = String(deg);
+  Log.debug("applyRotation", { deg, before, after: { className: el.className, rotation: (el as any).dataset?.fthRotation } });
 }
 
 function toggleRotation(app: any) {
   const appId: number | undefined = app?.appId ?? app?.id;
-  const el: HTMLElement | undefined =
-    app?.element ?? app?._element ?? app?.element?.[0];
-  if (!appId || !el) {
-    Log.warn("toggleRotation: missing appId or element");
+  const rootEl = resolveAppRoot(app);
+  if (!appId || !rootEl) {
+    Log.warn("toggleRotation: missing appId or element", { appId, hasEl: !!rootEl });
     return;
   }
   const curr = rotationByAppId.get(appId) ?? 0;
   const next = nextRotation(curr);
   rotationByAppId.set(appId, next);
-  applyRotation(el, next);
-  Log.debug("toggled rotation", { appId, next });
+  Log.group("fth: toggleRotation");
+  Log.debug("app", { ctor: app?.constructor?.name, appId });
+  Log.debug("element", { className: rootEl.className, dataset: (rootEl as any).dataset });
+  applyRotation(rootEl, next);
+  Log.debug("applied", { next });
+  Log.groupEnd();
 }
 
-Hooks.on("getHeaderControlsApplicationV2", (app: any, controls: any[]) =>
+onGetHeaderControlsApplicationV2((app, controls) =>
   safe(() => {
-    controls.push({
-      id: "fth-rotate",
+    (controls as any).unshift?.({
+      icon: "fa-solid fa-arrows-rotate",
       label: "Rotate 90°",
-      icon: "fas fa-undo",
-      onclick: () => toggleRotation(app),
+      action: "fth-rotate",
+      visible: true,
     });
     Log.debug("added V2 header control", {
-      app: app?.constructor?.name,
-      appId: app?.appId,
+      app: (app as any)?.constructor?.name,
+      appId: (app as any)?.appId,
     });
   }, "getHeaderControlsApplicationV2")
 );
 
-Hooks.on("renderApplicationV2", (app: any) =>
+Hooks.on("renderApplicationV2", (app: AppV2) =>
   safe(() => {
-    const deg = rotationByAppId.get(app?.appId);
-    if (deg !== undefined) applyRotation(app?.element, deg);
+    const el = resolveAppRoot(app as any);
+    // Wire our V2 header control action to the toggle handler
+    const btn: HTMLElement | null = el?.querySelector?.('[data-action="fth-rotate"]') ?? null;
+    if (btn && !(btn as any).dataset?.fthRotateBound) {
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        toggleRotation(app as any);
+      }, { passive: true });
+      (btn as any).dataset.fthRotateBound = "1";
+    }
+    const deg = rotationByAppId.get((app as any)?.appId);
+    if (deg !== undefined) applyRotation(el ?? undefined, deg);
   }, "renderApplicationV2")
 );
 
-Hooks.on("closeApplicationV2", (app: any) =>
+Hooks.on("closeApplicationV2", (app: AppV2) =>
   safe(() => {
-    rotationByAppId.delete(app?.appId);
+    rotationByAppId.delete((app as any)?.appId);
   }, "closeApplicationV2")
 );
 
 /* ---------- optional legacy (V1) behind a toggle ---------- */
-const supportV1 = () => game.settings.get(MOD, "supportV1") as boolean;
+const supportV1 = () => (game!.settings as any).get(MOD, "supportV1") as boolean;
 
-Hooks.on("getApplicationV1HeaderButtons", (app: any, buttons: any[]) =>
+onGetApplicationV1HeaderButtons((app, buttons) =>
   safe(() => {
     if (!supportV1()) return;
     buttons.unshift({
       label: "Rotate 90°",
       class: "fth-rotate",
-      icon: "fas fa-undo",
-      onclick: () => toggleRotation(app),
+      icon: "fa-solid fa-arrows-rotate",
+      onclick: () => toggleRotation(app as any),
     });
     Log.debug("added V1 header button", {
-      app: app?.constructor?.name,
-      appId: app?.appId,
+      app: (app as any)?.constructor?.name,
+      appId: (app as any)?.appId,
     });
   }, "getApplicationV1HeaderButtons")
 );
 
-Hooks.on("renderApplicationV1", (app: any, html: any) =>
+onRenderApplicationV1((app, html) =>
   safe(() => {
     if (!supportV1()) return;
-    const deg = rotationByAppId.get(app?.appId);
-    if (deg !== undefined) applyRotation(html?.[0] as HTMLElement, deg);
+    const deg = rotationByAppId.get((app as any)?.appId);
+    if (deg !== undefined) applyRotation(resolveAppRoot(app as any), deg);
   }, "renderApplicationV1")
 );
 
-Hooks.on("closeApplicationV1", (app: any) =>
+onCloseApplicationV1((app) =>
   safe(() => {
     if (!supportV1()) return;
-    rotationByAppId.delete(app?.appId);
+    rotationByAppId.delete((app as any)?.appId);
   }, "closeApplicationV1")
 );
