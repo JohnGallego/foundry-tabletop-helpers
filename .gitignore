@@ -1,0 +1,46 @@
+# Node & dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# Build output
+dist/
+build/
+*.zip
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Foundry-related local files
+# (For local dev links or manifests)
+foundryconfig.json
+.env
+.env.*
+# Example: if you symlink into your Foundry Data/modules directory
+__modules__/
+modules/
+
+# Optional test/coverage
+coverage/
+*.lcov
+
+# Temporary files
+tmp/
+temp/
