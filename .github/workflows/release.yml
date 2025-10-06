@@ -26,15 +26,22 @@ jobs:
           fi
           echo "✅ Tag is on main."
 
-      - name: Validate tag matches package.json version
+      - name: Sync package.json version to tag
         run: |
-          PKG_VER=$(node -p "require('./package.json').version")
           TAG_VER="${GITHUB_REF_NAME#v}"
-          if [ "$PKG_VER" != "$TAG_VER" ]; then
-            echo "package.json version ($PKG_VER) != tag ($TAG_VER)"
-            exit 1
+          node -e "const fs=require('fs');const p='package.json';const pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.version='${TAG_VER}';fs.writeFileSync(p, JSON.stringify(pkg,null,2)+'\n');"
+          cat package.json | sed -n '1,25p'
+
+      - name: Commit package.json version (to main)
+        run: |
+          if ! git diff --quiet -- package.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package.json
+            git commit -m "chore: set package.json version to ${GITHUB_REF_NAME#v}"
+            git push origin HEAD:main
           fi
-          echo "✅ package.json version matches tag."
+
 
       - name: Use Node.js
         uses: actions/setup-node@v4
