@@ -21,6 +21,6 @@
     "styles": [
         "dist/style.css"
     ],
-    "manifest": "https://raw.githubusercontent.com/yourname/foundry-tabletop-helpers/main/module.json",
-    "download": "https://github.com/yourname/foundry-tabletop-helpers/releases/latest/download/foundry-tabletop-helpers.zip"
+    "manifest": "https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/main/module.json",
+    "download": "https://github.com/JohnGallego/foundry-tabletop-helpers/releases/latest/download/foundry-tabletop-helpers.zip"
 }
