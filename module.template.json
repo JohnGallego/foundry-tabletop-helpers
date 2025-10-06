@@ -5,11 +5,11 @@
     "version": "0.0.0-PLACEHOLDER",
     "authors": [
         {
-            "name": "Your Name",
-            "url": "https://github.com/yourname"
+            "name": "JohnGallego",
+            "url": "https://github.com/JohnGallego"
         }
     ],
-    "url": "https://github.com/yourname/foundry-tabletop-helpers",
+    "url": "https://github.com/JohnGallego/foundry-tabletop-helpers",
     "license": "MIT",
     "compatibility": {
         "minimum": "13",
@@ -21,6 +21,6 @@
     "styles": [
         "style.css"
     ],
-    "manifest": "https://raw.githubusercontent.com/yourname/foundry-tabletop-helpers/main/module.json",
-    "download": "https://github.com/yourname/foundry-tabletop-helpers/releases/latest/download/foundry-tabletop-helpers.zip"
+    "manifest": "https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/v0.1.4-alpha/module.json",
+    "download": "https://github.com/JohnGallego/foundry-tabletop-helpers/releases/download/v0.1.4-alpha/foundry-tabletop-helpers-v0.1.4-alpha.zip"
 }
