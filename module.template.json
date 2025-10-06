@@ -19,7 +19,7 @@
         "index.js"
     ],
     "styles": [
-        "style.css"
+        "styles.css"
     ],
     "manifest": "https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/v0.1.4-alpha/module.json",
     "download": "https://github.com/JohnGallego/foundry-tabletop-helpers/releases/download/v0.1.4-alpha/foundry-tabletop-helpers-v0.1.4-alpha.zip"

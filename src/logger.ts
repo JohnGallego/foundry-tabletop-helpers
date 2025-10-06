@@ -1,11 +1,9 @@
-const MOD = "foundry-tabletop-helpers";
+export const MOD = "foundry-tabletop-helpers";
 
-type Level = "silent" | "error" | "warn" | "info" | "debug";
+export type Level = "silent" | "error" | "warn" | "info" | "debug";
 let currentLevel: Level = "info";
 
-function prefix() {
-  return [`%c${MOD}`, "color:#7c3aed;font-weight:700", "|"];
-}
+const prefix = () => [`%c${MOD}`, "color:#7c3aed;font-weight:700", "|"];
 
 export const Log = {
   setLevel(level: Level) {
