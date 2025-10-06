@@ -15,7 +15,7 @@ export default defineConfig({
         // ensure asset names are stable (no hashes)
         assetFileNames: (chunkInfo) => {
           // keep css as 'style.css'
-          if (chunkInfo.name === "style.css") return "style.css";
+          if (chunkInfo.names.includes("styles.css")) return "styles.css";
           // keep everything else in place, no hashing
           return "[name][extname]";
         },

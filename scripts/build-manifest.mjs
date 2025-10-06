@@ -13,7 +13,7 @@ const tpl = JSON.parse(
 tpl.version = pkg.version;
 
 /** Optional: keep URLs in sync with your repo slug */
-const owner = "yourname";
+const owner = "JohnGallego";
 const repo = "foundry-tabletop-helpers";
 tpl.manifest = `https://raw.githubusercontent.com/${owner}/${repo}/main/module.json`;
 tpl.download = `https://github.com/${owner}/${repo}/releases/latest/download/${repo}.zip`;
