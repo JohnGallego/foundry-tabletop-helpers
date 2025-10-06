@@ -45,6 +45,34 @@ function resolveAppRoot(app: any): HTMLElement | undefined {
   return el as HTMLElement | undefined;
 }
 
+// Build a per-window persistent key so we can remember rotation across closes/re-opens
+function getPersistKey(app: any): string | undefined {
+  try {
+    const cls = app?.constructor?.name ?? "Application";
+    const doc = app?.document ?? app?.object ?? app?.actor ?? app?.item ?? app?.journal ?? app?.scene;
+    const uuid: string | undefined = doc?.uuid ?? doc?._id;
+    if (uuid) return `doc:${uuid}`;
+    const pack:
+      | string
+      | undefined = app?.collection?.metadata?.id ?? app?.collection?.collection ?? app?.pack ?? app?.metadata?.id;
+    if (pack) return `pack:${pack}`;
+    const id: string | number | undefined = app?.id ?? app?.appId ?? app?.options?.id ?? resolveAppRoot(app)?.id;
+    if (id !== undefined) return `app:${cls}:${id}`;
+    return `app:${cls}`;
+  } catch {
+    return undefined;
+  }
+}
+
+function readPersistedRotation(app: any): 0 | 90 | 180 | 270 | undefined {
+  const key = getPersistKey(app);
+  if (!key) return undefined;
+  const raw = localStorage.getItem(`${MOD}:rot:${key}`);
+  const n = Number(raw);
+  return n === 0 || n === 90 || n === 180 || n === 270 ? (n as any) : undefined;
+}
+
+
 Hooks.on("init", () => {
   // settings for log level + optional legacy support toggle
   (game!.settings as any).register(MOD, "logLevel", {
@@ -121,6 +149,12 @@ function toggleRotation(app: any) {
   const curr = rotationByAppId.get(appId) ?? 0;
   const next = nextRotation(curr);
   rotationByAppId.set(appId, next);
+  const key = getPersistKey(app);
+  if (key) {
+    try {
+      localStorage.setItem(`${MOD}:rot:${key}`, String(next));
+    } catch {}
+  }
   Log.group("fth: toggleRotation");
   Log.debug("app", { ctor: app?.constructor?.name, appId });
   Log.debug("element", { className: rootEl.className, dataset: (rootEl as any).dataset });
@@ -136,6 +170,7 @@ onGetHeaderControlsApplicationV2((app, controls) =>
       label: "Rotate 90°",
       action: "fth-rotate",
       visible: true,
+      onClick: () => toggleRotation(app as any),
     });
     Log.debug("added V2 header control", {
       app: (app as any)?.constructor?.name,
@@ -156,7 +191,15 @@ Hooks.on("renderApplicationV2", (app: AppV2) =>
       }, { passive: true });
       (btn as any).dataset.fthRotateBound = "1";
     }
-    const deg = rotationByAppId.get((app as any)?.appId);
+    const appId = (app as any)?.appId;
+    let deg = rotationByAppId.get(appId);
+    if (deg === undefined) {
+      const p = readPersistedRotation(app as any);
+      if (p !== undefined) {
+        deg = p;
+        rotationByAppId.set(appId as any, p);
+      }
+    }
     if (deg !== undefined) applyRotation(el ?? undefined, deg);
   }, "renderApplicationV2")
 );
@@ -189,7 +232,15 @@ onGetApplicationV1HeaderButtons((app, buttons) =>
 onRenderApplicationV1((app, html) =>
   safe(() => {
     if (!supportV1()) return;
-    const deg = rotationByAppId.get((app as any)?.appId);
+    const appId = (app as any)?.appId;
+    let deg = rotationByAppId.get(appId);
+    if (deg === undefined) {
+      const p = readPersistedRotation(app as any);
+      if (p !== undefined) {
+        deg = p;
+        rotationByAppId.set(appId as any, p);
+      }
+    }
     if (deg !== undefined) applyRotation(resolveAppRoot(app as any), deg);
   }, "renderApplicationV1")
 );
