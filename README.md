@@ -3,7 +3,15 @@
 A small set of quality-of-life helpers for touchscreen tabletop play in Foundry VTT.
 
 Current features:
-- Adds a "Flip 180°" control to application windows (handy for flipping between upside-down and right-side-up orientations).
+- Adds a Rotate/Flip control to application windows. Default rotates 90° per press; optionally switch to 180° flip in settings.
+
+## Settings
+- Rotation: Choose how much each press rotates
+  - Rotate 90° (default): cycles 0 → 90 → 180 → 270 → 0
+  - Flip 180°: toggles 0 ↔ 180°
+- Log Level: Controls console verbosity (set to debug when troubleshooting).
+- Add header button to V1 windows (legacy): Only if you need the rotation button on V1 apps (deprecated since V13).
+
 
 ## Install (Stable Manifest URL)
 Use the stable manifest URL so Foundry always sees new releases when you click "Check for Updates":
@@ -39,7 +47,7 @@ Then, start Foundry → Manage Modules → enable "Foundry Tabletop Helpers".
 - Create a development zip from the built `dist/` contents: `npm run zip`
 
 ### Troubleshooting / Debug logs
-If you run into issues (e.g., the flip button not appearing or not flipping):
+If you run into issues (e.g., the rotate/flip button not appearing or not rotating/flipping):
 - In Foundry, go to Module Settings → Foundry Tabletop Helpers → set "Log Level" to "debug".
 - Try the action again, then open your browser console and copy the logs prefixed with "foundry-tabletop-helpers".
 - Alternatively, in the console you can run `fth.setLevel('debug')` to enable verbose logs.
