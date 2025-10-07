@@ -159,12 +159,59 @@ Hooks.on("ready", () => {
     user: game.user?.id,
   });
 
-  // Optional: simple debug API in console -> fth.setLevel('debug')
+  // API exposed to macros and console
+  const rotateAll = (mode: RotMode, dir: RotDir = "cw") => {
+    try {
+      activeApps.forEach((app) => toggleRotation(app, { mode, dir }));
+    } catch (e) {
+      Log.warn("rotateAll error", e);
+    }
+  };
+
   (globalThis as any).fth = {
     setLevel: (lvl: any) => Log.setLevel(lvl),
     version: game!.modules!.get(MOD)?.version,
+    rotateAll,
+    rotateAll90CW: () => rotateAll(90, "cw"),
+    rotateAll90CCW: () => rotateAll(90, "ccw"),
+    rotateAll180: () => rotateAll(180, "cw"),
   };
-  Log.debug("debug API attached to window.fth");
+
+  // Ensure world compendium with prebuilt macros (GM only)
+  if ((game.user as any)?.isGM) {
+    (async () => {
+      try {
+        const CC: any = (globalThis as any).CompendiumCollection;
+        const desired = { name: "fth-macros", label: "FTH Macros", type: "Macro", package: "world" };
+        let pack: any = (game as any).packs?.find((p: any) => p?.metadata?.package === "world"
+          && (p?.metadata?.name === desired.name || p?.metadata?.label === desired.label)
+          && p?.documentName === "Macro");
+        if (!pack && CC?.createCompendium) {
+          pack = await CC.createCompendium(desired);
+        }
+        if (!pack) {
+          Log.warn("Could not create or find world macro pack");
+        } else {
+          const docs = await pack.getDocuments();
+          const needed: Array<[string, string]> = [
+            ["Rotate All 90° (CW)", "window.fth?.rotateAll90CW?.();"],
+            ["Rotate All 90° (CCW)", "window.fth?.rotateAll90CCW?.();"],
+            ["Rotate All 180°", "window.fth?.rotateAll180?.();"],
+          ];
+          for (const [name, command] of needed) {
+            if (!docs.find((d: any) => d.name === name)) {
+              await pack.documentClass.create({ name, type: "script", img: "icons/svg/compass.svg", command }, { pack: pack.collection });
+            }
+          }
+          Log.info("FTH macros pack ready", { collection: pack.collection });
+        }
+      } catch (e) {
+        Log.warn("macro pack setup failed", e);
+      }
+    })();
+  }
+
+  Log.debug("debug API attached to window.fth and macros registered (if GM)");
 });
 
 /* ---------- your rotation hooks (V2) ---------- */
@@ -180,8 +227,16 @@ const nextRotation = (d: 0 | 90 | 180 | 270) => {
 // Re-entrancy guard to prevent double toggles from duplicate handlers
 const lastToggleByAppId = new Map<number, number>();
 
+// Track currently active apps to support macro-driven rotations across all windows
+const activeApps = new Map<number, any>();
+
+type RotDir = "cw" | "ccw";
+const prevRotation = (d: 0 | 90 | 180 | 270) => (d === 0 ? 270 : d === 90 ? 0 : d === 180 ? 90 : 180);
+
+
 function applyRotation(el: HTMLElement | undefined, deg: 0 | 90 | 180 | 270) {
   if (!el) {
+
     Log.warn("applyRotation: element missing");
     return;
   }
@@ -194,7 +249,7 @@ function applyRotation(el: HTMLElement | undefined, deg: 0 | 90 | 180 | 270) {
   Log.debug("applyRotation", { deg, before, after: { className: el.className, rotation: (el as any).dataset?.fthRotation } });
 }
 
-function toggleRotation(app: any) {
+function toggleRotation(app: any, opts?: { mode?: RotMode; dir?: RotDir }) {
   const appId: number | undefined = app?.appId ?? app?.id;
   const rootEl = resolveAppRoot(app);
   if (!appId || !rootEl) {
@@ -210,7 +265,15 @@ function toggleRotation(app: any) {
   lastToggleByAppId.set(appId, now);
 
   const curr = rotationByAppId.get(appId) ?? 0;
-  const next = nextRotation(curr);
+  const mode = opts?.mode ?? rotationMode();
+  const dir = opts?.dir ?? "cw";
+  let next: 0 | 90 | 180 | 270;
+  if (mode === 180) {
+    next = curr === 180 ? 0 : 180;
+  } else {
+    next = dir === "cw" ? (curr === 0 ? 90 : curr === 90 ? 180 : curr === 180 ? 270 : 0) : prevRotation(curr);
+  }
+
   rotationByAppId.set(appId, next);
   const key = getPersistKey(app);
   if (key) {
@@ -222,7 +285,7 @@ function toggleRotation(app: any) {
   Log.debug("app", { ctor: app?.constructor?.name, appId });
   Log.debug("element", { className: rootEl.className, dataset: (rootEl as any).dataset });
   applyRotation(rootEl, next);
-  Log.debug("applied", { next });
+  Log.debug("applied", { next, mode, dir });
   Log.groupEnd();
 }
 
@@ -276,9 +339,12 @@ Hooks.on("renderApplicationV2", (app: AppV2) =>
     }
 
     const appId = (app as any)?.appId;
+    if (appId != null) activeApps.set(appId as any, app as any);
+
     let deg = rotationByAppId.get(appId);
     if (deg === undefined) {
       const p = readPersistedRotation(app as any);
+
       if (p !== undefined) {
         const norm = normalizeForMode(p);
         deg = norm;
@@ -294,6 +360,7 @@ Hooks.on("closeApplicationV2", (app: AppV2) =>
     const id = (app as any)?.appId;
     rotationByAppId.delete(id);
     lastToggleByAppId.delete(id);
+    activeApps.delete(id as any);
   }, "closeApplicationV2")
 );
 
@@ -320,6 +387,8 @@ onRenderApplicationV1((app, html) =>
   safe(() => {
     if (!supportV1()) return;
     const appId = (app as any)?.appId;
+    if (appId != null) activeApps.set(appId as any, app as any);
+
     let deg = rotationByAppId.get(appId);
     if (deg === undefined) {
       const p = readPersistedRotation(app as any);
@@ -339,5 +408,6 @@ onCloseApplicationV1((app) =>
     const id = (app as any)?.appId;
     rotationByAppId.delete(id);
     lastToggleByAppId.delete(id);
+    activeApps.delete(id as any);
   }, "closeApplicationV1")
 );
