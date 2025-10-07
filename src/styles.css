@@ -17,3 +17,16 @@
   -webkit-user-select: none;
   user-select: none;
 }
+
+
+/* Ensure injected Flip 180° header control matches native spacing/alignment */
+.window-header .controls [data-action="fth-rotate-dom"],
+.window-header .controls [data-action="fth-rotate"],
+.titlebar .controls [data-action="fth-rotate-dom"],
+.titlebar .controls [data-action="fth-rotate"] {
+  margin-left: 0.25rem; /* small gap from sibling controls */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
