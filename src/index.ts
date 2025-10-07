@@ -84,6 +84,30 @@ function readPersistedRotation(app: any): 0 | 90 | 180 | 270 | undefined {
   return n === 0 || n === 90 || n === 180 || n === 270 ? (n as any) : undefined;
 }
 
+// Rotation mode setting: 90° steps vs 180° flips
+type RotMode = 90 | 180;
+const rotationMode = (): RotMode => {
+  try {
+    const v = (game!.settings as any).get(MOD, "rotationMode");
+    return Number(v) === 180 ? 180 : 90;
+  } catch {
+    return 90;
+  }
+};
+const rotationLabel = () => (rotationMode() === 180 ? "Flip 180°" : "Rotate 90°");
+
+// Normalize a persisted angle for the current mode
+function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefined {
+  if (deg === undefined) return undefined;
+  const mode = rotationMode();
+  if (mode === 180) return deg === 0 ? 0 : 180;
+  // 90-mode: snap to the closest quarter-turn among 0/90/180/270
+  const allowed = [0, 90, 180, 270] as const;
+  const best = allowed.reduce((a, b) => (Math.abs((deg ?? 0) - a) <= Math.abs((deg ?? 0) - b) ? a : b));
+  return best as any;
+}
+
+
 
 Hooks.on("init", () => {
   // settings for log level + optional legacy support toggle
@@ -102,6 +126,17 @@ Hooks.on("init", () => {
     },
     default: "info",
     onChange: (v: string) => Log.setLevel(v as any),
+  });
+
+
+  (game!.settings as any).register(MOD, "rotationMode", {
+    name: "Rotation",
+    hint: "How much each press rotates: 90° steps or 180° flip.",
+    scope: "client",
+    config: true,
+    type: String,
+    choices: { "90": "Rotate 90°", "180": "Flip 180°" },
+    default: "90",
   });
 
   (game!.settings as any).register(MOD, "supportV1", {
@@ -134,8 +169,12 @@ Hooks.on("ready", () => {
 
 /* ---------- your rotation hooks (V2) ---------- */
 const rotationByAppId = new Map<number, 0 | 90 | 180 | 270>();
-const nextRotation = (d: 0 | 90 | 180 | 270) =>
-  d === 180 ? 0 : 180; // flip between up (0) and down (180)
+const nextRotation = (d: 0 | 90 | 180 | 270) => {
+  const mode = rotationMode();
+  if (mode === 180) return d === 180 ? 0 : 180;
+  // 90-mode: 0->90->180->270->0
+  return d === 0 ? 90 : d === 90 ? 180 : d === 180 ? 270 : 0;
+};
 
 
 // Re-entrancy guard to prevent double toggles from duplicate handlers
@@ -191,7 +230,7 @@ onGetHeaderControlsApplicationV2((app, controls) =>
   safe(() => {
     (controls as any).unshift?.({
       icon: "fa-solid fa-arrows-rotate",
-      label: "Flip 180°",
+      label: rotationLabel(),
       action: "fth-rotate",
       visible: true,
       onClick: () => toggleRotation(app as any),
@@ -227,7 +266,7 @@ Hooks.on("renderApplicationV2", (app: AppV2) =>
         const a = document.createElement('a');
         a.className = 'header-control icon fa-solid fa-arrows-rotate';
         (a as any).dataset.action = 'fth-rotate-dom';
-        (a as any).title = 'Flip 180°';
+        (a as any).title = rotationLabel();
         a.addEventListener('click', () => toggleRotation(app as any));
         controlsEl.appendChild(a);
         Log.debug('injected fallback rotate control', { app: (app as any)?.constructor?.name, appId: (app as any)?.appId });
@@ -241,7 +280,7 @@ Hooks.on("renderApplicationV2", (app: AppV2) =>
     if (deg === undefined) {
       const p = readPersistedRotation(app as any);
       if (p !== undefined) {
-        const norm = p === 0 ? 0 : 180;
+        const norm = normalizeForMode(p);
         deg = norm;
         rotationByAppId.set(appId as any, norm);
       }
@@ -265,7 +304,7 @@ onGetApplicationV1HeaderButtons((app, buttons) =>
   safe(() => {
     if (!supportV1()) return;
     buttons.unshift({
-      label: "Flip 180°",
+      label: rotationLabel(),
       class: "fth-rotate",
       icon: "fa-solid fa-arrows-rotate",
       onclick: () => toggleRotation(app as any),
@@ -285,7 +324,7 @@ onRenderApplicationV1((app, html) =>
     if (deg === undefined) {
       const p = readPersistedRotation(app as any);
       if (p !== undefined) {
-        const norm = p === 0 ? 0 : 180;
+        const norm = normalizeForMode(p);
         deg = norm;
         rotationByAppId.set(appId as any, norm);
       }
