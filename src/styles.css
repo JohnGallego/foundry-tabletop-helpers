@@ -3,6 +3,15 @@
 .fth-rot-180 { transform: rotate(180deg); transform-origin: center center; }
 .fth-rot-270 { transform: rotate(270deg); transform-origin: center center; }
 
+
+/* Snappy rotation animation (toggle via setting) */
+.fth-anim {
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fth-anim { transition: none !important; }
+}
+
 /* Keep it above other UI after rotation so it doesn’t slide under siblings */
 .app.fth-rot-90,
 .app.fth-rot-180,

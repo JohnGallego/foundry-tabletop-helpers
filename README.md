@@ -11,6 +11,8 @@ Current features:
 - Rotation: Choose how much each press rotates
   - Rotate 90° (default): cycles 0 → 90 → 180 → 270 → 0
   - Flip 180°: toggles 0 ↔ 180°
+- Animations: Enable or disable snappy rotation animations (default: enabled). Uses a polished easing curve for a professional feel.
+
 - Log Level: Controls console verbosity (set to debug when troubleshooting).
 ## Macros
 - On world load, if you are the GM, the module ensures a world compendium named "FTH Macros" containing:

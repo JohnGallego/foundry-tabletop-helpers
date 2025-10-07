@@ -96,8 +96,17 @@ const rotationMode = (): RotMode => {
 };
 const rotationLabel = () => (rotationMode() === 180 ? "Flip 180°" : "Rotate 90°");
 
+const animationsEnabled = (): boolean => {
+  try {
+    return Boolean((game!.settings as any).get(MOD, "enableAnimations"));
+  } catch {
+    return true;
+  }
+};
+
 // Normalize a persisted angle for the current mode
 function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefined {
+
   if (deg === undefined) return undefined;
   const mode = rotationMode();
   if (mode === 180) return deg === 0 ? 0 : 180;
@@ -137,6 +146,16 @@ Hooks.on("init", () => {
     type: String,
     choices: { "90": "Rotate 90°", "180": "Flip 180°" },
     default: "90",
+  });
+
+
+  (game!.settings as any).register(MOD, "enableAnimations", {
+    name: "Animations",
+    hint: "Enable snappy rotation animations with a polished easing curve.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
   });
 
   (game!.settings as any).register(MOD, "supportV1", {
@@ -241,6 +260,9 @@ function applyRotation(el: HTMLElement | undefined, deg: 0 | 90 | 180 | 270) {
     return;
   }
   const before = { className: el.className, rotation: (el as any).dataset?.fthRotation };
+  // Toggle animation class based on setting
+  if (animationsEnabled()) el.classList.add("fth-anim"); else el.classList.remove("fth-anim");
+  // Apply rotation classes
   el.classList.remove("fth-rot-90", "fth-rot-180", "fth-rot-270");
   if (deg === 90) el.classList.add("fth-rot-90");
   if (deg === 180) el.classList.add("fth-rot-180");
