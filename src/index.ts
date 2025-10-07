@@ -137,6 +137,10 @@ const rotationByAppId = new Map<number, 0 | 90 | 180 | 270>();
 const nextRotation = (d: 0 | 90 | 180 | 270) =>
   d === 180 ? 0 : 180; // flip between up (0) and down (180)
 
+
+// Re-entrancy guard to prevent double toggles from duplicate handlers
+const lastToggleByAppId = new Map<number, number>();
+
 function applyRotation(el: HTMLElement | undefined, deg: 0 | 90 | 180 | 270) {
   if (!el) {
     Log.warn("applyRotation: element missing");
@@ -158,6 +162,14 @@ function toggleRotation(app: any) {
     Log.warn("toggleRotation: missing appId or element", { appId, hasEl: !!rootEl });
     return;
   }
+  const now = (globalThis as any).performance?.now?.() ?? Date.now();
+  const last = lastToggleByAppId.get(appId);
+  if (last && now - last < 50) {
+    Log.debug("toggleRotation: ignored duplicate within 50ms", { appId });
+    return;
+  }
+  lastToggleByAppId.set(appId, now);
+
   const curr = rotationByAppId.get(appId) ?? 0;
   const next = nextRotation(curr);
   rotationByAppId.set(appId, next);
@@ -194,14 +206,36 @@ onGetHeaderControlsApplicationV2((app, controls) =>
 Hooks.on("renderApplicationV2", (app: AppV2) =>
   safe(() => {
     const el = resolveAppRoot(app as any);
-    // Wire our V2 header control action to the toggle handler
-    const btn: HTMLElement | null = el?.querySelector?.('[data-action="fth-rotate"]') ?? null;
-    if (btn && !(btn as any).dataset?.fthRotateBound) {
-      btn.addEventListener("click", () => {
-        toggleRotation(app as any);
-      });
-      (btn as any).dataset.fthRotateBound = "1";
+
+    // If the official V2 header control is present, do not bind a DOM handler
+    const hasV2Btn = !!el?.querySelector?.('[data-action="fth-rotate"]');
+    if (!hasV2Btn) {
+      // Inject a fallback rotate control into the header if possible
+      const headerControls = el?.querySelector?.('.window-header .controls, .titlebar .controls') ?? null;
+      const headerContainer = headerControls ?? el?.querySelector?.('.window-header, .titlebar') ?? null;
+      let controlsEl: HTMLElement | null = headerControls as HTMLElement | null;
+      if (!controlsEl && headerContainer) {
+        // Ensure a controls container exists
+        controlsEl = headerContainer.querySelector?.(':scope .controls') as HTMLElement | null;
+        if (!controlsEl) {
+          controlsEl = document.createElement('div');
+          controlsEl.className = 'controls';
+          headerContainer.appendChild(controlsEl);
+        }
+      }
+      if (controlsEl && !controlsEl.querySelector?.('[data-action="fth-rotate-dom"]')) {
+        const a = document.createElement('a');
+        a.className = 'header-control icon fa-solid fa-arrows-rotate';
+        (a as any).dataset.action = 'fth-rotate-dom';
+        (a as any).title = 'Flip 180°';
+        a.addEventListener('click', () => toggleRotation(app as any));
+        controlsEl.appendChild(a);
+        Log.debug('injected fallback rotate control', { app: (app as any)?.constructor?.name, appId: (app as any)?.appId });
+      }
+    } else {
+      Log.debug('found V2 header control; not injecting DOM handler', { app: (app as any)?.constructor?.name, appId: (app as any)?.appId });
     }
+
     const appId = (app as any)?.appId;
     let deg = rotationByAppId.get(appId);
     if (deg === undefined) {
@@ -218,7 +252,9 @@ Hooks.on("renderApplicationV2", (app: AppV2) =>
 
 Hooks.on("closeApplicationV2", (app: AppV2) =>
   safe(() => {
-    rotationByAppId.delete((app as any)?.appId);
+    const id = (app as any)?.appId;
+    rotationByAppId.delete(id);
+    lastToggleByAppId.delete(id);
   }, "closeApplicationV2")
 );
 
@@ -261,6 +297,8 @@ onRenderApplicationV1((app, html) =>
 onCloseApplicationV1((app) =>
   safe(() => {
     if (!supportV1()) return;
-    rotationByAppId.delete((app as any)?.appId);
+    const id = (app as any)?.appId;
+    rotationByAppId.delete(id);
+    lastToggleByAppId.delete(id);
   }, "closeApplicationV1")
 );
