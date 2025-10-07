@@ -1,7 +1,7 @@
 {
     "id": "foundry-tabletop-helpers",
     "title": "Foundry Tabletop Helpers",
-    "description": "QoL helpers for touchscreen tables. Adds a Flip 180° control to windows.",
+    "description": "QoL helpers for touchscreen tables. Adds a Rotate/Flip control to windows (90° by default; optional 180° flip).",
     "version": "0.0.0-PLACEHOLDER",
     "authors": [
         {
