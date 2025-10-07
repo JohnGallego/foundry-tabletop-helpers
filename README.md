@@ -4,12 +4,29 @@ A small set of quality-of-life helpers for touchscreen tabletop play in Foundry 
 
 Current features:
 - Adds a Rotate/Flip control to application windows. Default rotates 90° per press; optionally switch to 180° flip in settings.
+- Includes prebuilt macros to rotate all open windows (90° clockwise/counterclockwise, and 180°). A world compendium "FTH Macros" is auto-created for drag-and-drop.
+
 
 ## Settings
 - Rotation: Choose how much each press rotates
   - Rotate 90° (default): cycles 0 → 90 → 180 → 270 → 0
   - Flip 180°: toggles 0 ↔ 180°
 - Log Level: Controls console verbosity (set to debug when troubleshooting).
+## Macros
+- On world load, if you are the GM, the module ensures a world compendium named "FTH Macros" containing:
+  - Rotate All 90° (CW)
+  - Rotate All 90° (CCW)
+  - Rotate All 180°
+- Drag any of these macros from the compendium to your hotbar to use them.
+- These macros act on all currently displayed windows and persist the new orientation.
+- Advanced: you can also call the API from a script macro or console:
+
+```js
+window.fth.rotateAll90CW();
+window.fth.rotateAll90CCW();
+window.fth.rotateAll180();
+```
+
 - Add header button to V1 windows (legacy): Only if you need the rotation button on V1 apps (deprecated since V13).
 
 
