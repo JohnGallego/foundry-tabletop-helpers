@@ -1,25 +1,27 @@
 import "./styles.css";
 import { Log, MOD } from "./logger"; // ⬅️ THIS IMPORT IS REQUIRED
+import { registerSettings, rotationMode, rotationLabel, animationsEnabled, supportV1, type RotMode } from "./settings";
 
-type AppV2 = foundry.applications.api.ApplicationV2.Any;
+
+type AppV2 = any; // Avoid tight coupling to Foundry TS types
 // Legacy ApplicationV1 API
-type AppV1 = foundry.appv1.api.Application;
+type AppV1 = any;
 
 type V1Button = { label?: string; class?: string; icon?: string; onclick?: (e: MouseEvent) => void };
 
-// Strongly-typed wrapper helpers to hook specific events without casting at call sites
+// Lightly-typed wrapper helpers using globalThis to avoid TS namespace issues
 const onGetHeaderControlsApplicationV2 = (
   fn: (app: AppV2, controls: any[]) => void
-) => (Hooks as any).on("getHeaderControlsApplicationV2", fn);
+) => (globalThis as any).Hooks?.on?.("getHeaderControlsApplicationV2", fn);
 const onGetApplicationV1HeaderButtons = (
   fn: (app: AppV1, buttons: V1Button[]) => void
-) => (Hooks as any).on("getApplicationV1HeaderButtons", fn);
+) => (globalThis as any).Hooks?.on?.("getApplicationV1HeaderButtons", fn);
 const onRenderApplicationV1 = (
-  fn: (app: AppV1, html: JQuery<HTMLElement>) => void
-) => (Hooks as any).on("renderApplicationV1", fn);
+  fn: (app: AppV1, html: any) => void
+) => (globalThis as any).Hooks?.on?.("renderApplicationV1", fn);
 const onCloseApplicationV1 = (
   fn: (app: AppV1) => void
-) => (Hooks as any).on("closeApplicationV1", fn);
+) => (globalThis as any).Hooks?.on?.("closeApplicationV1", fn);
 
 // Small helper so we never break other modules if something throws
 function safe(fn: () => void, where: string) {
@@ -84,26 +86,6 @@ function readPersistedRotation(app: any): 0 | 90 | 180 | 270 | undefined {
   return n === 0 || n === 90 || n === 180 || n === 270 ? (n as any) : undefined;
 }
 
-// Rotation mode setting: 90° steps vs 180° flips
-type RotMode = 90 | 180;
-const rotationMode = (): RotMode => {
-  try {
-    const v = (game!.settings as any).get(MOD, "rotationMode");
-    return Number(v) === 180 ? 180 : 90;
-  } catch {
-    return 90;
-  }
-};
-const rotationLabel = () => (rotationMode() === 180 ? "Flip 180°" : "Rotate 90°");
-
-const animationsEnabled = (): boolean => {
-  try {
-    return Boolean((game!.settings as any).get(MOD, "enableAnimations"));
-  } catch {
-    return true;
-  }
-};
-
 // Normalize a persisted angle for the current mode
 function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefined {
 
@@ -118,69 +100,24 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
 
 
 
-Hooks.on("init", () => {
-  // settings for log level + optional legacy support toggle
-  (game!.settings as any).register(MOD, "logLevel", {
-    name: "Log Level",
-    hint: "Controls verbosity of console logs for Foundry Tabletop Helpers.",
-    scope: "client",
-    config: true,
-    type: String,
-    choices: {
-      silent: "silent",
-      error: "error",
-      warn: "warn",
-      info: "info",
-      debug: "debug",
-    },
-    default: "info",
-    onChange: (v: string) => Log.setLevel(v as any),
-  });
-
-
-  (game!.settings as any).register(MOD, "rotationMode", {
-    name: "Rotation",
-    hint: "How much each press rotates: 90° steps or 180° flip.",
-    scope: "client",
-    config: true,
-    type: String,
-    choices: { "90": "Rotate 90°", "180": "Flip 180°" },
-    default: "90",
-  });
-
-
-  (game!.settings as any).register(MOD, "enableAnimations", {
-    name: "Animations",
-    hint: "Enable snappy rotation animations with a polished easing curve.",
-    scope: "client",
-    config: true,
-    type: Boolean,
-    default: true,
-  });
-
-  (game!.settings as any).register(MOD, "supportV1", {
-    name: "Add header button to V1 windows (legacy)",
-    hint: "Enable only if you need the Flip 180° button on V1 applications (deprecated since V13).",
-    scope: "client",
-    config: true,
-    type: Boolean,
-    default: false,
-  });
-
-  Log.setLevel((game!.settings as any).get(MOD, "logLevel") as any);
+(globalThis as any).Hooks?.on?.("init", () => {
+  registerSettings();
+  try { Log.setLevel(((globalThis as any).game?.settings?.get(MOD, "logLevel")) as any); } catch {}
   Log.info("init");
 });
 
-Hooks.on("ready", () => {
+(globalThis as any).Hooks?.on?.("ready", () => {
   Log.info("ready", {
-    core: game.version,
-    system: game.system?.id,
-    user: game.user?.id,
+    core: (globalThis as any).game?.version,
+    system: (globalThis as any).game?.system?.id,
+    user: (globalThis as any).game?.user?.id,
   });
 
   // API exposed to macros and console
   const rotateAll = (mode: RotMode, dir: RotDir = "cw") => {
     try {
+      const count = activeApps.size;
+      Log.info("rotateAll", { mode, dir, count });
       activeApps.forEach((app) => toggleRotation(app, { mode, dir }));
     } catch (e) {
       Log.warn("rotateAll error", e);
@@ -189,7 +126,7 @@ Hooks.on("ready", () => {
 
   (globalThis as any).fth = {
     setLevel: (lvl: any) => Log.setLevel(lvl),
-    version: game!.modules!.get(MOD)?.version,
+    version: (globalThis as any).game?.modules?.get(MOD)?.version,
     rotateAll,
     rotateAll90CW: () => rotateAll(90, "cw"),
     rotateAll90CCW: () => rotateAll(90, "ccw"),
@@ -197,12 +134,12 @@ Hooks.on("ready", () => {
   };
 
   // Ensure world compendium with prebuilt macros (GM only)
-  if ((game.user as any)?.isGM) {
+  if (((globalThis as any).game?.user as any)?.isGM) {
     (async () => {
       try {
         const CC: any = (globalThis as any).CompendiumCollection;
         const desired = { name: "fth-macros", label: "FTH Macros", type: "Macro", package: "world" };
-        let pack: any = (game as any).packs?.find((p: any) => p?.metadata?.package === "world"
+        let pack: any = (globalThis as any).game?.packs?.find((p: any) => p?.metadata?.package === "world"
           && (p?.metadata?.name === desired.name || p?.metadata?.label === desired.label)
           && p?.documentName === "Macro");
         if (!pack && CC?.createCompendium) {
@@ -327,7 +264,7 @@ onGetHeaderControlsApplicationV2((app, controls) =>
   }, "getHeaderControlsApplicationV2")
 );
 
-Hooks.on("renderApplicationV2", (app: AppV2) =>
+(globalThis as any).Hooks?.on?.("renderApplicationV2", (app: AppV2) =>
   safe(() => {
     const el = resolveAppRoot(app as any);
 
@@ -370,14 +307,14 @@ Hooks.on("renderApplicationV2", (app: AppV2) =>
       if (p !== undefined) {
         const norm = normalizeForMode(p);
         deg = norm;
-        rotationByAppId.set(appId as any, norm);
+        rotationByAppId.set(appId as any, norm as 0 | 90 | 180 | 270);
       }
     }
     if (deg !== undefined) applyRotation(el ?? undefined, deg);
   }, "renderApplicationV2")
 );
 
-Hooks.on("closeApplicationV2", (app: AppV2) =>
+(globalThis as any).Hooks?.on?.("closeApplicationV2", (app: AppV2) =>
   safe(() => {
     const id = (app as any)?.appId;
     rotationByAppId.delete(id);
@@ -387,7 +324,6 @@ Hooks.on("closeApplicationV2", (app: AppV2) =>
 );
 
 /* ---------- optional legacy (V1) behind a toggle ---------- */
-const supportV1 = () => (game!.settings as any).get(MOD, "supportV1") as boolean;
 
 onGetApplicationV1HeaderButtons((app, buttons) =>
   safe(() => {
@@ -417,7 +353,7 @@ onRenderApplicationV1((app, html) =>
       if (p !== undefined) {
         const norm = normalizeForMode(p);
         deg = norm;
-        rotationByAppId.set(appId as any, norm);
+        rotationByAppId.set(appId as any, norm as 0 | 90 | 180 | 270);
       }
     }
     if (deg !== undefined) applyRotation(resolveAppRoot(app as any), deg);
