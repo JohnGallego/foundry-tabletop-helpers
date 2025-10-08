@@ -59,6 +59,21 @@ function resolveAppRoot(app: any): HTMLElement | undefined {
   return el as HTMLElement | undefined;
 }
 
+// Decide if an element/app should be rotated. Excludes core UI (sidebar, hotbar, players, controls, nav, combat carousels).
+function isRotatableRoot(el: HTMLElement | undefined): boolean {
+  if (!el) return false;
+  const cls = el.classList;
+  const isWindow = cls?.contains("app") || cls?.contains("window-app") || cls?.contains("application") || cls?.contains("document-sheet") || cls?.contains("sheet");
+  if (!isWindow) return false;
+  const id = (el as any).id as string | undefined;
+  const disallowedIds = new Set(["sidebar", "hotbar", "players", "controls", "navigation"]);
+  if (id && disallowedIds.has(id)) return false;
+  const forbidden = el.closest?.("#sidebar, #hotbar, #players, #controls, #navigation, .combat-carousel, #combat-carousel");
+  if (forbidden) return false;
+  return true;
+}
+
+
 // Build a per-window persistent key so we can remember rotation across closes/re-opens
 function getPersistKey(app: any): string | undefined {
   try {
@@ -118,7 +133,11 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
     try {
       const count = activeApps.size;
       Log.info("rotateAll", { mode, dir, count });
-      activeApps.forEach((app) => toggleRotation(app, { mode, dir }));
+      activeApps.forEach((app) => {
+        const el = resolveAppRoot(app);
+        if (!isRotatableRoot(el)) return;
+        toggleRotation(app, { mode, dir });
+      });
     } catch (e) {
       Log.warn("rotateAll error", e);
     }
@@ -156,7 +175,7 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
           ];
           for (const [name, command] of needed) {
             if (!docs.find((d: any) => d.name === name)) {
-              await pack.documentClass.create({ name, type: "script", img: "icons/svg/dice-target.svg", command }, { pack: pack.collection });
+              await pack.documentClass.create({ name, type: "script", img: "icons/tools/navigation/compass-plain-blue.webp", command }, { pack: pack.collection });
             }
           }
           Log.info("FTH macros pack ready", { collection: pack.collection });
@@ -172,13 +191,6 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
 
 /* ---------- your rotation hooks (V2) ---------- */
 const rotationByAppId = new Map<number, 0 | 90 | 180 | 270>();
-const nextRotation = (d: 0 | 90 | 180 | 270) => {
-  const mode = rotationMode();
-  if (mode === 180) return d === 180 ? 0 : 180;
-  // 90-mode: 0->90->180->270->0
-  return d === 0 ? 90 : d === 90 ? 180 : d === 180 ? 270 : 0;
-};
-
 
 // Re-entrancy guard to prevent double toggles from duplicate handlers
 const lastToggleByAppId = new Map<number, number>();
@@ -298,7 +310,7 @@ onGetHeaderControlsApplicationV2((app, controls) =>
     }
 
     const appId = (app as any)?.appId;
-    activeApps.add(app as any);
+    if (isRotatableRoot(el ?? undefined)) activeApps.add(app as any);
 
     let deg = rotationByAppId.get(appId);
     if (deg === undefined) {
@@ -341,11 +353,12 @@ onGetApplicationV1HeaderButtons((app, buttons) =>
   }, "getApplicationV1HeaderButtons")
 );
 
-onRenderApplicationV1((app, html) =>
+onRenderApplicationV1((app) =>
   safe(() => {
     if (!supportV1()) return;
     const appId = (app as any)?.appId;
-    activeApps.add(app as any);
+    const el2 = resolveAppRoot(app as any);
+    if (isRotatableRoot(el2 ?? undefined)) activeApps.add(app as any);
 
     let deg = rotationByAppId.get(appId);
     if (deg === undefined) {
