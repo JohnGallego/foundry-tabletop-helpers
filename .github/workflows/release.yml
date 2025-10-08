@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write    # needed for pushing to main and creating releases
+    env:
+      FOUNDRY_RELEASE_TOKEN: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}
 
     steps:
       - name: Checkout
@@ -105,12 +107,12 @@ jobs:
 
 
       - name: Publish to Foundry Package Release API
-        if: ${{ secrets.FOUNDRY_RELEASE_TOKEN != '' }}
+        if: ${{ env.FOUNDRY_RELEASE_TOKEN != '' }}
         env:
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
           TAG: ${{ github.ref_name }}
-          TOKEN: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}
+          TOKEN: ${{ env.FOUNDRY_RELEASE_TOKEN }}
         run: |
           set -euo pipefail
           ID="$(jq -r '.id' dist/module.json)"
