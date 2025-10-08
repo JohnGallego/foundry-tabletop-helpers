@@ -1,6 +1,7 @@
 {
   "name": "foundry-tabletop-helpers",
   "version": "0.1.18-alpha",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
