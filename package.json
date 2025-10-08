@@ -1,6 +1,6 @@
 {
   "name": "foundry-tabletop-helpers",
-  "version": "0.1.17-alpha",
+  "version": "0.1.18-alpha",
   "private": true,
   "type": "module",
   "scripts": {
