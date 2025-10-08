@@ -158,24 +158,40 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
       try {
         const CC: any = (globalThis as any).CompendiumCollection;
         const desired = { name: "fth-macros", label: "FTH Macros", type: "Macro", package: "world" };
-        let pack: any = (globalThis as any).game?.packs?.find((p: any) => p?.metadata?.package === "world"
-          && (p?.metadata?.name === desired.name || p?.metadata?.label === desired.label)
-          && p?.documentName === "Macro");
+        const collectionId = `${desired.package}.${desired.name}`;
+        // Try by collection id first, then by metadata
+        let pack: any = (globalThis as any).game?.packs?.get?.(collectionId)
+          ?? (globalThis as any).game?.packs?.find?.((p: any) => p?.metadata?.package === "world"
+            && (p?.metadata?.name === desired.name || p?.metadata?.label === desired.label)
+            && (p?.documentName === "Macro" || p?.documentName === "macro"));
         if (!pack && CC?.createCompendium) {
-          pack = await CC.createCompendium(desired);
+          try {
+            pack = await CC.createCompendium(desired);
+          } catch (err) {
+            // If it already exists, fetch it
+            Log.info("createCompendium skipped; pack exists, fetching", err);
+            pack = (globalThis as any).game?.packs?.get?.(collectionId)
+              ?? (globalThis as any).game?.packs?.find?.((p: any) => p?.metadata?.package === "world"
+                && p?.metadata?.name === desired.name);
+          }
         }
         if (!pack) {
           Log.warn("Could not create or find world macro pack");
         } else {
-          const docs = await pack.getDocuments();
+          const img = "icons/tools/navigation/compass-plain-blue.webp";
           const needed: Array<[string, string]> = [
             ["Rotate All 90° (CW)", "window.fth?.rotateAll90CW?.();"],
             ["Rotate All 90° (CCW)", "window.fth?.rotateAll90CCW?.();"],
             ["Rotate All 180°", "window.fth?.rotateAll180?.();"],
           ];
+          const docs = await pack.getDocuments();
           for (const [name, command] of needed) {
-            if (!docs.find((d: any) => d.name === name)) {
-              await pack.documentClass.create({ name, type: "script", img: "icons/tools/navigation/compass-plain-blue.webp", command }, { pack: pack.collection });
+            const existing: any = docs.find((d: any) => d.name === name);
+            if (!existing) {
+              await pack.documentClass.create({ name, type: "script", img, command }, { pack: pack.collection });
+            } else {
+              const needsUpdate = existing?.command !== command || existing?.img !== img || existing?.type !== "script";
+              if (needsUpdate) await existing.update({ command, img, type: "script" }, { pack: pack.collection });
             }
           }
           Log.info("FTH macros pack ready", { collection: pack.collection });
