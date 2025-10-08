@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*.*.*"         
+      - "v*.*.*"
 
 jobs:
   build-and-release:
@@ -102,3 +102,62 @@ jobs:
             ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
             ${{ github.event.repository.name }}-${{ github.ref_name }}.zip.sha256
             dist/module.json
+
+
+      - name: Publish to Foundry Package Release API
+        if: ${{ secrets.FOUNDRY_RELEASE_TOKEN != '' }}
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          TAG: ${{ github.ref_name }}
+          TOKEN: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          ID="$(jq -r '.id' dist/module.json)"
+          MIN="$(jq -r '.compatibility.minimum' dist/module.json)"
+          VER="$(jq -r '.compatibility.verified' dist/module.json)"
+          MAX="$(jq -r '.compatibility.maximum // empty' dist/module.json)"
+          VERSION="${TAG#v}"
+          MANIFEST_URL="https://github.com/${OWNER}/${REPO}/releases/download/${TAG}/module.json"
+          NOTES_URL="https://github.com/${OWNER}/${REPO}/releases/tag/${TAG}"
+
+          echo "Submitting release to Foundry for package '${ID}' version '${VERSION}'"
+
+          payload=$(jq -n \
+            --arg id "$ID" \
+            --arg version "$VERSION" \
+            --arg manifest "$MANIFEST_URL" \
+            --arg notes "$NOTES_URL" \
+            --arg minimum "$MIN" \
+            --arg verified "$VER" \
+            --arg maximum "${MAX:-}" \
+            '{
+              id: $id,
+              release: {
+                version: $version,
+                manifest: $manifest,
+                notes: $notes,
+                compatibility: (if $maximum == "" then
+                  { minimum: $minimum, verified: $verified }
+                else
+                  { minimum: $minimum, verified: $verified, maximum: $maximum }
+                end)
+              }
+            }')
+
+          echo "$payload" | jq .
+
+          HTTP_STATUS=$(curl -sS -X POST "https://foundryvtt.com/_api/packages/release_version/" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: ${TOKEN}" \
+            -d @"-" \
+            -o response.json \
+            -w "%{http_code}" <<< "$payload")
+
+          echo "Response ($HTTP_STATUS):"
+          cat response.json && echo
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "Failed to publish to Foundry Package Release API (HTTP $HTTP_STATUS)"
+            exit 1
+          fi
