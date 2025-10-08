@@ -15,13 +15,13 @@ const onGetHeaderControlsApplicationV2 = (
 ) => (globalThis as any).Hooks?.on?.("getHeaderControlsApplicationV2", fn);
 const onGetApplicationV1HeaderButtons = (
   fn: (app: AppV1, buttons: V1Button[]) => void
-) => (globalThis as any).Hooks?.on?.("getApplicationV1HeaderButtons", fn);
+) => (globalThis as any).Hooks?.on?.("getApplicationHeaderButtons", fn);
 const onRenderApplicationV1 = (
   fn: (app: AppV1, html: any) => void
-) => (globalThis as any).Hooks?.on?.("renderApplicationV1", fn);
+) => (globalThis as any).Hooks?.on?.("renderApplication", fn);
 const onCloseApplicationV1 = (
   fn: (app: AppV1) => void
-) => (globalThis as any).Hooks?.on?.("closeApplicationV1", fn);
+) => (globalThis as any).Hooks?.on?.("closeApplication", fn);
 
 // Small helper so we never break other modules if something throws
 function safe(fn: () => void, where: string) {
@@ -156,7 +156,7 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
           ];
           for (const [name, command] of needed) {
             if (!docs.find((d: any) => d.name === name)) {
-              await pack.documentClass.create({ name, type: "script", img: "icons/svg/compass.svg", command }, { pack: pack.collection });
+              await pack.documentClass.create({ name, type: "script", img: "icons/svg/dice-target.svg", command }, { pack: pack.collection });
             }
           }
           Log.info("FTH macros pack ready", { collection: pack.collection });
@@ -184,7 +184,7 @@ const nextRotation = (d: 0 | 90 | 180 | 270) => {
 const lastToggleByAppId = new Map<number, number>();
 
 // Track currently active apps to support macro-driven rotations across all windows
-const activeApps = new Map<number, any>();
+const activeApps = new Set<any>();
 
 type RotDir = "cw" | "ccw";
 const prevRotation = (d: 0 | 90 | 180 | 270) => (d === 0 ? 270 : d === 90 ? 0 : d === 180 ? 90 : 180);
@@ -298,7 +298,7 @@ onGetHeaderControlsApplicationV2((app, controls) =>
     }
 
     const appId = (app as any)?.appId;
-    if (appId != null) activeApps.set(appId as any, app as any);
+    activeApps.add(app as any);
 
     let deg = rotationByAppId.get(appId);
     if (deg === undefined) {
@@ -319,7 +319,7 @@ onGetHeaderControlsApplicationV2((app, controls) =>
     const id = (app as any)?.appId;
     rotationByAppId.delete(id);
     lastToggleByAppId.delete(id);
-    activeApps.delete(id as any);
+    activeApps.delete(app as any);
   }, "closeApplicationV2")
 );
 
@@ -345,7 +345,7 @@ onRenderApplicationV1((app, html) =>
   safe(() => {
     if (!supportV1()) return;
     const appId = (app as any)?.appId;
-    if (appId != null) activeApps.set(appId as any, app as any);
+    activeApps.add(app as any);
 
     let deg = rotationByAppId.get(appId);
     if (deg === undefined) {
@@ -366,6 +366,6 @@ onCloseApplicationV1((app) =>
     const id = (app as any)?.appId;
     rotationByAppId.delete(id);
     lastToggleByAppId.delete(id);
-    activeApps.delete(id as any);
+    activeApps.delete(app as any);
   }, "closeApplicationV1")
 );
