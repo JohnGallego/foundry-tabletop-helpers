@@ -12,7 +12,7 @@ const tpl = JSON.parse(
 /** Stamp version from package.json */
 tpl.version = pkg.version;
 
-/** Optional: keep URLs in sync with your repo slug */
+/** keep URLs in sync with repo slug */
 const owner = "JohnGallego";
 const repo = "foundry-tabletop-helpers";
 tpl.manifest = `https://raw.githubusercontent.com/${owner}/${repo}/main/module.json`;
@@ -26,9 +26,19 @@ fs.writeFileSync(
   "utf8"
 );
 
-/** Also copy README.md for convenience (Foundry ignores it, but handy in zips) */
+/** Also copy README.md for convenience */
 fs.copyFileSync(
   path.join(root, "README.md"),
   path.join(root, "dist", "README.md")
 );
+
+/** Copy templates (if present) */
+const tplDir = path.join(root, "templates");
+if (fs.existsSync(tplDir)) {
+  const outDir = path.join(root, "dist", "templates");
+  fs.mkdirSync(outDir, { recursive: true });
+  for (const entry of fs.readdirSync(tplDir)) {
+    fs.copyFileSync(path.join(tplDir, entry), path.join(outDir, entry));
+  }
+}
 console.log("Manifest built → dist/module.json");

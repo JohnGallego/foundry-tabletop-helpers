@@ -54,7 +54,58 @@ export function registerSettings(): void {
     type: Boolean,
     default: false,
   });
+
+  // Target players list (GM-only; stored as CSV; hidden - configured via submenu)
+  G.settings.register(MOD, "targetUserIds", {
+    name: "Target Players (storage)",
+    hint: "Internal storage for selected player IDs.",
+    scope: "world",
+    config: false,
+    type: String,
+    default: "",
+    restricted: true,
+  });
+
+  // GM-only submenu to configure target players with checkboxes
+  try {
+    class TargetPlayersForm extends ((globalThis as any).FormApplication ?? class {}) {
+      static get defaultOptions() {
+        const base: any = (super as any).defaultOptions ?? {};
+        return Object.assign({}, base, {
+          id: `${MOD}-target-players`,
+          title: "Target Players",
+          template: `modules/${MOD}/templates/target-users.hbs`,
+          width: 420,
+        });
+      }
+      async getData() {
+        const G: any = (globalThis as any).game;
+        const selected = new Set(targetUserIds());
+        const users = (G?.users ?? []).filter((u: any) => !u?.isGM);
+        return {
+          users: users.map((u: any) => ({ id: u.id, name: u.name, selected: selected.has(u.id), isActive: u.active })),
+        };
+      }
+      async _updateObject(_event: any, formData: any) {
+        const raw = (formData as any)["userIds"];
+        const ids: string[] = Array.isArray(raw) ? raw : raw ? [String(raw)] : [];
+        await (globalThis as any).game?.settings?.set(MOD, "targetUserIds", ids.join(","));
+      }
+    }
+
+    G.settings.registerMenu(MOD, "targetUsersMenu", {
+      name: "Target Players",
+      label: "Configure",
+      hint: "Choose which players are affected by rotation macros.",
+      icon: "fa-solid fa-user-check",
+      type: TargetPlayersForm,
+      restricted: true,
+    });
+  } catch (e) {
+    Log.warn("Failed to register Target Players submenu", e);
+  }
 }
+
 
 export const rotationMode = (): RotMode => {
   try {
@@ -80,6 +131,15 @@ export const supportV1 = (): boolean => {
     return Boolean((globalThis as any).game?.settings?.get(MOD, "supportV1"));
   } catch {
     return false;
+  }
+};
+
+export const targetUserIds = (): string[] => {
+  try {
+    const raw = String((globalThis as any).game?.settings?.get(MOD, "targetUserIds") ?? "");
+    return raw.split(",").map(s => s.trim()).filter(Boolean);
+  } catch {
+    return [];
   }
 };
 

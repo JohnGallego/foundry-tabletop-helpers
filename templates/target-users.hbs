@@ -1,0 +1,25 @@
+<form>
+  <div class="form-group">
+    <p>Select which players should be affected by FTH rotation macros.</p>
+  </div>
+
+  <div class="form-group">
+    <label>Players</label>
+    <div class="form-fields" style="display:flex; flex-direction: column; gap: 6px;">
+      {{#each users}}
+        <label class="checkbox">
+          <input type="checkbox" name="userIds" value="{{this.id}}" {{#if this.selected}}checked{{/if}} />
+          {{this.name}}
+          {{#if this.isActive}}<i class="fa-solid fa-circle" style="color: var(--color-success, #28a745);"></i>{{/if}}
+        </label>
+      {{/each}}
+    </div>
+  </div>
+
+  <footer class="sheet-footer flexrow">
+    <button type="submit" class="dialog-button default">
+      <i class="fa-solid fa-save"></i> Save
+    </button>
+  </footer>
+</form>
+

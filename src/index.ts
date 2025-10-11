@@ -1,6 +1,6 @@
 import "./styles.css";
-import { Log, MOD } from "./logger"; // ⬅️ THIS IMPORT IS REQUIRED
-import { registerSettings, rotationMode, rotationLabel, animationsEnabled, supportV1, type RotMode } from "./settings";
+import { Log, MOD } from "./logger";
+import { registerSettings, rotationMode, rotationLabel, animationsEnabled, supportV1, targetUserIds, type RotMode } from "./settings";
 
 
 type AppV2 = any; // Avoid tight coupling to Foundry TS types
@@ -73,7 +73,6 @@ function isRotatableRoot(el: HTMLElement | undefined): boolean {
   return true;
 }
 
-
 // Build a per-window persistent key so we can remember rotation across closes/re-opens
 function getPersistKey(app: any): string | undefined {
   try {
@@ -114,7 +113,6 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
 }
 
 
-
 (globalThis as any).Hooks?.on?.("init", () => {
   registerSettings();
   try { Log.setLevel(((globalThis as any).game?.settings?.get(MOD, "logLevel")) as any); } catch {}
@@ -127,6 +125,26 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
     system: (globalThis as any).game?.system?.id,
     user: (globalThis as any).game?.user?.id,
   });
+
+
+  // Socket listener: only targeted players act; GMs ignore to avoid affecting DM screen
+  try {
+    (globalThis as any).game?.socket?.on?.(`module.${MOD}`, (payload: any) => {
+      try {
+        if (!payload || payload.action !== "rotate") return;
+        const myId = (globalThis as any).game?.user?.id;
+        const isGM = !!(globalThis as any).game?.user?.isGM;
+        if (isGM) return; // never affect GM screen
+        const targets: any[] = Array.isArray(payload.userIds) ? payload.userIds : [];
+        if (targets.includes(myId)) {
+          Log.info("socket: rotate for this client", { mode: payload.mode, dir: payload.dir });
+          rotateAll(payload.mode as RotMode, payload.dir as RotDir);
+        }
+      } catch (e) {
+        Log.warn("socket handler error", e);
+      }
+    });
+  } catch {}
 
   // API exposed to macros and console
   const rotateAll = (mode: RotMode, dir: RotDir = "cw") => {
@@ -143,13 +161,39 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
     }
   };
 
+  const rotateTargets = (mode: RotMode, dir: RotDir = "cw") => {
+    try {
+      const ids = targetUserIds();
+      if (!ids.length) {
+        Log.warn("rotateTargets: no target users configured");
+        return;
+      }
+      Log.info("rotateTargets emit", { mode, dir, ids });
+      (globalThis as any).game?.socket?.emit?.(`module.${MOD}`, {
+        action: "rotate",
+        userIds: ids,
+        mode,
+        dir,
+      });
+    } catch (e) {
+      Log.warn("rotateTargets error", e);
+    }
+  };
+
+
   (globalThis as any).fth = {
     setLevel: (lvl: any) => Log.setLevel(lvl),
     version: (globalThis as any).game?.modules?.get(MOD)?.version,
+    // Local rotation (current client only)
     rotateAll,
     rotateAll90CW: () => rotateAll(90, "cw"),
     rotateAll90CCW: () => rotateAll(90, "ccw"),
     rotateAll180: () => rotateAll(180, "cw"),
+    // Targeted rotation (via socket to selected players only)
+    rotateTargets: (mode: RotMode, dir: RotDir = "cw") => rotateTargets(mode, dir),
+    rotateTargets90CW: () => rotateTargets(90, "cw"),
+    rotateTargets90CCW: () => rotateTargets(90, "ccw"),
+    rotateTargets180: () => rotateTargets(180, "cw"),
   };
 
   // Ensure world compendium with prebuilt macros (GM only)
@@ -179,22 +223,37 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
           Log.warn("Could not create or find world macro pack");
         } else {
           const img = "icons/tools/navigation/compass-plain-blue.webp";
-          const needed: Array<[string, string]> = [
-            ["Rotate All 90° (CW)", "window.fth?.rotateAll90CW?.();"],
-            ["Rotate All 90° (CCW)", "window.fth?.rotateAll90CCW?.();"],
-            ["Rotate All 180°", "window.fth?.rotateAll180?.();"],
+          const needed = [
+            {
+              newName: "Rotate Players 90° (CW)",
+              legacy: ["Rotate All 90° (CW)"],
+              command: "window.fth?.rotateTargets90CW?.();",
+            },
+            {
+              newName: "Rotate Players 90° (CCW)",
+              legacy: ["Rotate All 90° (CCW)"],
+              command: "window.fth?.rotateTargets90CCW?.();",
+            },
+            {
+              newName: "Rotate Players 180°",
+              legacy: ["Rotate All 180°"],
+              command: "window.fth?.rotateTargets180?.();",
+            },
           ];
           const docs = await pack.getDocuments();
-          for (const [name, command] of needed) {
-            const existing: any = docs.find((d: any) => d.name === name);
+          for (const entry of needed) {
+            let existing: any = docs.find((d: any) => d.name === entry.newName)
+              ?? docs.find((d: any) => entry.legacy.includes(d.name));
             if (!existing) {
-              await pack.documentClass.create({ name, type: "script", img, command }, { pack: pack.collection });
+              await pack.documentClass.create({ name: entry.newName, type: "script", img, command: entry.command }, { pack: pack.collection });
             } else {
-              const needsUpdate = existing?.command !== command || existing?.img !== img || existing?.type !== "script";
-              if (needsUpdate) await existing.update({ command, img, type: "script" }, { pack: pack.collection });
+              const patch: any = { img, type: "script", command: entry.command };
+              if (existing.name !== entry.newName) patch.name = entry.newName;
+              const needsUpdate = existing?.command !== entry.command || existing?.img !== img || existing?.type !== "script" || patch.name;
+              if (needsUpdate) await existing.update(patch, { pack: pack.collection });
             }
           }
-          Log.info("FTH macros pack ready", { collection: pack.collection });
+          Log.info("FTH macros pack ready (migrated if needed)", { collection: pack.collection });
         }
       } catch (e) {
         Log.warn("macro pack setup failed", e);
