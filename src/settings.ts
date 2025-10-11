@@ -68,9 +68,10 @@ export function registerSettings(): void {
 
   // GM-only submenu to configure target players with checkboxes
   try {
-    class TargetPlayersForm extends ((globalThis as any).FormApplication ?? class {}) {
+    const Base: any = (globalThis as any).FormApplication || class {};
+    class TargetPlayersForm extends Base {
       static get defaultOptions() {
-        const base: any = (super as any).defaultOptions ?? {};
+        const base: any = (Base as any).defaultOptions ?? {};
         return Object.assign({}, base, {
           id: `${MOD}-target-players`,
           title: "Target Players",
