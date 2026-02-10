@@ -32,6 +32,24 @@ function safe(fn: () => void, where: string) {
   }
 }
 
+// Detect apps that should never receive rotation controls or DOM injection.
+// This covers HUDs (TokenHUD, TileHUD, DrawingHUD …), toolbars, and other
+// non-windowed overlay apps that happen to fire ApplicationV2 hooks.
+function isExcludedApp(app: any): boolean {
+  // Check constructor name – all core HUDs end with "HUD" or "Hud"
+  const name: string = app?.constructor?.name ?? "";
+  if (/HUD$/i.test(name)) return true;
+
+  // V2 apps that are not framed windows (hasFrame === false) should be skipped
+  if (app?.hasFrame === false) return true;
+
+  // Also check for known non-window overlay class names
+  const excluded = ["SceneNavigation", "Hotbar", "PlayerList", "CombatCarousel"];
+  if (excluded.includes(name)) return true;
+
+  return false;
+}
+
 // Try to resolve the actual window root element for both V1 and V2 apps
 function resolveAppRoot(app: any): HTMLElement | undefined {
   // Prefer V2 window.element when available
@@ -59,12 +77,15 @@ function resolveAppRoot(app: any): HTMLElement | undefined {
   return el as HTMLElement | undefined;
 }
 
-// Decide if an element/app should be rotated. Excludes core UI (sidebar, hotbar, players, controls, nav, combat carousels).
+// Decide if an element/app should be rotated. Excludes core UI (sidebar, hotbar, players, controls, nav, combat carousels, HUDs).
 function isRotatableRoot(el: HTMLElement | undefined): boolean {
   if (!el) return false;
   const cls = el.classList;
   const isWindow = cls?.contains("app") || cls?.contains("window-app") || cls?.contains("application") || cls?.contains("document-sheet") || cls?.contains("sheet");
   if (!isWindow) return false;
+  // Exclude HUD elements (token-hud, tile-hud, drawing-hud, etc.)
+  if (el.id && /hud$/i.test(el.id)) return false;
+  if (cls?.contains("placeable-hud")) return false;
   const id = (el as any).id as string | undefined;
   const disallowedIds = new Set(["sidebar", "hotbar", "players", "controls", "navigation"]);
   if (id && disallowedIds.has(id)) return false;
@@ -227,17 +248,32 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
             {
               newName: "Rotate Players 90° (CW)",
               legacy: ["Rotate All 90° (CW)"],
-              command: "window.fth?.rotateTargets90CW?.();",
+              command: "window.fth.rotateTargets90CW();",
             },
             {
               newName: "Rotate Players 90° (CCW)",
               legacy: ["Rotate All 90° (CCW)"],
-              command: "window.fth?.rotateTargets90CCW?.();",
+              command: "window.fth.rotateTargets90CCW();",
             },
             {
               newName: "Rotate Players 180°",
               legacy: ["Rotate All 180°"],
-              command: "window.fth?.rotateTargets180?.();",
+              command: "window.fth.rotateTargets180();",
+            },
+            {
+              newName: "Rotate Local 90° (CW)",
+              legacy: [],
+              command: "window.fth.rotateAll90CW();",
+            },
+            {
+              newName: "Rotate Local 90° (CCW)",
+              legacy: [],
+              command: "window.fth.rotateAll90CCW();",
+            },
+            {
+              newName: "Rotate Local 180°",
+              legacy: [],
+              command: "window.fth.rotateAll180();",
             },
           ];
           const docs = await pack.getDocuments();
@@ -337,6 +373,7 @@ function toggleRotation(app: any, opts?: { mode?: RotMode; dir?: RotDir }) {
 
 onGetHeaderControlsApplicationV2((app, controls) =>
   safe(() => {
+    if (isExcludedApp(app)) return;
     (controls as any).unshift?.({
       icon: "fa-solid fa-arrows-rotate",
       label: rotationLabel(),
@@ -353,6 +390,7 @@ onGetHeaderControlsApplicationV2((app, controls) =>
 
 (globalThis as any).Hooks?.on?.("renderApplicationV2", (app: AppV2) =>
   safe(() => {
+    if (isExcludedApp(app)) return;
     const el = resolveAppRoot(app as any);
 
     // If the official V2 header control is present, do not bind a DOM handler
