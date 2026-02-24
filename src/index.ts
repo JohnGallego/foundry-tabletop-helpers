@@ -1,6 +1,7 @@
 import "./styles.css";
 import { Log, MOD } from "./logger";
 import { registerSettings, rotationMode, rotationLabel, animationsEnabled, supportV1, targetUserIds, type RotMode } from "./settings";
+import { registerPrintSheetHooks } from "./print-sheet/print-sheet";
 
 
 type AppV2 = any; // Avoid tight coupling to Foundry TS types
@@ -136,6 +137,7 @@ function normalizeForMode(deg: number | undefined): 0 | 90 | 180 | 270 | undefin
 
 (globalThis as any).Hooks?.on?.("init", () => {
   registerSettings();
+  registerPrintSheetHooks();
   try { Log.setLevel(((globalThis as any).game?.settings?.get(MOD, "logLevel")) as any); } catch {}
   Log.info("init");
 });

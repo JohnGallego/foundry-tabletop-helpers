@@ -1,0 +1,70 @@
+<form class="fth-print-defaults" style="padding: 8px;">
+  <p style="margin-bottom: 16px; font-size: 0.9em; color: var(--color-text-dark-secondary, #666);">
+    Configure default print options for each sheet type. These are used when "Show Print Options Dialog" is disabled, or as pre-populated defaults when shown.
+  </p>
+
+  {{#each sheetTypes}}
+  <fieldset style="margin-bottom: 20px; padding: 12px 16px; border: 1px solid var(--color-border-light, #ccc); border-radius: 6px; background: var(--color-bg-option, rgba(0,0,0,0.03));">
+    <legend style="font-weight: bold; padding: 0 10px; font-size: 1.05em;">{{this.label}}</legend>
+
+    <table style="width: 100%; border-collapse: collapse;">
+      <!-- Paper Size Row -->
+      <tr>
+        <td style="padding: 8px 0; width: 90px; vertical-align: top; font-weight: 500;">Paper Size</td>
+        <td style="padding: 8px 0;">
+          <label class="radio" style="margin-right: 16px; cursor: pointer;">
+            <input type="radio" name="{{this.key}}_paperSize" value="letter" {{#if (eq this.paperSize "letter")}}checked{{/if}} />
+            US Letter
+          </label>
+          <label class="radio" style="cursor: pointer;">
+            <input type="radio" name="{{this.key}}_paperSize" value="a4" {{#if (eq this.paperSize "a4")}}checked{{/if}} />
+            A4
+          </label>
+        </td>
+      </tr>
+
+      {{#if this.showPortrait}}
+      <!-- Image Row -->
+      <tr>
+        <td style="padding: 8px 0; vertical-align: top; font-weight: 500;">Image</td>
+        <td style="padding: 8px 0;">
+          <label class="radio" style="margin-right: 16px; cursor: pointer;">
+            <input type="radio" name="{{this.key}}_portrait" value="portrait" {{#if (eq this.portrait "portrait")}}checked{{/if}} />
+            Portrait
+          </label>
+          <label class="radio" style="margin-right: 16px; cursor: pointer;">
+            <input type="radio" name="{{this.key}}_portrait" value="token" {{#if (eq this.portrait "token")}}checked{{/if}} />
+            Token
+          </label>
+          <label class="radio" style="cursor: pointer;">
+            <input type="radio" name="{{this.key}}_portrait" value="none" {{#if (eq this.portrait "none")}}checked{{/if}} />
+            None
+          </label>
+        </td>
+      </tr>
+      {{/if}}
+
+      <!-- Sections Row -->
+      <tr>
+        <td style="padding: 8px 0; vertical-align: top; font-weight: 500;">Sections</td>
+        <td style="padding: 8px 0;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px;">
+            {{#each this.sections}}
+            <label class="checkbox" style="cursor: pointer; white-space: nowrap;">
+              <input type="checkbox" name="{{../key}}_section_{{this.key}}" {{#if this.checked}}checked{{/if}} />
+              {{this.label}}
+            </label>
+            {{/each}}
+          </div>
+        </td>
+      </tr>
+    </table>
+  </fieldset>
+  {{/each}}
+
+  <footer class="sheet-footer flexrow" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border-light, #ddd);">
+    <button type="submit" class="dialog-button default" style="flex: 1;">
+      <i class="fa-solid fa-save"></i> Save Defaults
+    </button>
+  </footer>
+</form>
