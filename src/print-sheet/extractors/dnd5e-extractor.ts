@@ -366,8 +366,24 @@ export class Dnd5eExtractor extends BaseExtractor {
         weaponType = "Melee or Ranged Weapon";
       }
 
-      // Get mastery
+      // Get mastery and check if character has mastered this weapon type
       const mastery = sys?.mastery ? this.formatMastery(sys.mastery) : "";
+
+      // Check if character has mastered this weapon type
+      // Character masteries are stored as weapon base item names (e.g., "longsword", "battleaxe")
+      let hasMastery = false;
+      if (mastery) {
+        const baseItem = sys?.type?.baseItem ?? "";
+        const masterySet = actor?.system?.traits?.weaponProf?.mastery?.value;
+        if (masterySet) {
+          const masteryArr = masterySet instanceof Set ? [...masterySet] :
+            Array.isArray(masterySet) ? masterySet : [];
+          hasMastery = masteryArr.some((w: string) =>
+            w.toLowerCase() === baseItem.toLowerCase() ||
+            w.toLowerCase().replace(/-/g, " ") === baseItem.toLowerCase().replace(/-/g, " ")
+          );
+        }
+      }
 
       // Get range/reach
       const range = sys?.range ?? {};
@@ -520,6 +536,7 @@ export class Dnd5eExtractor extends BaseExtractor {
         name: item.name ?? "",
         weaponType,
         mastery,
+        hasMastery,
         range: rangeStr,
         rangeType,
         toHit,

@@ -51,6 +51,8 @@ export interface WeaponActionData {
   weaponType: string;
   /** Weapon mastery if applicable (e.g., "Vex", "Slow") */
   mastery: string;
+  /** Whether the character has mastered this weapon type and can use the mastery */
+  hasMastery: boolean;
   /** Range display: "5 ft." for reach, "80 (320)" for ranged */
   range: string;
   /** "Reach" or empty for ranged */
@@ -143,6 +145,8 @@ export interface SpellData {
   level: number;
   school: string;
   components: string;
+  /** Material component description if any */
+  materials: string;
   concentration: boolean;
   ritual: boolean;
   prepared: boolean;
@@ -160,6 +164,10 @@ export interface SpellData {
   effect: string;
   /** Source: "Cleric", "Magic Initiate (Druid)", etc. */
   source: string;
+  /** Spell icon/image URL */
+  img: string;
+  /** Higher level scaling description */
+  higherLevel: string;
 }
 
 /* ── Inventory ─────────────────────────────────────────────── */

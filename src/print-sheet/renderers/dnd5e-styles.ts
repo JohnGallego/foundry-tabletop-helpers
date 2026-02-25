@@ -38,21 +38,21 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-save-label { font-size: 9pt; width: 12px; }
 .fth-save-circles { font-size: 10pt; letter-spacing: 2px; }
 
-/* Abilities and Saves row - same height */
-.fth-abilities-saves-row { display: flex; gap: 12px; align-items: stretch; margin: 8px 0; }
+/* Abilities and Saves row - natural height */
+.fth-abilities-saves-row { display: flex; gap: 12px; align-items: flex-start; margin: 8px 0; }
 
 /* Ability scores */
 .fth-abilities { display: flex; gap: 6px; justify-content: center; flex: 1; }
-.fth-ability { text-align: center; border: 1.5px solid #7a200d; border-radius: 4px; padding: 4px 6px; min-width: 0.7in; display: flex; flex-direction: column; justify-content: center; }
+.fth-ability { text-align: center; border: 1.5px solid #7a200d; border-radius: 4px; padding: 4px 6px; min-width: 0.7in; }
 .fth-ability-label { display: block; font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #7a200d; letter-spacing: 0.5px; }
 .fth-ability-mod { display: block; font-size: 14pt; font-weight: 700; color: #1a1a1a; }
 .fth-ability-score { display: block; font-size: 9pt; color: #666; }
 
-/* Saves widget - matches ability box height */
-.fth-saves-widget { border: 1.5px solid #7a200d; border-radius: 4px; padding: 6px 10px; background: #fdf8f6; min-width: 1.8in; display: flex; flex-direction: column; }
+/* Saves widget */
+.fth-saves-widget { border: 1.5px solid #7a200d; border-radius: 4px; padding: 6px 10px; background: #fdf8f6; min-width: 1.8in; }
 .fth-saves-title { font-size: 8pt; font-weight: 700; text-transform: uppercase; color: #7a200d; text-align: center; margin-bottom: 4px; letter-spacing: 0.5px; }
-.fth-saves-grid { display: flex; gap: 12px; flex: 1; }
-.fth-saves-column { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.fth-saves-grid { display: flex; gap: 12px; }
+.fth-saves-column { flex: 1; }
 .fth-save-item { display: flex; align-items: center; gap: 4px; font-size: 8pt; padding: 2px 0; }
 .fth-save-prof { font-size: 7pt; width: 10px; }
 .fth-save-label { flex: 1; font-weight: 600; color: #333; }
@@ -104,6 +104,8 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-skill { padding: 1px 0; }
 .fth-skill-prof { font-weight: 700; }
 .fth-skill-expert { font-weight: 700; color: #7a200d; }
+.fth-skill-mod { font-weight: 700; min-width: 22px; display: inline-block; }
+.fth-skill-ability { font-size: 7pt; color: #888; }
 .fth-fav { color: #d4a017; }
 .fth-languages { font-size: 8.5pt; margin-top: 6px; padding-top: 4px; border-top: 1px solid #ddd; margin-left: 12px; }
 
@@ -131,8 +133,9 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-atk-name strong { font-size: 9pt; }
 .fth-atk-type { font-size: 7pt; color: #666; margin-top: 1px; display: flex; align-items: center; gap: 4px; }
 .fth-mastery {
-  display: inline-block; background: #7a200d; color: #fff; font-size: 6.5pt;
-  padding: 1px 4px; border-radius: 2px; font-weight: 600; text-transform: uppercase;
+  display: inline-block; background: #2d6a2d; color: #fff; font-size: 5.5pt;
+  padding: 1px 3px; border-radius: 2px; font-weight: 600; text-transform: uppercase;
+  margin-left: 4px; vertical-align: middle;
 }
 
 .fth-atk-range { text-align: center; min-width: 50px; }
@@ -196,6 +199,31 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-spell-effect { width: 60px; }
 .fth-spell-notes { width: 50px; font-size: 7.5pt; color: #666; }
 
+/* Spell Cards - new page with 2 cards per row */
+.fth-spell-cards-page { page-break-before: always; margin-top: 12px; }
+.fth-spell-cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-left: 12px; }
+.fth-spell-card {
+  position: relative;
+  border: 1.5px solid #7a200d; border-radius: 6px; padding: 8px 10px 20px;
+  background: #fefcfb; break-inside: avoid; font-size: 8pt;
+}
+.fth-spell-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.fth-spell-card-title { flex: 1; }
+.fth-spell-card-name { display: inline; font-size: 11pt; font-weight: 700; color: #7a200d; line-height: 1.2; }
+.fth-spell-card-name .fth-spell-tag { vertical-align: middle; margin-left: 6px; }
+.fth-spell-card-level { display: block; font-size: 7.5pt; font-style: italic; color: #555; margin-top: 1px; }
+.fth-spell-card-img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; margin-left: 8px; border: 1px solid #ddd; }
+.fth-spell-tag { font-size: 6.5pt; font-weight: 600; text-transform: uppercase; padding: 1px 4px; border-radius: 3px; }
+.fth-tag-conc { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+.fth-tag-ritual { background: #d4edda; color: #155724; border: 1px solid #28a745; }
+.fth-spell-card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; margin-bottom: 6px; font-size: 7.5pt; }
+.fth-spell-card-stat strong { color: #333; }
+.fth-spell-materials { font-style: italic; color: #666; font-size: 7pt; }
+.fth-spell-card-atk { font-size: 7.5pt; margin-bottom: 4px; padding: 3px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+.fth-spell-card-desc { font-size: 7.5pt; color: #333; line-height: 1.35; margin-bottom: 4px; }
+.fth-spell-higher { font-size: 7pt; color: #555; font-style: italic; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #ccc; }
+.fth-spell-source { position: absolute; bottom: 6px; right: 10px; font-size: 6.5pt; color: #888; }
+
 /* Features */
 .fth-features { margin: 8px 0; }
 .fth-features-content { margin-left: 12px; }
@@ -217,32 +245,28 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-prof-content { margin-left: 12px; }
 .fth-prof-line { font-size: 8.5pt; margin-bottom: 3px; }
 
-/* Inventory */
+/* Inventory - 2-column grid layout */
 .fth-inventory { margin: 8px 0; }
-.fth-inv-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-left: 12px; max-width: calc(100% - 12px); }
-.fth-inv-table th { text-align: left; font-size: 7.5pt; font-weight: 700; text-transform: uppercase; color: #555; border-bottom: 1px solid #999; padding: 4px 6px; }
-.fth-inv-table td { padding: 4px 6px; border-bottom: 1px solid #eee; vertical-align: top; }
-.fth-inv-col-active { width: 40px; text-align: center; }
-.fth-inv-col-name { }
-.fth-inv-col-weight { width: 50px; }
-.fth-inv-col-qty { width: 35px; text-align: center; }
-.fth-inv-active { text-align: center; }
-.fth-eq-active { color: #7a200d; font-size: 10pt; }
-.fth-eq-inactive { color: #999; }
-.fth-inv-name-cell { }
-.fth-inv-name-row { display: flex; align-items: center; gap: 4px; }
+.fth-inv-weight-total { font-weight: normal; font-size: 9pt; color: #666; }
+.fth-inv-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 16px;
+  font-size: 8pt; margin-left: 12px; max-width: calc(100% - 12px);
+}
+.fth-inv-item {
+  display: flex; align-items: center; gap: 3px;
+  padding: 2px 0; border-bottom: 1px dotted #ddd;
+}
 .fth-inv-item-name { font-weight: 600; }
-.fth-inv-item-type { font-size: 7.5pt; color: #666; margin-left: 20px; }
-.fth-inv-icon { width: 16px; height: 16px; object-fit: contain; flex-shrink: 0; }
-.fth-inv-icon-placeholder { width: 16px; height: 16px; flex-shrink: 0; }
-.fth-inv-weight { }
-.fth-inv-qty { text-align: center; }
-.fth-inv-total td { border-top: 1px solid #999; border-bottom: none; padding-top: 6px; }
+.fth-inv-uses { color: #666; font-size: 7pt; }
+.fth-inv-meta { color: #888; font-size: 7pt; margin-left: auto; }
+.fth-inv-icon { width: 14px; height: 14px; object-fit: contain; flex-shrink: 0; }
+.fth-eq-active { color: #7a200d; font-size: 8pt; margin-right: 2px; }
+.fth-eq-inactive { color: #bbb; font-size: 8pt; margin-right: 2px; }
+/* Container groups stay together */
+.fth-inv-container-group { break-inside: avoid; }
 /* Container contents indentation */
-.fth-inv-contained { background-color: #f9f9f9; }
-.fth-inv-indented { padding-left: 24px !important; }
+.fth-inv-indented { padding-left: 16px; }
 .fth-inv-indented .fth-inv-item-name { font-weight: normal; font-style: italic; }
-.fth-inv-indented .fth-inv-item-type { margin-left: 20px; }
 
 /* Backstory */
 .fth-backstory { margin: 8px 0; font-size: 8.5pt; }
@@ -289,10 +313,33 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 @media print {
   body { padding: 0; }
   @page { margin: 0.4in; }
+
+  /* Keep sections together - avoid breaking inside */
   .fth-statblock { break-inside: avoid; }
   .fth-feat-group { break-inside: avoid; }
   .fth-spell-level { break-inside: avoid; }
+  .fth-spell-card { break-inside: avoid; }
+  .fth-action-group { break-inside: avoid; }
+  .fth-inv-container-group { break-inside: avoid; }
   .fth-party-table tr { break-inside: avoid; }
+
+  /* Section titles should not be orphaned at bottom of page */
+  .fth-section-title { break-after: avoid; }
+  h3 { break-after: avoid; }
+
+  /* Main sections prefer to stay together when possible */
+  .fth-actions { break-inside: avoid-page; }
+  .fth-features { break-inside: avoid-page; }
+  .fth-inventory { break-inside: avoid-page; }
+  .fth-spellcasting { break-inside: avoid-page; }
+
+  /* Spell cards always on new page */
+  .fth-spell-cards-page { page-break-before: always; }
+
+  /* Orphans/widows - require at least 3 lines before/after page break */
+  p, .fth-feat, .fth-action-item, .fth-inv-item { orphans: 3; widows: 3; }
+
+  /* Background removal for print */
   .fth-stat-box { background: none !important; }
   .fth-party-table tr:nth-child(even) td { background: none !important; }
 }

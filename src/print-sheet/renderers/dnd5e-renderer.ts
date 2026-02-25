@@ -84,6 +84,12 @@ export class Dnd5eRenderer extends BaseRenderer {
       parts.push(this.charSkills(data.skills));
     }
 
+    // Build set of action names to filter from Features & Traits (Actions takes priority)
+    const actionNames = new Set<string>();
+    for (const f of data.actions.other) {
+      actionNames.add(f.name.toLowerCase());
+    }
+
     // Actions (new section)
     if (sec.actions !== false && this.hasActions(data.actions)) {
       parts.push(this.charActions(data.actions));
@@ -94,14 +100,19 @@ export class Dnd5eRenderer extends BaseRenderer {
       parts.push(this.charSpellcasting(data.spellcasting, data.favorites));
     }
 
-    // Features & Traits
+    // Features & Traits (filter out items that appear in Actions)
     if (sec.features !== false && data.features.length > 0) {
-      parts.push(this.charFeatures(data.features, data.proficiencies, data.traits.languages));
+      parts.push(this.charFeatures(data.features, data.proficiencies, data.traits.languages, actionNames));
     }
 
     // Inventory
     if (sec.inventory !== false && data.inventory.length > 0) {
       parts.push(this.charInventory(data.inventory));
+    }
+
+    // Spell cards on new page (after inventory)
+    if (sec.spells !== false && data.spellcasting) {
+      parts.push(this.charSpellCards(data.spellcasting));
     }
 
     // Backstory
@@ -298,11 +309,18 @@ export class Dnd5eRenderer extends BaseRenderer {
     const leftSaves = abilities.slice(0, 3);  // STR, DEX, CON
     const rightSaves = abilities.slice(3, 6); // INT, WIS, CHA
 
+    // Abbreviate ability names for saves
+    const abbrev: Record<string, string> = {
+      Strength: "STR", Dexterity: "DEX", Constitution: "CON",
+      Intelligence: "INT", Wisdom: "WIS", Charisma: "CHA",
+    };
+
     const renderSave = (a: AbilityData): string => {
       const profIcon = a.proficient ? "●" : "○";
+      const shortName = abbrev[a.label] ?? a.label.slice(0, 3).toUpperCase();
       return `<div class="fth-save-item">
         <span class="fth-save-prof">${profIcon}</span>
-        <span class="fth-save-label">${esc(a.label)}</span>
+        <span class="fth-save-label">${esc(shortName)}</span>
         <span class="fth-save-value">${signStr(a.save)}</span>
       </div>`;
     };
@@ -357,9 +375,16 @@ export class Dnd5eRenderer extends BaseRenderer {
 
 
   private charSkills(skills: SkillData[]): string {
+    // Ability abbreviations
+    const abbrev: Record<string, string> = {
+      str: "STR", dex: "DEX", con: "CON", int: "INT", wis: "WIS", cha: "CHA",
+    };
+
     const rows = skills.map(s => {
       const cls = s.proficiency >= 2 ? "fth-skill fth-skill-expert" : s.proficiency >= 1 ? "fth-skill fth-skill-prof" : "fth-skill";
-      return `<div class="${cls}">${profIcon(s.proficiency)} ${esc(s.label)} ${signStr(s.total)}</div>`;
+      const abilityAbbr = abbrev[s.ability] ?? s.ability.toUpperCase().slice(0, 3);
+      // Order: modifier, skill name, (ability)
+      return `<div class="${cls}">${profIcon(s.proficiency)} <span class="fth-skill-mod">${signStr(s.total)}</span> ${esc(s.label)} <span class="fth-skill-ability">(${abilityAbbr})</span></div>`;
     }).join("");
     return `
       <div class="fth-skills">
@@ -374,19 +399,39 @@ export class Dnd5eRenderer extends BaseRenderer {
            actions.bonusActions.length > 0 || actions.reactions.length > 0 || actions.other.length > 0;
   }
 
+  /** Weapon mastery descriptions from the 2024 PHB */
+  private static readonly MASTERY_DESCRIPTIONS: Record<string, string> = {
+    cleave: "If you hit a creature, you can make an attack roll against a second creature within 5 feet of the first that is also within your reach. On a hit, the second creature takes the weapon's damage, but don't add your ability modifier unless it's negative.",
+    graze: "If your attack roll misses a creature, that creature takes damage equal to your ability modifier. This damage is the same type as the weapon's damage, and can't be increased in any way other than increasing the ability modifier.",
+    nick: "When you make the extra attack of the Light weapon property, you can make it as part of the Attack action instead of as a Bonus Action. You can make this extra attack only once per turn.",
+    push: "If you hit a creature, you can push that creature up to 10 feet straight away from yourself if it is Large or smaller.",
+    sap: "If you hit a creature, that creature has Disadvantage on its next attack roll before the start of your next turn.",
+    slow: "If you hit a creature, that creature's Speed is reduced by 10 feet until the start of your next turn. This can't reduce the creature's speed below 0.",
+    topple: "If you hit a creature, you can force that creature to make a Constitution saving throw (DC 8 + your Proficiency Bonus + the ability modifier used to make the attack roll). On a failed save, the creature has the Prone condition.",
+    vex: "If you hit a creature, you have Advantage on your next attack roll against that creature before the end of your next turn.",
+  };
+
   /** Render character actions section with table format */
   private charActions(actions: CharacterActions): string {
     const sections: string[] = [];
+
+    // Track masteries used on weapons (only if character has the mastery) for the "Other" section
+    const usedMasteries = new Set<string>();
 
     // Render weapon attacks table
     if (actions.weapons.length > 0) {
       const weaponRows = actions.weapons.map(w => {
         const fav = w.isFavorite ? '<span class="fth-fav">★</span>' : "";
-        const masteryBadge = w.mastery ? `<span class="fth-mastery">${esc(w.mastery)}</span>` : "";
+        // Only show mastery badge if character has mastered this weapon
+        const masteryBadge = (w.mastery && w.hasMastery) ? `<span class="fth-mastery">${esc(w.mastery)}</span>` : "";
+        // Track mastery for later description (only if character has it)
+        if (w.mastery && w.hasMastery) {
+          usedMasteries.add(w.mastery.toLowerCase());
+        }
         return `<tr>
           <td class="fth-atk-name">
-            ${fav}<strong>${esc(w.name)}</strong>
-            <div class="fth-atk-type">${esc(w.weaponType)}${masteryBadge}</div>
+            ${fav}<strong>${esc(w.name)}</strong>${masteryBadge}
+            <div class="fth-atk-type">${esc(w.weaponType)}</div>
           </td>
           <td class="fth-atk-range">
             <div class="fth-atk-range-val">${esc(w.range)}</div>
@@ -403,7 +448,6 @@ export class Dnd5eRenderer extends BaseRenderer {
 
       sections.push(`
         <div class="fth-action-group">
-          <h3>Actions</h3>
           <table class="fth-attack-table">
             <thead><tr>
               <th>Attack</th>
@@ -452,10 +496,24 @@ export class Dnd5eRenderer extends BaseRenderer {
       sections.push(`<div class="fth-action-group"><h3>Reactions</h3><div class="fth-action-list">${items}</div></div>`);
     }
 
-    // Other special features (like Sneak Attack)
+    // Other special features (like Sneak Attack) + mastery descriptions
+    // Actions takes priority - these will be filtered out of Features & Traits
+    const otherItems: string[] = [];
     if (actions.other.length > 0) {
-      const items = actions.other.map(renderFeature).join("");
-      sections.push(`<div class="fth-action-group"><h3>Other</h3><div class="fth-action-list">${items}</div></div>`);
+      otherItems.push(...actions.other.map(renderFeature));
+    }
+    // Add mastery descriptions for any masteries used on weapons (with adv/dis symbols)
+    for (const mastery of usedMasteries) {
+      const desc = Dnd5eRenderer.MASTERY_DESCRIPTIONS[mastery];
+      if (desc) {
+        const name = mastery.charAt(0).toUpperCase() + mastery.slice(1);
+        // Replace advantage/disadvantage with symbols in the description
+        const formattedDesc = this.replaceAdvDisText(esc(desc));
+        otherItems.push(`<div class="fth-action-item"><strong>Mastery: ${name}.</strong> ${formattedDesc}</div>`);
+      }
+    }
+    if (otherItems.length > 0) {
+      sections.push(`<div class="fth-action-group"><h3>Other</h3><div class="fth-action-list">${otherItems.join("")}</div></div>`);
     }
 
     return `
@@ -561,6 +619,95 @@ export class Dnd5eRenderer extends BaseRenderer {
     return `${level}${suffix} Level`;
   }
 
+  /** Get full school name from abbreviation */
+  private schoolName(abbr: string): string {
+    const schools: Record<string, string> = {
+      abj: "Abjuration", con: "Conjuration", div: "Divination", enc: "Enchantment",
+      evo: "Evocation", ill: "Illusion", nec: "Necromancy", trs: "Transmutation",
+    };
+    return schools[abbr.toLowerCase()] ?? abbr;
+  }
+
+  /** Render spell cards for prepared/readied spells */
+  private charSpellCards(sc: SpellcastingData): string {
+    // Collect all prepared spells (or all cantrips + prepared spells)
+    const preparedSpells: { spell: SpellData; levelLabel: string }[] = [];
+    const sortedLevels = Array.from(sc.spellsByLevel.keys()).sort((a, b) => a - b);
+
+    for (const level of sortedLevels) {
+      const spells = sc.spellsByLevel.get(level) ?? [];
+      const levelLabel = level === 0 ? "Cantrip" : this.ordinalLevel(level);
+
+      for (const sp of spells) {
+        // Cantrips are always prepared; for leveled spells, check prepared flag
+        if (level === 0 || sp.prepared) {
+          preparedSpells.push({ spell: sp, levelLabel });
+        }
+      }
+    }
+
+    if (preparedSpells.length === 0) return "";
+
+    const cards = preparedSpells.map(({ spell, levelLabel }) => {
+      const sp = spell;
+
+      // Concentration tag (placed next to name)
+      const concTag = sp.concentration ? '<span class="fth-spell-tag fth-tag-conc">C</span>' : "";
+
+      // Ritual tag (placed after level line)
+      const ritualTag = sp.ritual ? '<span class="fth-spell-tag fth-tag-ritual">Ritual</span>' : "";
+
+      // Components with materials
+      let componentsLine = esc(sp.components || "—");
+      if (sp.materials) {
+        componentsLine += ` <span class="fth-spell-materials">(${esc(sp.materials)})</span>`;
+      }
+
+      // Image
+      const imgHtml = sp.img ? `<img class="fth-spell-card-img" src="${esc(sp.img)}" alt="">` : "";
+
+      // Clean description: strip HTML and limit length
+      const descText = stripHtml(sp.description, 400);
+
+      // Higher level scaling
+      const higherHtml = sp.higherLevel
+        ? `<div class="fth-spell-higher"><strong>At Higher Levels:</strong> ${esc(sp.higherLevel)}</div>`
+        : "";
+
+      // Source (positioned at bottom right via CSS)
+      const sourceHtml = sp.source ? `<div class="fth-spell-source">${esc(sp.source)}</div>` : "";
+
+      return `
+        <div class="fth-spell-card">
+          <div class="fth-spell-card-header">
+            <div class="fth-spell-card-title">
+              <span class="fth-spell-card-name">${esc(sp.name)} ${concTag}</span>
+              <span class="fth-spell-card-level">${esc(levelLabel)} ${esc(this.schoolName(sp.school))} ${ritualTag}</span>
+            </div>
+            ${imgHtml}
+          </div>
+          <div class="fth-spell-card-stats">
+            <div class="fth-spell-card-stat"><strong>Casting Time:</strong> ${esc(sp.castingTime || "—")}</div>
+            <div class="fth-spell-card-stat"><strong>Range:</strong> ${esc(sp.range || "—")}</div>
+            <div class="fth-spell-card-stat"><strong>Duration:</strong> ${esc(sp.duration || "—")}</div>
+            <div class="fth-spell-card-stat"><strong>Components:</strong> ${componentsLine}</div>
+          </div>
+          ${sp.attackSave ? `<div class="fth-spell-card-atk"><strong>Attack/Save:</strong> ${esc(sp.attackSave)} ${sp.effect ? `• <strong>Effect:</strong> ${esc(sp.effect)}` : ""}</div>` : ""}
+          <div class="fth-spell-card-desc">${esc(descText)}</div>
+          ${higherHtml}
+          ${sourceHtml}
+        </div>`;
+    }).join("");
+
+    return `
+      <div class="fth-spell-cards-page">
+        <div class="fth-section-title">Spell Cards</div>
+        <div class="fth-spell-cards-grid">
+          ${cards}
+        </div>
+      </div>`;
+  }
+
   /** Format recovery period for display */
   private formatRecovery(recovery: unknown): string {
     // Handle non-string recovery values (could be array, object, undefined)
@@ -599,9 +746,14 @@ export class Dnd5eRenderer extends BaseRenderer {
     groups: FeatureGroup[],
     proficiencies: { armor: string[]; weapons: string[]; tools: string[]; weaponMasteries: string[] },
     languages: string[],
+    actionNames: Set<string> = new Set(),
   ): string {
     const groupsHtml = groups.map(g => {
-      const featsHtml = g.features.map(f => {
+      // Filter out features that appear in Actions (Actions takes priority)
+      const filteredFeatures = g.features.filter(f => !actionNames.has(f.name.toLowerCase()));
+      if (filteredFeatures.length === 0) return ""; // Skip empty groups
+
+      const featsHtml = filteredFeatures.map(f => {
         const fav = f.isFavorite ? '<span class="fth-fav">★</span> ' : "";
         // Format uses: show "X/Day" or "X/Short Rest" with checkboxes
         let usesHtml = "";
@@ -617,7 +769,7 @@ export class Dnd5eRenderer extends BaseRenderer {
         return `<div class="fth-feat">${fav}<span class="fth-feat-name">${esc(f.name)}</span>${usesHtml}${desc}</div>`;
       }).join("");
       return `<div class="fth-feat-group"><h3>${esc(g.category)}</h3><div class="fth-feat-list">${featsHtml}</div></div>`;
-    }).join("");
+    }).filter(html => html !== "").join("");
 
     // Build proficiencies and languages as its own section
     const profParts: string[] = [];
@@ -666,53 +818,49 @@ export class Dnd5eRenderer extends BaseRenderer {
     const totalWeight = calcWeight(items);
     const totalWeightStr = totalWeight > 0 ? `${Math.round(totalWeight * 100) / 100} lb` : "—";
 
-    // Helper to render a single item row
-    const renderItemRow = (i: InventoryItem, isContained: boolean = false): string => {
+    // Helper to render a single item as a list item (for 2-column layout)
+    const renderItem = (i: InventoryItem, isContained: boolean = false): string => {
       const fav = i.isFavorite ? '<span class="fth-fav">★</span> ' : "";
-      const uses = i.uses ? ` (${i.uses.value}/${i.uses.max})` : "";
-      const iconHtml = i.img ? `<img class="fth-inv-icon" src="${esc(i.img)}" alt="">` : '<span class="fth-inv-icon-placeholder"></span>';
+      const uses = i.uses ? ` <span class="fth-inv-uses">(${i.uses.value}/${i.uses.max})</span>` : "";
+      const iconHtml = i.img ? `<img class="fth-inv-icon" src="${esc(i.img)}" alt="">` : "";
 
-      // Equipped indicator - filled square for equipped, dash for not
+      // Equipped indicator
       const eqIndicator = i.equipped ? '<span class="fth-eq-active">■</span>' : '<span class="fth-eq-inactive">—</span>';
 
-      // Format item type (capitalize first letter)
-      const itemType = i.type ? i.type.charAt(0).toUpperCase() + i.type.slice(1) : "";
+      // Quantity and weight info
+      const qty = i.quantity > 1 ? `×${i.quantity}` : "";
+      const wt = i.weight ? `${i.weight}lb` : "";
+      const meta = [qty, wt].filter(Boolean).join(" ");
+      const metaHtml = meta ? ` <span class="fth-inv-meta">${meta}</span>` : "";
 
-      // Add indentation class for items inside containers
-      const rowClass = isContained ? 'class="fth-inv-contained"' : "";
-      const indentClass = isContained ? ' fth-inv-indented' : "";
+      const indentClass = isContained ? " fth-inv-indented" : "";
 
-      return `<tr ${rowClass}>
-        <td class="fth-inv-active">${eqIndicator}</td>
-        <td class="fth-inv-name-cell${indentClass}">
-          <div class="fth-inv-name-row">${iconHtml}${fav}<span class="fth-inv-item-name">${esc(i.name)}</span>${uses}</div>
-          ${itemType ? `<div class="fth-inv-item-type">${esc(itemType)}</div>` : ""}
-        </td>
-        <td class="fth-inv-weight">${i.weight ? i.weight + " lb" : "—"}</td>
-        <td class="fth-inv-qty">${i.quantity}</td>
-      </tr>`;
+      return `<div class="fth-inv-item${indentClass}">
+        ${eqIndicator}${iconHtml}${fav}<span class="fth-inv-item-name">${esc(i.name)}</span>${uses}${metaHtml}
+      </div>`;
     };
 
-    // Build rows - containers show their contents indented below them
-    const rows: string[] = [];
+    // Build item list - containers with their contents grouped together
+    const itemsHtml: string[] = [];
     for (const item of items) {
-      rows.push(renderItemRow(item, false));
-      // If this is a container with contents, render the contents indented
+      // Containers with contents form a group (keeps them together)
       if (item.type === "container" && item.contents && item.contents.length > 0) {
+        const containerItems = [renderItem(item, false)];
         for (const contained of item.contents) {
-          rows.push(renderItemRow(contained, true));
+          containerItems.push(renderItem(contained, true));
         }
+        itemsHtml.push(`<div class="fth-inv-container-group">${containerItems.join("")}</div>`);
+      } else {
+        itemsHtml.push(renderItem(item, false));
       }
     }
 
     return `
       <div class="fth-inventory">
-        <div class="fth-section-title">Inventory</div>
-        <table class="fth-inv-table">
-          <thead><tr><th class="fth-inv-col-active">Active</th><th class="fth-inv-col-name">Name</th><th class="fth-inv-col-weight">Weight</th><th class="fth-inv-col-qty">Qty</th></tr></thead>
-          <tbody>${rows.join("")}</tbody>
-          <tfoot><tr class="fth-inv-total"><td></td><td><strong>Total Weight</strong></td><td><strong>${totalWeightStr}</strong></td><td></td></tr></tfoot>
-        </table>
+        <div class="fth-section-title">Inventory <span class="fth-inv-weight-total">(${totalWeightStr})</span></div>
+        <div class="fth-inv-grid">
+          ${itemsHtml.join("")}
+        </div>
       </div>`;
   }
 

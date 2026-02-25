@@ -409,6 +409,33 @@ export function extractSpellcasting(actor: any, favorites: Set<string>): Spellca
     // Get source (class or feat that granted the spell)
     const source = sys?.sourceClass ?? item.flags?.dnd5e?.sourceClass ?? "";
 
+    // Get material components description
+    const materials = sys?.materials?.value ?? "";
+
+    // Get higher level scaling description
+    // In dnd5e 5.x, this is in the activities scaling or in the description
+    let higherLevel = "";
+    if (activities) {
+      try {
+        const actValues = activities instanceof Map ? [...activities.values()] :
+          typeof activities.values === "function" ? [...activities.values()] :
+          Object.values(activities);
+        for (const act of actValues) {
+          if (act?.scaling?.formula || act?.scaling?.mode) {
+            // There's scaling info, but actual text is often in description
+            break;
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    // Check for "At Higher Levels" section in description
+    const descVal = sys?.description?.value ?? "";
+    const higherMatch = descVal.match(/<p><strong>At Higher Levels[.:]?<\/strong>\s*(.*?)<\/p>/i) ||
+                        descVal.match(/At Higher Levels[.:]?\s*([^<]+)/i);
+    if (higherMatch) {
+      higherLevel = higherMatch[1].replace(/<[^>]+>/g, "").trim();
+    }
+
     // dnd5e 5.x: preparation.mode is deprecated, use method instead
     // preparation.prepared is deprecated, use prepared directly
     const spell: SpellData = {
@@ -416,6 +443,7 @@ export function extractSpellcasting(actor: any, favorites: Set<string>): Spellca
       level,
       school: sys?.school ?? "",
       components,
+      materials,
       concentration: isConc,
       ritual: !!(props && hasProperty(props, "ritual")),
       prepared: sys?.prepared ?? sys?.preparation?.prepared ?? false,
@@ -427,6 +455,8 @@ export function extractSpellcasting(actor: any, favorites: Set<string>): Spellca
       attackSave,
       effect,
       source,
+      img: item.img ?? "",
+      higherLevel,
     };
 
     if (!spellsByLevel.has(level)) spellsByLevel.set(level, []);
