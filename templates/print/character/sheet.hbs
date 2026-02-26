@@ -338,6 +338,30 @@
   {{#if hasInventory}}
   <div class="fth-inventory">
     <div class="fth-section-title">Inventory <span class="fth-inv-weight-total">({{inventory.totalWeight}})</span></div>
+
+    {{!-- Currency Widget --}}
+    {{#if hasCurrency}}
+    <div class="fth-currency">
+      <div class="fth-currency-row">
+        {{#each currency.coins}}
+        <div class="fth-coin {{#unless hasCoins}}fth-coin-empty{{/unless}}">
+          <span class="fth-coin-icon">{{icon}}</span>
+          <span class="fth-coin-val">{{amountDisplay}}</span>
+          <span class="fth-coin-label">{{abbr}}</span>
+        </div>
+        {{/each}}
+      </div>
+      <div class="fth-currency-row fth-currency-input">
+        {{#each currency.coins}}
+        <div class="fth-coin-input">
+          <span class="fth-coin-label">{{abbr}}</span>
+          <span class="fth-coin-box">____</span>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
     <div class="fth-inv-grid">
       {{#each inventory.items}}
       {{#if isContainerGroup}}

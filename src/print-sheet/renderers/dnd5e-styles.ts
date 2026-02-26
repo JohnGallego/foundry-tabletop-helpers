@@ -447,6 +447,618 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   .fth-paper-letter { }
   .fth-paper-a4 { }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PRO CHARACTER SHEET STYLES - Premium RPG-themed design
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.fth-pro-sheet {
+  font-family: 'Crimson Text', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  color: #1a1a1a;
+  background: #faf8f5;
+  padding: 16px;
+  line-height: 1.35;
+}
+
+/* ─── Header ───────────────────────────────────────────────────────────── */
+.fth-pro-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  background: linear-gradient(135deg, #2c1810 0%, #4a2c2a 50%, #2c1810 100%);
+  border: 3px solid #8b4513;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.fth-pro-header-left { }
+.fth-pro-portrait-frame {
+  width: 72px; height: 72px;
+  border: 2px solid #d4a574;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.fth-pro-portrait { width: 100%; height: 100%; object-fit: cover; }
+.fth-pro-header-center { text-align: center; }
+.fth-pro-name {
+  font-size: 22pt;
+  font-weight: 700;
+  color: #f4e4bc;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  margin: 0;
+  letter-spacing: 1px;
+}
+.fth-pro-subtitle {
+  font-size: 10pt;
+  color: #d4a574;
+  font-style: italic;
+  margin-top: 2px;
+}
+.fth-pro-header-right { text-align: center; }
+.fth-pro-hp-block {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid #8b4513;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.fth-pro-hp-label {
+  font-size: 7pt;
+  text-transform: uppercase;
+  color: #d4a574;
+  letter-spacing: 1px;
+}
+.fth-pro-hp-max {
+  font-size: 20pt;
+  font-weight: 700;
+  color: #e74c3c;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+.fth-pro-hp-current, .fth-pro-hp-temp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.fth-pro-hp-current-label, .fth-pro-hp-temp-label {
+  font-size: 6pt;
+  color: #999;
+  text-transform: uppercase;
+}
+.fth-pro-hp-box {
+  display: inline-block;
+  width: 32px; height: 16px;
+  border: 1px solid #666;
+  background: #fff;
+  border-radius: 2px;
+}
+.fth-pro-hp-box-sm {
+  display: inline-block;
+  width: 24px; height: 14px;
+  border: 1px solid #666;
+  background: #e8e8e8;
+  border-radius: 2px;
+}
+
+/* ─── Stats Bar ────────────────────────────────────────────────────────── */
+.fth-pro-stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.fth-pro-stat-gem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(145deg, #f5f0e6 0%, #e8dcc8 100%);
+  border: 2px solid #8b7355;
+  border-radius: 8px;
+  padding: 6px 12px;
+  min-width: 60px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.fth-pro-stat-icon { font-size: 12pt; }
+.fth-pro-stat-val {
+  font-size: 14pt;
+  font-weight: 700;
+  color: #2c1810;
+}
+.fth-pro-stat-lbl {
+  font-size: 6pt;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Ability Scores (Hex Layout) ──────────────────────────────────────── */
+.fth-pro-abilities {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.fth-pro-ability-hex {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(180deg, #4a2c2a 0%, #2c1810 100%);
+  border: 2px solid #d4a574;
+  border-radius: 6px;
+  padding: 8px 10px;
+  min-width: 52px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+.fth-pro-ability-mod {
+  font-size: 16pt;
+  font-weight: 700;
+  color: #f4e4bc;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  line-height: 1;
+}
+.fth-pro-ability-name {
+  font-size: 6pt;
+  text-transform: uppercase;
+  color: #d4a574;
+  letter-spacing: 1px;
+  margin: 2px 0;
+}
+.fth-pro-ability-score {
+  font-size: 8pt;
+  color: #999;
+}
+
+/* ─── Two Column Layout ────────────────────────────────────────────────── */
+.fth-pro-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.fth-pro-col-left, .fth-pro-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── Card Components ──────────────────────────────────────────────────── */
+.fth-pro-card {
+  background: #fff;
+  border: 1.5px solid #c9b896;
+  border-radius: 6px;
+  padding: 8px 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+.fth-pro-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 2px solid #7a200d;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+.fth-pro-card-header h2 {
+  font-size: 10pt;
+  font-weight: 700;
+  color: #7a200d;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.fth-pro-card-icon { font-size: 12pt; }
+
+/* ─── Saving Throws Card ───────────────────────────────────────────────── */
+.fth-pro-saves-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+}
+.fth-pro-save-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8.5pt;
+  padding: 1px 0;
+}
+.fth-pro-save-prof { width: 12px; text-align: center; }
+.fth-pro-save-name { flex: 1; }
+.fth-pro-save-val { font-weight: 700; min-width: 24px; text-align: right; }
+.fth-pro-save-features {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed #ddd;
+  font-size: 7.5pt;
+  color: #555;
+}
+.fth-pro-save-feature { margin-bottom: 2px; }
+
+/* ─── Passive Senses Card ──────────────────────────────────────────────── */
+.fth-pro-passives-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+}
+.fth-pro-passive {
+  text-align: center;
+}
+.fth-pro-passive-val {
+  font-size: 14pt;
+  font-weight: 700;
+  color: #2c1810;
+  display: block;
+}
+.fth-pro-passive-lbl {
+  font-size: 6pt;
+  text-transform: uppercase;
+  color: #666;
+}
+.fth-pro-senses-extra {
+  text-align: center;
+  font-size: 7.5pt;
+  color: #555;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed #ddd;
+}
+
+/* ─── Skills Card ──────────────────────────────────────────────────────── */
+.fth-pro-skills-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 8px;
+  font-size: 7.5pt;
+}
+.fth-pro-skill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 0;
+}
+.fth-pro-skill-prof { width: 10px; text-align: center; font-size: 8pt; }
+.fth-pro-skill-mod { font-weight: 700; min-width: 20px; }
+.fth-pro-skill-name { color: #444; }
+.fth-pro-skill.fth-skill-prof .fth-pro-skill-name { font-weight: 600; color: #1a1a1a; }
+.fth-pro-skill.fth-skill-expert .fth-pro-skill-name { font-weight: 700; color: #7a200d; }
+
+/* ─── Defenses Card ────────────────────────────────────────────────────── */
+.fth-pro-defenses-content {
+  font-size: 8pt;
+  line-height: 1.4;
+}
+
+/* ─── Death Saves Card ─────────────────────────────────────────────────── */
+.fth-pro-death-grid { }
+.fth-pro-death-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+.fth-pro-death-label { font-size: 8pt; }
+.fth-pro-death-boxes { font-size: 12pt; letter-spacing: 4px; }
+.fth-pro-death-success .fth-pro-death-label { color: #2d6a2d; }
+.fth-pro-death-fail .fth-pro-death-label { color: #a02020; }
+
+/* ─── Rest Tracking Card ───────────────────────────────────────────────── */
+.fth-pro-rest-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  font-size: 8pt;
+}
+.fth-pro-rest-label { color: #444; }
+.fth-pro-rest-checks { font-size: 11pt; letter-spacing: 2px; }
+
+/* ─── Proficiencies Card ───────────────────────────────────────────────── */
+.fth-pro-prof-content { font-size: 8pt; line-height: 1.4; }
+.fth-pro-prof-line { margin-bottom: 3px; }
+.fth-pro-prof-line strong { color: #555; }
+.fth-pro-mastery { color: #2d6a2d; }
+
+/* ─── Section Styling ──────────────────────────────────────────────────── */
+.fth-pro-section {
+  background: #fff;
+  border: 1.5px solid #c9b896;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  break-inside: avoid;
+}
+.fth-pro-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #7a200d;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+.fth-pro-section-header h2 {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #7a200d;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  flex: 1;
+}
+.fth-pro-section-icon { font-size: 14pt; }
+
+/* ─── Pro Attack Table ─────────────────────────────────────────────────── */
+.fth-pro-attack-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+  margin-bottom: 8px;
+}
+.fth-pro-attack-table thead th {
+  text-align: left;
+  font-size: 7pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #666;
+  border-bottom: 1.5px solid #999;
+  padding: 4px 6px;
+}
+.fth-pro-attack-table tbody td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #e8e0d0;
+  vertical-align: top;
+}
+.fth-pro-attack-table tbody tr:last-child td { border-bottom: none; }
+.fth-pro-atk-name { min-width: 100px; }
+.fth-pro-atk-name strong { font-size: 9pt; color: #2c1810; }
+.fth-pro-atk-type { font-size: 7pt; color: #888; margin-top: 1px; }
+.fth-pro-mastery-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #2d6a2d 0%, #1e4d1e 100%);
+  color: #fff;
+  font-size: 5.5pt;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.fth-pro-atk-range { text-align: center; min-width: 50px; }
+.fth-pro-range-type { font-size: 6.5pt; color: #888; }
+.fth-pro-atk-hit { text-align: center; min-width: 40px; }
+.fth-pro-hit-val { font-weight: 700; font-size: 11pt; color: #2c1810; }
+.fth-pro-atk-dmg { min-width: 65px; }
+.fth-pro-dmg-type { font-size: 6.5pt; color: #888; }
+.fth-pro-atk-notes { font-size: 7pt; color: #666; max-width: 150px; }
+
+/* ─── Combat Reference ─────────────────────────────────────────────────── */
+.fth-pro-combat-ref {
+  font-size: 7.5pt;
+  color: #555;
+  background: #f8f5f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.fth-pro-combat-ref strong { color: #444; }
+
+/* ─── Action Groups Grid ───────────────────────────────────────────────── */
+.fth-pro-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+.fth-pro-action-group { margin-bottom: 6px; }
+.fth-pro-action-group h3 {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+.fth-pro-action-item {
+  font-size: 8pt;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+.fth-pro-action-item strong { color: #2c1810; }
+.fth-pro-uses {
+  font-size: 7pt;
+  color: #666;
+  margin-left: 2px;
+}
+.fth-pro-bonus h3 { color: #856404; }
+.fth-pro-reaction h3 { color: #155724; }
+.fth-pro-masteries h3 { color: #2d6a2d; }
+
+/* ─── Spellcasting ─────────────────────────────────────────────────────── */
+.fth-pro-spell-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 8pt;
+  margin-left: auto;
+}
+.fth-pro-spell-stat strong { color: #666; }
+.fth-pro-spell-level { margin-bottom: 10px; }
+.fth-pro-spell-level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1.5px solid #7a200d;
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+}
+.fth-pro-level-name {
+  font-size: 9pt;
+  font-weight: 700;
+  color: #7a200d;
+  text-transform: uppercase;
+}
+.fth-pro-slots { font-size: 8pt; color: #555; }
+.fth-pro-spell-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8pt;
+}
+.fth-pro-spell-table th {
+  text-align: left;
+  font-size: 6.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #888;
+  padding: 2px 4px;
+  border-bottom: 1px solid #ddd;
+}
+.fth-pro-spell-table td {
+  padding: 3px 4px;
+  border-bottom: 1px solid #f0ebe0;
+  vertical-align: top;
+}
+.fth-pro-spell-table tbody tr:last-child td { border-bottom: none; }
+.fth-pro-spell-name { font-weight: 500; min-width: 90px; }
+.fth-pro-spell-notes { font-size: 7pt; color: #888; }
+
+/* ─── Spell Cards Page ─────────────────────────────────────────────────── */
+.fth-pro-spell-cards-page { page-break-before: always; }
+.fth-pro-spell-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.fth-pro-spell-card {
+  border: 1.5px solid #7a200d;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, #fefcfb 0%, #f8f4ef 100%);
+  font-size: 7.5pt;
+  break-inside: avoid;
+}
+.fth-pro-sc-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.fth-pro-sc-title { flex: 1; }
+.fth-pro-sc-name {
+  font-size: 10pt;
+  font-weight: 700;
+  color: #7a200d;
+  display: block;
+}
+.fth-pro-sc-level {
+  font-size: 7pt;
+  font-style: italic;
+  color: #666;
+}
+.fth-pro-sc-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+  margin-left: 8px;
+}
+.fth-pro-sc-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px 8px;
+  margin-bottom: 6px;
+  font-size: 7pt;
+}
+.fth-pro-sc-stats strong { color: #555; }
+.fth-pro-sc-atk {
+  font-size: 7pt;
+  padding: 3px 0;
+  border-top: 1px solid #e8e0d0;
+  border-bottom: 1px solid #e8e0d0;
+  margin-bottom: 4px;
+}
+.fth-pro-sc-desc {
+  font-size: 7pt;
+  color: #444;
+  line-height: 1.35;
+}
+.fth-pro-sc-higher {
+  font-size: 6.5pt;
+  color: #666;
+  font-style: italic;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed #ddd;
+}
+.fth-pro-sc-source {
+  font-size: 6pt;
+  color: #aaa;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* ─── Features Section ─────────────────────────────────────────────────── */
+.fth-pro-features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+.fth-pro-feat-group { margin-bottom: 6px; }
+.fth-pro-feat-group h3 {
+  font-size: 9pt;
+  font-weight: 700;
+  color: #7a200d;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.fth-pro-feat {
+  font-size: 8pt;
+  margin-bottom: 3px;
+  line-height: 1.35;
+}
+.fth-pro-feat strong { color: #2c1810; }
+.fth-pro-feat-desc { color: #555; }
+
+/* ─── Inventory Section ────────────────────────────────────────────────── */
+.fth-pro-inv-weight {
+  font-size: 9pt;
+  color: #666;
+  margin-left: auto;
+}
+.fth-pro-inv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 16px;
+}
+.fth-pro-inv-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8pt;
+  padding: 2px 0;
+}
+.fth-pro-inv-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: cover;
+}
+.fth-pro-inv-name { flex: 1; }
+.fth-pro-inv-meta { font-size: 7pt; color: #888; }
+.fth-pro-inv-container { margin-bottom: 4px; }
+.fth-pro-inv-container-head { font-weight: 600; }
+.fth-pro-inv-contained { padding-left: 16px; font-size: 7.5pt; color: #555; }
+
+/* ─── Backstory Section ────────────────────────────────────────────────── */
+.fth-pro-backstory-content {
+  font-size: 9pt;
+  line-height: 1.5;
+  color: #333;
+  column-count: 2;
+  column-gap: 20px;
+}
 `;
 }
 

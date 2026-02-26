@@ -87,6 +87,7 @@ export class Dnd5eExtractor extends BaseExtractor {
       favorites,
       backstory: actor.system?.details?.biography?.value ?? "",
       traits: extractTraits(actor),
+      currency: this.extractCurrency(actor),
     };
   }
 
@@ -149,6 +150,21 @@ export class Dnd5eExtractor extends BaseExtractor {
       weapons: weaponProfs,
       tools: toolProfs,
       weaponMasteries,
+    };
+  }
+
+  /**
+   * Extract currency/money from the actor.
+   * dnd5e stores currency at system.currency with pp, gp, ep, sp, cp.
+   */
+  private extractCurrency(actor: unknown): { pp: number; gp: number; ep: number; sp: number; cp: number } {
+    const currency = (actor as { system?: { currency?: Record<string, unknown> } })?.system?.currency ?? {};
+    return {
+      pp: typeof currency.pp === "number" ? currency.pp : 0,
+      gp: typeof currency.gp === "number" ? currency.gp : 0,
+      ep: typeof currency.ep === "number" ? currency.ep : 0,
+      sp: typeof currency.sp === "number" ? currency.sp : 0,
+      cp: typeof currency.cp === "number" ? currency.cp : 0,
     };
   }
 

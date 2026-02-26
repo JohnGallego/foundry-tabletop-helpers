@@ -13,6 +13,9 @@ import {
 
 export type RotMode = 90 | 180;
 
+/** Character sheet visual style */
+export type CharacterSheetStyle = "classic" | "pro";
+
 /** Default print options structure */
 export interface DefaultPrintOptions {
   paperSize: PaperSize;
@@ -129,6 +132,20 @@ export function registerSettings(): void {
   });
 
   /* ── Print Sheet Settings ─────────────────────────────────── */
+
+  // Character sheet style (Classic vs Pro)
+  settings.register(MOD, "characterSheetStyle", {
+    name: "Character Sheet Style",
+    hint: "Choose the visual style for printed character sheets. 'Pro' offers a premium, RPG-inspired look. 'Classic' is clean and functional.",
+    scope: "client",
+    config: true,
+    type: String,
+    choices: {
+      pro: "Pro (Premium RPG Style)",
+      classic: "Classic (Clean & Functional)",
+    },
+    default: "pro",
+  });
 
   // Print button visibility
   settings.register(MOD, "showPrintButton", {
@@ -354,4 +371,10 @@ export const setPrintDefaults = async (sheetType: SheetType, options: DefaultPri
   } catch (e) {
     Log.warn(`Failed to save print defaults for ${sheetType}`, e);
   }
+};
+
+/** Get the character sheet visual style preference */
+export const getCharacterSheetStyle = (): CharacterSheetStyle => {
+  const style = getSetting<string>(MOD, "characterSheetStyle");
+  return style === "classic" ? "classic" : "pro";
 };

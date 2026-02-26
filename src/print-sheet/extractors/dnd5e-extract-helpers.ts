@@ -497,6 +497,12 @@ export function extractInventory(actor: any, favorites: Set<string>): InventoryI
     // In dnd5e 5.x, items inside containers have system.container pointing to parent container ID
     const containerId = item.system?.container ?? null;
 
+    // Extract price data (dnd5e stores it as system.price with value and denomination)
+    const priceData = item.system?.price;
+    const price = (priceData && typeof priceData.value === "number" && priceData.value > 0)
+      ? { value: priceData.value, denomination: priceData.denomination ?? "gp" }
+      : null;
+
     const invItem: InventoryItem = {
       id: item.id ?? "",
       name: item.name ?? "",
@@ -511,6 +517,7 @@ export function extractInventory(actor: any, favorites: Set<string>): InventoryI
       isFavorite: favorites.has(item.id) || favorites.has(item.uuid),
       containerId,
       contents: [],
+      price,
     };
 
     allItems.push(invItem);

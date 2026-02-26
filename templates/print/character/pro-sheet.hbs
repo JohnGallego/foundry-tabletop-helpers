@@ -1,0 +1,477 @@
+{{!-- Pro Character Sheet Template --}}
+{{!-- Premium RPG-inspired design for D&D 5e (2024) PC character sheets --}}
+
+<div class="fth-pro-sheet {{paperClass}}">
+  {{!-- Ornate Header Banner --}}
+  <header class="fth-pro-header">
+    {{#if hasPortrait}}
+    <div class="fth-pro-header-portrait">
+      <img class="fth-pro-portrait" src="{{portraitUrl}}" alt="">
+    </div>
+    {{/if}}
+    <div class="fth-pro-header-center">
+      <h1 class="fth-pro-name">{{name}}</h1>
+      <div class="fth-pro-subtitle">{{subtitle}}</div>
+    </div>
+    <div class="fth-pro-header-right">
+      <div class="fth-pro-hp-block">
+        <div class="fth-pro-hp-label">Hit Points</div>
+        <div class="fth-pro-hp-max">{{combat.hpMax}}</div>
+        <div class="fth-pro-hp-row">
+          <div class="fth-pro-hp-cell">
+            <span class="fth-pro-hp-cell-label">Current</span>
+            <span class="fth-pro-hp-box"></span>
+          </div>
+          <div class="fth-pro-hp-cell">
+            <span class="fth-pro-hp-cell-label">Temp</span>
+            <span class="fth-pro-hp-box"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {{!-- Core Stats Row: Stats + Saves + Death Saves --}}
+  <div class="fth-pro-core-row">
+    {{!-- Stat Gems --}}
+    <div class="fth-pro-stat-gem">
+      <span class="fth-pro-stat-icon">🛡</span>
+      <span class="fth-pro-stat-val">{{combat.ac}}</span>
+      <span class="fth-pro-stat-lbl">AC</span>
+    </div>
+    <div class="fth-pro-stat-gem">
+      <span class="fth-pro-stat-icon">⚡</span>
+      <span class="fth-pro-stat-val">{{combat.initiative}}</span>
+      <span class="fth-pro-stat-lbl">Initiative</span>
+    </div>
+    <div class="fth-pro-stat-gem">
+      <span class="fth-pro-stat-icon">👣</span>
+      <span class="fth-pro-stat-val">{{combat.speed}}</span>
+      <span class="fth-pro-stat-lbl">Speed</span>
+    </div>
+    <div class="fth-pro-stat-gem">
+      <span class="fth-pro-stat-icon">🎯</span>
+      <span class="fth-pro-stat-val">{{combat.proficiency}}</span>
+      <span class="fth-pro-stat-lbl">Proficiency</span>
+    </div>
+    <div class="fth-pro-stat-gem fth-pro-stat-hitdice">
+      <span class="fth-pro-stat-icon fth-pro-hitdice-icon" data-die="{{combat.hitDieType}}">{{combat.hitDieIcon}}</span>
+      <span class="fth-pro-stat-val">{{combat.hitDice}}</span>
+      <span class="fth-pro-stat-lbl">Hit Dice</span>
+    </div>
+
+    {{!-- Saving Throws (compact) --}}
+    <div class="fth-pro-core-card fth-pro-saves-compact">
+      <div class="fth-pro-core-card-title">Saves</div>
+      <div class="fth-pro-saves-mini">
+        {{#each saves.leftColumn}}
+        <div class="fth-pro-save-mini">{{profIcon}} <span class="fth-pro-save-mini-val">{{value}}</span> {{abbr}}</div>
+        {{/each}}
+        {{#each saves.rightColumn}}
+        <div class="fth-pro-save-mini">{{profIcon}} <span class="fth-pro-save-mini-val">{{value}}</span> {{abbr}}</div>
+        {{/each}}
+      </div>
+    </div>
+
+    {{!-- Death Saves (compact) --}}
+    <div class="fth-pro-core-card fth-pro-death-compact">
+      <div class="fth-pro-core-card-title">Death</div>
+      <div class="fth-pro-death-mini">
+        <div class="fth-pro-death-mini-row"><span class="fth-pro-death-success">✓</span> ☐☐☐</div>
+        <div class="fth-pro-death-mini-row"><span class="fth-pro-death-fail">✗</span> ☐☐☐</div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Ability Scores - Hex/Shield style --}}
+  {{#if showAbilities}}
+  <section class="fth-pro-abilities">
+    {{#each abilities}}
+    <div class="fth-pro-ability-hex">
+      <div class="fth-pro-ability-mod">{{mod}}</div>
+      <div class="fth-pro-ability-name">{{label}}</div>
+      <div class="fth-pro-ability-score">{{score}}</div>
+    </div>
+    {{/each}}
+  </section>
+  {{/if}}
+
+  {{!-- Actions Section (first, full width) --}}
+  {{#if showActions}}
+  {{#if hasActions}}
+  <section class="fth-pro-section fth-pro-actions">
+    <div class="fth-pro-section-header">
+      <span class="fth-pro-section-icon">⚔</span>
+      <h2>Combat Actions</h2>
+    </div>
+
+    {{!-- Weapons Table --}}
+    {{#if actions.hasWeapons}}
+    <div class="fth-pro-weapons">
+      <table class="fth-pro-attack-table">
+        <thead><tr>
+          <th>Attack</th>
+          <th>Range</th>
+          <th>Hit</th>
+          <th>Damage</th>
+          <th>Notes</th>
+        </tr></thead>
+        <tbody>
+        {{#each actions.weapons}}
+        <tr>
+          <td class="fth-pro-atk-name">
+            {{#if favStar}}<span class="fth-fav">{{favStar}}</span>{{/if}}<strong>{{name}}</strong>{{#if hasMastery}}<span class="fth-pro-mastery-badge">{{masteryBadge}}</span>{{/if}}
+            <div class="fth-pro-atk-type">{{weaponType}}</div>
+          </td>
+          <td class="fth-pro-atk-range">{{range}}{{#if rangeType}}<div class="fth-pro-range-type">{{rangeType}}</div>{{/if}}</td>
+          <td class="fth-pro-atk-hit"><span class="fth-pro-hit-val">{{toHit}}</span></td>
+          <td class="fth-pro-atk-dmg">{{damage}}{{#if damageType}}<div class="fth-pro-dmg-type">{{damageType}}</div>{{/if}}</td>
+          <td class="fth-pro-atk-notes">{{properties}}</td>
+        </tr>
+        {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{/if}}
+
+    {{!-- Combat Actions Reference --}}
+    <div class="fth-pro-combat-ref">
+      <strong>Actions:</strong> {{actions.combatActionsRef}}
+    </div>
+
+    {{!-- Other Actions Grid --}}
+    <div class="fth-pro-actions-grid">
+      {{#each actions.otherActions}}
+      {{#if hasItems}}
+      <div class="fth-pro-action-group">
+        <h3>{{title}}</h3>
+        {{#each items}}
+        <div class="fth-pro-action-item">{{{favStar}}}<strong>{{name}}.</strong>{{#if usesDisplay}} <span class="fth-pro-uses">{{usesDisplay}}</span>{{checkboxes}}{{/if}}{{#if description}} — {{description}}{{/if}}</div>
+        {{/each}}
+      </div>
+      {{/if}}
+      {{/each}}
+
+      {{#each actions.bonusActions}}
+      {{#if hasItems}}
+      <div class="fth-pro-action-group fth-pro-bonus">
+        <h3>{{title}}</h3>
+        {{#each items}}
+        <div class="fth-pro-action-item">{{{favStar}}}<strong>{{name}}.</strong>{{#if usesDisplay}} <span class="fth-pro-uses">{{usesDisplay}}</span>{{checkboxes}}{{/if}}{{#if description}} — {{description}}{{/if}}</div>
+        {{/each}}
+      </div>
+      {{/if}}
+      {{/each}}
+
+      {{#each actions.reactions}}
+      {{#if hasItems}}
+      <div class="fth-pro-action-group fth-pro-reaction">
+        <h3>{{title}}</h3>
+        {{#each items}}
+        <div class="fth-pro-action-item">{{{favStar}}}<strong>{{name}}.</strong>{{#if usesDisplay}} <span class="fth-pro-uses">{{usesDisplay}}</span>{{checkboxes}}{{/if}}{{#if description}} — {{description}}{{/if}}</div>
+        {{/each}}
+      </div>
+      {{/if}}
+      {{/each}}
+
+      {{#each actions.other}}
+      {{#if hasItems}}
+      <div class="fth-pro-action-group">
+        <h3>{{title}}</h3>
+        {{#each items}}
+        <div class="fth-pro-action-item">{{{favStar}}}<strong>{{name}}.</strong>{{#if usesDisplay}} <span class="fth-pro-uses">{{usesDisplay}}</span>{{checkboxes}}{{/if}}{{#if description}} — {{description}}{{/if}}</div>
+        {{/each}}
+      </div>
+      {{/if}}
+      {{/each}}
+
+      {{#if actions.hasMasteryDescriptions}}
+      <div class="fth-pro-action-group fth-pro-masteries">
+        <h3>Weapon Masteries</h3>
+        {{#each actions.masteryDescriptions}}
+        <div class="fth-pro-action-item"><strong>{{name}}.</strong> {{{description}}}</div>
+        {{/each}}
+      </div>
+      {{/if}}
+    </div>
+  </section>
+  {{/if}}
+  {{/if}}
+
+  {{!-- Two Column Layout: Skills/Senses + Proficiencies/Defenses --}}
+  <div class="fth-pro-columns">
+    <div class="fth-pro-col-left">
+      {{!-- Skills --}}
+      {{#if showSkills}}
+      <div class="fth-pro-card fth-pro-skills-card">
+        <div class="fth-pro-card-header">
+          <span class="fth-pro-card-icon">📜</span>
+          <h2>Skills</h2>
+        </div>
+        <div class="fth-pro-skills-list">
+          {{#each skills}}
+          <div class="fth-pro-skill {{cssClass}}">
+            <span class="fth-pro-skill-prof">{{profIcon}}</span>
+            <span class="fth-pro-skill-mod">{{mod}}</span>
+            <span class="fth-pro-skill-name">{{name}}</span>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+
+      {{!-- Passive Senses --}}
+      <div class="fth-pro-card fth-pro-passives-card">
+        <div class="fth-pro-card-header">
+          <span class="fth-pro-card-icon">👁</span>
+          <h2>Senses</h2>
+        </div>
+        <div class="fth-pro-passives-row">
+          {{#each passives}}
+          <div class="fth-pro-passive">
+            <span class="fth-pro-passive-val">{{value}}</span>
+            <span class="fth-pro-passive-lbl">{{label}}</span>
+          </div>
+          {{/each}}
+        </div>
+        {{#if sensesLine}}
+        <div class="fth-pro-senses-extra">{{sensesLine}}</div>
+        {{/if}}
+      </div>
+    </div>
+
+    <div class="fth-pro-col-right">
+      {{!-- Proficiencies --}}
+      {{#if hasProficiencies}}
+      <div class="fth-pro-card fth-pro-prof-card">
+        <div class="fth-pro-card-header">
+          <span class="fth-pro-card-icon">🏅</span>
+          <h2>Proficiencies</h2>
+        </div>
+        <div class="fth-pro-prof-content">
+          {{#if proficiencies.hasArmor}}<div class="fth-pro-prof-line"><strong>Armor:</strong> {{proficiencies.armor}}</div>{{/if}}
+          {{#if proficiencies.hasWeapons}}<div class="fth-pro-prof-line"><strong>Weapons:</strong> {{proficiencies.weapons}}</div>{{/if}}
+          {{#if proficiencies.hasWeaponMasteries}}<div class="fth-pro-prof-line fth-pro-mastery"><strong>Mastery:</strong> {{{proficiencies.weaponMasteries}}}</div>{{/if}}
+          {{#if proficiencies.hasTools}}<div class="fth-pro-prof-line"><strong>Tools:</strong> {{proficiencies.tools}}</div>{{/if}}
+          {{#if proficiencies.hasLanguages}}<div class="fth-pro-prof-line"><strong>Languages:</strong> {{proficiencies.languages}}</div>{{/if}}
+        </div>
+      </div>
+      {{/if}}
+
+      {{!-- Defenses --}}
+      {{#if hasDefenses}}
+      <div class="fth-pro-card fth-pro-defenses-card">
+        <div class="fth-pro-card-header">
+          <span class="fth-pro-card-icon">🔰</span>
+          <h2>Defenses</h2>
+        </div>
+        <div class="fth-pro-defenses-content">{{{defensesLine}}}</div>
+      </div>
+      {{/if}}
+
+      {{!-- Rest Tracking --}}
+      <div class="fth-pro-card fth-pro-rest-card">
+        <div class="fth-pro-card-header">
+          <span class="fth-pro-card-icon">☀</span>
+          <h2>Rest Tracking</h2>
+        </div>
+        <div class="fth-pro-rest-row">
+          <span class="fth-pro-rest-label">Short Rests</span>
+          <span class="fth-pro-rest-checks">{{{shortRestCheckboxes}}}</span>
+        </div>
+        <div class="fth-pro-rest-row">
+          <span class="fth-pro-rest-label">Inspiration</span>
+          <span class="fth-pro-rest-checks">☐</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{!-- Spellcasting Section --}}
+  {{#if showSpells}}
+  {{#if hasSpellcasting}}
+  <section class="fth-pro-section fth-pro-spellcasting">
+    <div class="fth-pro-section-header">
+      <span class="fth-pro-section-icon">✨</span>
+      <h2>Spellcasting</h2>
+      <div class="fth-pro-spell-stats">
+        <span class="fth-pro-spell-stat"><strong>Mod</strong> {{spellcasting.modifier}}</span>
+        <span class="fth-pro-spell-stat"><strong>Attack</strong> {{spellcasting.attackMod}}</span>
+        <span class="fth-pro-spell-stat"><strong>DC</strong> {{spellcasting.saveDC}}</span>
+      </div>
+    </div>
+
+    {{#each spellcasting.spellLevels}}
+    <div class="fth-pro-spell-level">
+      <div class="fth-pro-spell-level-header">
+        <span class="fth-pro-level-name">{{levelLabel}}</span>
+        {{#if hasSlots}}<span class="fth-pro-slots">{{slotCheckboxes}} Slots</span>{{/if}}
+      </div>
+      <table class="fth-pro-spell-table">
+        <thead><tr><th>Name</th><th>Time</th><th>Range</th><th>Hit/DC</th><th>Effect</th><th>Notes</th></tr></thead>
+        <tbody>
+          {{#each spells}}
+          <tr>
+            <td class="fth-pro-spell-name">{{#if favStar}}<span class="fth-fav">{{favStar}}</span>{{/if}}{{name}} {{tags}}</td>
+            <td>{{time}}</td>
+            <td>{{range}}</td>
+            <td>{{hitDc}}</td>
+            <td>{{effect}}</td>
+            <td class="fth-pro-spell-notes">{{notes}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{/each}}
+  </section>
+  {{/if}}
+  {{/if}}
+
+  {{!-- Features Section --}}
+  {{#if showFeatures}}
+  {{#if hasFeatures}}
+  <section class="fth-pro-section fth-pro-features">
+    <div class="fth-pro-section-header">
+      <span class="fth-pro-section-icon">📖</span>
+      <h2>Features & Traits</h2>
+    </div>
+    <div class="fth-pro-features-grid">
+      {{#each featureGroups}}
+      <div class="fth-pro-feat-group">
+        <h3>{{category}}</h3>
+        {{#each features}}
+        <div class="fth-pro-feat">{{{favStar}}}<strong>{{name}}</strong>{{#if usesDisplay}} <span class="fth-pro-uses">{{usesDisplay}}</span>{{checkboxes}}{{/if}}{{#if description}} <span class="fth-pro-feat-desc">— {{{description}}}</span>{{/if}}</div>
+        {{/each}}
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+  {{/if}}
+
+  {{!-- Inventory Section --}}
+  {{#if showInventory}}
+  {{#if hasInventory}}
+  <section class="fth-pro-section fth-pro-inventory">
+    <div class="fth-pro-section-header">
+      <span class="fth-pro-section-icon">🎒</span>
+      <h2>Inventory</h2>
+      <span class="fth-pro-inv-weight">{{inventory.totalWeight}}</span>
+    </div>
+
+    {{!-- Currency Widget --}}
+    {{#if hasCurrency}}
+    <div class="fth-pro-currency">
+      <div class="fth-pro-currency-row fth-pro-currency-current">
+        {{#each currency.coins}}
+        <div class="fth-pro-coin {{#unless hasCoins}}fth-pro-coin-empty{{/unless}}">
+          <span class="fth-pro-coin-icon">{{icon}}</span>
+          <span class="fth-pro-coin-val">{{amountDisplay}}</span>
+          <span class="fth-pro-coin-label">{{abbr}}</span>
+        </div>
+        {{/each}}
+        <div class="fth-pro-coin fth-pro-coin-total">
+          <span class="fth-pro-coin-label">Total:</span>
+          <span class="fth-pro-coin-val">{{currency.totalGpValue}}</span>
+        </div>
+      </div>
+      <div class="fth-pro-currency-row fth-pro-currency-input">
+        {{#each currency.coins}}
+        <div class="fth-pro-coin-input">
+          <span class="fth-pro-coin-icon-sm">{{icon}}</span>
+          <span class="fth-pro-coin-box">☐☐☐☐</span>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    <div class="fth-pro-inv-grid">
+      {{#each inventory.items}}
+      {{#if isContainerGroup}}
+      <div class="fth-pro-inv-container">
+        <div class="fth-pro-inv-item fth-pro-inv-container-head">
+          <span class="fth-pro-inv-eq">{{eqIndicator}}</span>
+          {{#if hasImg}}<img class="fth-pro-inv-icon" src="{{imgUrl}}" alt="">{{/if}}
+          <span class="fth-pro-inv-name">{{{favStar}}}{{name}}</span>
+          {{#if quantityDisplay}}<span class="fth-pro-inv-qty">{{quantityDisplay}}</span>{{/if}}
+          {{#if hasCost}}<span class="fth-pro-inv-cost">{{cost}}</span>{{/if}}
+          {{#if usesDisplay}}<span class="fth-pro-uses">{{usesDisplay}}</span>{{/if}}
+        </div>
+        {{#each containerItems}}
+        <div class="fth-pro-inv-item fth-pro-inv-contained">
+          <span class="fth-pro-inv-eq">{{eqIndicator}}</span>
+          {{#if hasImg}}<img class="fth-pro-inv-icon" src="{{imgUrl}}" alt="">{{/if}}
+          <span class="fth-pro-inv-name">{{{favStar}}}{{name}}</span>
+          {{#if quantityDisplay}}<span class="fth-pro-inv-qty">{{quantityDisplay}}</span>{{/if}}
+          {{#if hasCost}}<span class="fth-pro-inv-cost">{{cost}}</span>{{/if}}
+          {{#if usesDisplay}}<span class="fth-pro-uses">{{usesDisplay}}</span>{{/if}}
+        </div>
+        {{/each}}
+      </div>
+      {{else}}
+      <div class="fth-pro-inv-item">
+        <span class="fth-pro-inv-eq">{{eqIndicator}}</span>
+        {{#if hasImg}}<img class="fth-pro-inv-icon" src="{{imgUrl}}" alt="">{{/if}}
+        <span class="fth-pro-inv-name">{{{favStar}}}{{name}}</span>
+        {{#if quantityDisplay}}<span class="fth-pro-inv-qty">{{quantityDisplay}}</span>{{/if}}
+        {{#if hasCost}}<span class="fth-pro-inv-cost">{{cost}}</span>{{/if}}
+        {{#if usesDisplay}}<span class="fth-pro-uses">{{usesDisplay}}</span>{{/if}}
+      </div>
+      {{/if}}
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+  {{/if}}
+
+  {{!-- Spell Cards (separate page) --}}
+  {{#if showSpells}}
+  {{#if hasSpellCards}}
+  <section class="fth-pro-section fth-pro-spell-cards-page">
+    <div class="fth-pro-section-header">
+      <span class="fth-pro-section-icon">🃏</span>
+      <h2>Spell Cards</h2>
+    </div>
+    <div class="fth-pro-spell-cards-grid">
+      {{#each spellCards}}
+      <div class="fth-pro-spell-card">
+        <div class="fth-pro-sc-header">
+          <div class="fth-pro-sc-title">
+            <span class="fth-pro-sc-name">{{name}} {{{concTag}}}</span>
+            <span class="fth-pro-sc-level">{{levelSchool}} {{{ritualTag}}}</span>
+          </div>
+          {{#if hasImg}}<img class="fth-pro-sc-img" src="{{imgUrl}}" alt="">{{/if}}
+        </div>
+        <div class="fth-pro-sc-stats">
+          <div><strong>Casting:</strong> {{castingTime}}</div>
+          <div><strong>Range:</strong> {{range}}</div>
+          <div><strong>Duration:</strong> {{duration}}</div>
+          <div><strong>Components:</strong> {{{components}}}</div>
+        </div>
+        {{#if hasAttackSave}}<div class="fth-pro-sc-atk"><strong>Attack/Save:</strong> {{attackSave}}{{#if effect}} • <strong>Effect:</strong> {{effect}}{{/if}}</div>{{/if}}
+        <div class="fth-pro-sc-desc">{{description}}</div>
+        {{#if hasHigherLevel}}<div class="fth-pro-sc-higher"><strong>Higher Levels:</strong> {{higherLevel}}</div>{{/if}}
+        {{#if hasSource}}<div class="fth-pro-sc-source">{{source}}</div>{{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+  {{/if}}
+
+  {{!-- Backstory --}}
+  {{#if showBackstory}}
+  {{#if hasBackstory}}
+  <section class="fth-pro-section fth-pro-backstory">
+    <div class="fth-pro-section-header">
+      <span class="fth-pro-section-icon">📜</span>
+      <h2>Backstory & Notes</h2>
+    </div>
+    <div class="fth-pro-backstory-content">{{{backstory}}}</div>
+  </section>
+  {{/if}}
+  {{/if}}
+
+</div>

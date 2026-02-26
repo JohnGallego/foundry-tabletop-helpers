@@ -22,6 +22,16 @@ export interface CharacterData {
   favorites: Set<string>;
   backstory: string;
   traits: TraitData;
+  currency: CurrencyData;
+}
+
+/** Currency/money carried by the character */
+export interface CurrencyData {
+  pp: number;  // Platinum
+  gp: number;  // Gold
+  ep: number;  // Electrum
+  sp: number;  // Silver
+  cp: number;  // Copper
 }
 
 export interface ProficiencyData {
@@ -189,6 +199,8 @@ export interface InventoryItem {
   containerId: string | null;
   /** Items inside this container (populated during processing) */
   contents: InventoryItem[];
+  /** Item price (in GP or other denomination) */
+  price: { value: number; denomination: string } | null;
 }
 
 /* ── Features ──────────────────────────────────────────────── */

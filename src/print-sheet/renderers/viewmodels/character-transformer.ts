@@ -14,6 +14,7 @@ import type {
   SpellcastingData,
   SpellData,
   InventoryItem,
+  CurrencyData,
 } from "../../extractors/dnd5e-types";
 import type { PrintOptions } from "../../types";
 import type {
@@ -37,6 +38,8 @@ import type {
   ProficiencyViewModel,
   InventoryViewModel,
   InventoryItemViewModel,
+  CurrencyViewModel,
+  CoinViewModel,
 } from "./character-viewmodel";
 
 /* ── HTML Helpers ──────────────────────────────────────────── */
@@ -160,6 +163,9 @@ export function transformCharacterToViewModel(
   // Build inventory
   const inventory = buildInventory(data.inventory);
 
+  // Build currency
+  const currency = buildCurrency(data.currency);
+
   return {
     name: esc(data.name),
     portraitUrl,
@@ -185,6 +191,8 @@ export function transformCharacterToViewModel(
       proficiencies.hasTools || proficiencies.hasLanguages || proficiencies.hasWeaponMasteries,
     inventory,
     hasInventory: inventory.items.length > 0,
+    currency,
+    hasCurrency: currency.coins.some(c => c.hasCoins),
     spellCards,
     hasSpellCards: spellCards.length > 0,
     backstory: data.backstory,
@@ -233,20 +241,42 @@ function buildDefensesLine(traits: { resistances: string[]; immunities: string[]
 
 /* ── Combat Stats ───────────────────────────────────────────── */
 
+/** Map die type to a Unicode die icon (fallback to generic die) */
+function getDieIcon(dieType: string): string {
+  // Using Unicode dice characters where available
+  const dieIcons: Record<string, string> = {
+    d4: "🜂",     // Using alchemical symbol for tetrahedron-ish
+    d6: "⚅",     // Die face 6
+    d8: "◆",     // Diamond shape for d8
+    d10: "⬟",    // Pentagon shape for d10
+    d12: "⬡",    // Hexagon shape for d12
+    d20: "🎲",    // Generic die for d20
+  };
+  return dieIcons[dieType] || "🎲";
+}
+
 function buildCombatStats(data: CharacterData): CombatStatsViewModel {
   const c = data.combat;
   const speedStr = c.speed.map(s => `${s.value} ft ${s.key}`).join(", ");
 
-  const hitDiceStr = Object.entries(c.hitDice)
+  // Build hit dice string and determine primary die type
+  const hitDiceEntries = Object.entries(c.hitDice)
     .filter(([, hd]) => hd.max > 0)
-    .sort((a, b) => parseInt(b[0].slice(1)) - parseInt(a[0].slice(1)))
+    .sort((a, b) => parseInt(b[0].slice(1)) - parseInt(a[0].slice(1)));
+
+  const hitDiceStr = hitDiceEntries
     .map(([denom, hd]) => `${hd.max}${denom}`)
     .join(", ") || "—";
+
+  // Primary die type is the first (largest) one
+  const primaryDieType = hitDiceEntries.length > 0 ? hitDiceEntries[0][0] : "d8";
 
   return {
     ac: c.ac,
     hpMax: c.hp.max,
     hitDice: hitDiceStr,
+    hitDieType: primaryDieType,
+    hitDieIcon: getDieIcon(primaryDieType),
     initiative: signStr(c.initiative),
     speed: speedStr,
     proficiency: signStr(c.proficiency),
@@ -271,11 +301,15 @@ function buildSavesWidget(abilities: AbilityData[], features: FeatureGroup[]): S
     Intelligence: "INT", Wisdom: "WIS", Charisma: "CHA",
   };
 
-  const toSaveItem = (a: AbilityData): SaveItemViewModel => ({
-    profIcon: a.proficient ? "●" : "○",
-    label: abbrev[a.label] ?? a.label.slice(0, 3).toUpperCase(),
-    value: signStr(a.save),
-  });
+  const toSaveItem = (a: AbilityData): SaveItemViewModel => {
+    const abbr = abbrev[a.label] ?? a.label.slice(0, 3).toUpperCase();
+    return {
+      profIcon: a.proficient ? "●" : "○",
+      label: a.label,
+      abbr,
+      value: signStr(a.save),
+    };
+  };
 
   const leftColumn = abilities.slice(0, 3).map(toSaveItem);
   const rightColumn = abilities.slice(3, 6).map(toSaveItem);
@@ -640,6 +674,11 @@ function buildInventoryItem(i: InventoryItem, isIndented: boolean): InventoryIte
   const wt = i.weight ? `${i.weight}lb` : "";
   const meta = [qty, wt].filter(Boolean).join(" ");
 
+  // Format cost display
+  const cost = i.price
+    ? `${i.price.value} ${i.price.denomination}`
+    : "";
+
   return {
     eqIndicator: i.equipped ? "■" : "—",
     imgUrl: i.img || "",
@@ -650,8 +689,49 @@ function buildInventoryItem(i: InventoryItem, isIndented: boolean): InventoryIte
     meta,
     isIndented,
     cssClass: isIndented ? "fth-inv-item fth-inv-indented" : "fth-inv-item",
+    quantity: i.quantity,
+    quantityDisplay: i.quantity > 1 ? `×${i.quantity}` : "",
+    cost,
+    hasCost: !!cost,
     isContainerGroup: false,
     containerItems: [],
   };
 }
 
+/* ── Currency ────────────────────────────────────────────────── */
+
+/** Coin type definitions with display info */
+const COIN_TYPES: Array<{ type: keyof CurrencyData; label: string; abbr: string; icon: string; gpValue: number }> = [
+  { type: "pp", label: "Platinum", abbr: "PP", icon: "🪙", gpValue: 10 },
+  { type: "gp", label: "Gold", abbr: "GP", icon: "🟡", gpValue: 1 },
+  { type: "ep", label: "Electrum", abbr: "EP", icon: "⚪", gpValue: 0.5 },
+  { type: "sp", label: "Silver", abbr: "SP", icon: "⚫", gpValue: 0.1 },
+  { type: "cp", label: "Copper", abbr: "CP", icon: "🟤", gpValue: 0.01 },
+];
+
+function buildCurrency(data: CurrencyData): CurrencyViewModel {
+  const coins: CoinViewModel[] = COIN_TYPES.map(({ type, label, abbr, icon, gpValue }) => {
+    const amount = data[type] ?? 0;
+    return {
+      type,
+      label,
+      abbr,
+      icon,
+      amount,
+      amountDisplay: amount.toLocaleString(),
+      hasCoins: amount > 0,
+      gpValue,
+    };
+  });
+
+  // Calculate total GP value
+  const totalGp = coins.reduce((sum, c) => {
+    const coinDef = COIN_TYPES.find(ct => ct.type === c.type);
+    return sum + (c.amount * (coinDef?.gpValue ?? 0));
+  }, 0);
+
+  return {
+    coins,
+    totalGpValue: totalGp > 0 ? `${totalGp.toLocaleString()} gp` : "0 gp",
+  };
+}

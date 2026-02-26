@@ -57,7 +57,11 @@ export interface CharacterViewModel {
   // Inventory
   inventory: InventoryViewModel;
   hasInventory: boolean;
-  
+
+  // Currency
+  currency: CurrencyViewModel;
+  hasCurrency: boolean;
+
   // Spell cards (separate page)
   spellCards: SpellCardViewModel[];
   hasSpellCards: boolean;
@@ -90,6 +94,8 @@ export interface CombatStatsViewModel {
   ac: number;
   hpMax: number;
   hitDice: string;      // "3d10, 2d8"
+  hitDieType: string;   // "d8", "d10", etc. (primary die type for icon)
+  hitDieIcon: string;   // Unicode die icon or placeholder
   initiative: string;   // "+2"
   speed: string;        // "30 ft., 10 ft. swim"
   proficiency: string;  // "+3"
@@ -109,7 +115,8 @@ export interface SavesWidgetViewModel {
 
 export interface SaveItemViewModel {
   profIcon: string;     // "●" or "○"
-  label: string;        // "STR"
+  label: string;        // "Strength"
+  abbr: string;         // "STR" (for compact displays)
   value: string;        // "+5"
 }
 
@@ -261,8 +268,29 @@ export interface InventoryItemViewModel {
   meta: string;           // "×2 5lb"
   isIndented: boolean;    // For items in containers
   cssClass: string;
+  // Pro sheet fields
+  quantity: number;       // Raw quantity for display
+  quantityDisplay: string; // "×3" or "" if 1
+  cost: string;           // "50 gp" or ""
+  hasCost: boolean;
   // Container groups
   isContainerGroup: boolean;
   containerItems: InventoryItemViewModel[];
 }
 
+/* ── Currency ────────────────────────────────────────────────── */
+
+export interface CurrencyViewModel {
+  coins: CoinViewModel[];
+  totalGpValue: string;   // "125.5 gp" (total value converted to gold)
+}
+
+export interface CoinViewModel {
+  type: string;           // "pp", "gp", "ep", "sp", "cp"
+  label: string;          // "Platinum", "Gold", etc.
+  abbr: string;           // "PP", "GP", etc.
+  icon: string;           // Coin emoji/icon
+  amount: number;         // Raw amount
+  amountDisplay: string;  // Formatted display "1,234"
+  hasCoins: boolean;      // true if amount > 0
+}

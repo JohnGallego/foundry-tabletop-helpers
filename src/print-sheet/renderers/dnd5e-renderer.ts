@@ -20,6 +20,7 @@ import {
   transformPartySummaryToViewModel,
   transformEncounterGroupToViewModel,
 } from "./viewmodels";
+import { getCharacterSheetStyle } from "../../settings";
 import type { PrintOptions } from "../types";
 import type {
   CharacterData, NPCData, EncounterGroupData, PartySummaryData,
@@ -35,7 +36,8 @@ export class Dnd5eRenderer extends BaseRenderer {
   async renderCharacter(data: CharacterData, options: PrintOptions): Promise<string> {
     // Use template-based rendering via ViewModel
     const viewModel = transformCharacterToViewModel(data, options);
-    return renderCharacterSheet(viewModel);
+    const style = getCharacterSheetStyle();
+    return renderCharacterSheet(viewModel, style);
   }
 
   /* ── NPC Stat Block ────────────────────────────────────── */
