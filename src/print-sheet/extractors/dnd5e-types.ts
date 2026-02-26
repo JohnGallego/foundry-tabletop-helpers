@@ -272,13 +272,21 @@ export interface PartySummaryData {
 export interface PartyMemberSummary {
   name: string;
   classes: string;
+  level: number;
   species: string;
+  background: string;
+  senses: string;
   ac: number;
-  hp: { value: number; max: number };
-  spellDC: number | null;
-  initiative: number;
-  passivePerception: number;
+  hp: { max: number };
   proficiency: number;
-  topSkills: { name: string; total: number }[];
+  initiative: number;
+  passives: { perception: number; insight: number; investigation: number };
+  spellDC: number | null;
+  saves: { key: string; mod: number; proficient: boolean }[];
+  proficientSkills: { name: string; abbr: string; mod: number; ability: string }[];
+  /** Spell slots by level (1-9), value is max slots */
+  spellSlots: { level: number; max: number }[];
+  /** Pact magic slots if warlock */
+  pactSlots: { max: number; level: number } | null;
 }
 

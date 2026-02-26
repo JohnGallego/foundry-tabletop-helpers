@@ -1233,17 +1233,57 @@ export class Dnd5eExtractor extends BaseExtractor {
   /* ── Encounter Group ────────────────────────────────────── */
 
   async extractEncounterGroup(group: any, options: PrintOptions): Promise<EncounterGroupData> {
-    Log.info("dnd5e: extracting encounter group", { name: group?.name });
+    Log.info("dnd5e: extracting encounter group", { name: group?.name, type: group?.type });
 
-    // dnd5e groups store member actors; retrieve them
-    const members = this.getGroupMembers(group);
+    // dnd5e 5.x has TWO actor types that can be encounter groups:
+    // 1. "encounter" actor type - uses system.getMembers() async method
+    // 2. "group" actor type with system.type.value = "encounter" - uses system.members array
     const actors: NPCData[] = [];
+    const seenUUIDs = new Set<string>(); // Track unique actors to avoid duplicates
 
-    for (const member of members) {
+    // Check if this is the dedicated "encounter" actor type with getMembers() method
+    if (group.type === "encounter" && typeof group.system?.getMembers === "function") {
       try {
-        actors.push(await this.extractNPC(member, options));
+        // getMembers() returns { actor, quantity }[] where actor is the resolved Actor document
+        const members = await group.system.getMembers();
+        Log.debug("encounter getMembers() returned", { count: members?.length });
+
+        for (const { actor } of members) {
+          if (!actor) continue;
+
+          // Deduplicate by UUID - we only want one stat block per creature type
+          const uuid = actor.uuid ?? actor.id ?? actor.name;
+          if (seenUUIDs.has(uuid)) {
+            Log.debug("skipping duplicate actor", { name: actor.name, uuid });
+            continue;
+          }
+          seenUUIDs.add(uuid);
+
+          try {
+            actors.push(await this.extractNPC(actor, options));
+          } catch (err) {
+            Log.warn("failed to extract NPC for encounter", { name: actor?.name, err });
+          }
+        }
       } catch (err) {
-        Log.warn("failed to extract NPC for encounter group", { name: member?.name, err });
+        Log.warn("getMembers() failed, falling back to manual extraction", { err: String(err) });
+      }
+    }
+
+    // Fallback: use the old getGroupMembers for "group" actor type
+    if (actors.length === 0) {
+      const members = this.getGroupMembers(group);
+      for (const member of members) {
+        // Deduplicate by UUID or name
+        const uuid = member.uuid ?? member.id ?? member.name;
+        if (seenUUIDs.has(uuid)) continue;
+        seenUUIDs.add(uuid);
+
+        try {
+          actors.push(await this.extractNPC(member, options));
+        } catch (err) {
+          Log.warn("failed to extract NPC for encounter group", { name: member?.name, err });
+        }
       }
     }
 
@@ -1258,11 +1298,20 @@ export class Dnd5eExtractor extends BaseExtractor {
     const members = this.getGroupMembers(group);
     const summaries: PartyMemberSummary[] = [];
 
+    // Skill abbreviations for compact display
+    const skillAbbr: Record<string, string> = {
+      acr: "Acro", ani: "Anim", arc: "Arca", ath: "Athl", dec: "Dece",
+      his: "Hist", ins: "Insi", itm: "Intm", inv: "Inve", med: "Medi",
+      nat: "Natu", prc: "Perc", prf: "Perf", per: "Pers", rel: "Reli",
+      slt: "Slei", ste: "Stea", sur: "Surv",
+    };
+
     for (const actor of members) {
       try {
         const details = extractDetails(actor);
         const combat = extractCombat(actor);
         const skills = extractSkills(actor);
+        const abilities = extractAbilities(actor);
         const attrs = actor.system?.attributes ?? {};
 
         // Spell DC
@@ -1273,31 +1322,75 @@ export class Dnd5eExtractor extends BaseExtractor {
           spellDC = 8 + (attrs.prof ?? 0) + mod;
         }
 
-        // Top 5 skills by total bonus (proficient ones preferred)
+        // Build class string (abbreviated for space)
+        const classStr = details.classes
+          .map((c) => `${c.name} ${c.level}`)
+          .join("/") || "—";
+
+        // Senses string
+        const sensesStr = combat.senses
+          .map(s => `${s.key} ${s.value}${typeof s.value === "number" ? "ft" : ""}`)
+          .join(", ") || "—";
+
+        // Passives
+        const passives = {
+          perception: skills.find((s) => s.key === "prc")?.passive ?? 10,
+          insight: skills.find((s) => s.key === "ins")?.passive ?? 10,
+          investigation: skills.find((s) => s.key === "inv")?.passive ?? 10,
+        };
+
+        // Save modifiers (all 6)
+        const saves = abilities.map(a => ({
+          key: a.key.toUpperCase().slice(0, 3),
+          mod: a.save,
+          proficient: a.saveProficient ?? false,
+        }));
+
+        // Proficient skills only, sorted by mod
         const proficientSkills = skills
           .filter((s) => s.proficiency >= 1)
           .sort((a, b) => b.total - a.total)
-          .slice(0, 5);
-        const topSkills = proficientSkills.length >= 3
-          ? proficientSkills
-          : skills.sort((a, b) => b.total - a.total).slice(0, 5);
+          .map((s) => ({
+            name: s.label,
+            abbr: skillAbbr[s.key] ?? s.label.slice(0, 4),
+            mod: s.total,
+            ability: s.ability.toUpperCase().slice(0, 3),
+          }));
 
-        // Build class string like "Fighter 5 / Wizard 3"
-        const classStr = details.classes
-          .map((c) => `${c.name} ${c.level}${c.subclass ? ` (${c.subclass})` : ""}`)
-          .join(" / ") || "—";
+        // Extract spell slots (levels 1-9)
+        const spellsData = actor.system?.spells ?? {};
+        const spellSlots: { level: number; max: number }[] = [];
+        for (let lvl = 1; lvl <= 9; lvl++) {
+          const slotData = spellsData[`spell${lvl}`];
+          if (slotData?.max > 0) {
+            spellSlots.push({ level: lvl, max: slotData.max });
+          }
+        }
+
+        // Pact magic (warlock)
+        let pactSlots: { max: number; level: number } | null = null;
+        const pactData = spellsData.pact;
+        if (pactData?.max > 0) {
+          pactSlots = { max: pactData.max, level: pactData.level ?? 1 };
+        }
 
         summaries.push({
           name: actor.name ?? "Unknown",
           classes: classStr,
+          level: details.level,
           species: details.race || "—",
+          background: details.background || "—",
+          senses: sensesStr,
           ac: combat.ac,
-          hp: { value: combat.hp.value, max: combat.hp.max },
-          spellDC,
-          initiative: combat.initiative,
-          passivePerception: skills.find((s) => s.key === "prc")?.passive ?? 10,
+          hp: { max: combat.hp.max },
           proficiency: combat.proficiency,
-          topSkills: topSkills.map((s) => ({ name: s.label, total: s.total })),
+          initiative: combat.initiative,
+          passives,
+          spellDC,
+          saves,
+          proficientSkills,
+          spellSlots,
+          pactSlots,
         });
       } catch (err) {
         Log.warn("failed to extract party member", { name: actor?.name, err });

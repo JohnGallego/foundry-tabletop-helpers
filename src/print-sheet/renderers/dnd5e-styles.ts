@@ -296,42 +296,134 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-sb-trait em { font-style: italic; }
 
 /* ── Encounter Group ──────────────────────────────────────── */
-.fth-encounter { max-width: 7.5in; margin: 0 auto; }
+.fth-encounter { max-width: 11in; margin: 0 auto; }
 .fth-encounter > h1 { font-size: 16pt; color: #7a200d; border-bottom: 2px solid #7a200d; padding-bottom: 4px; margin-bottom: 10px; }
-.fth-encounter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fth-encounter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-items: start; }
+.fth-encounter-grid .fth-statblock { max-width: none; margin: 0; }
 
-/* ── Party Summary ────────────────────────────────────────── */
-.fth-party { max-width: 7.5in; margin: 0 auto; }
-.fth-party > h1 { font-size: 16pt; color: #7a200d; border-bottom: 2px solid #7a200d; padding-bottom: 4px; margin-bottom: 10px; }
-.fth-party-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
-.fth-party-table th { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; color: #555; border-bottom: 2px solid #7a200d; padding: 3px 5px; text-align: left; }
-.fth-party-table td { padding: 3px 5px; border-bottom: 1px solid #ddd; }
-.fth-party-table tr:nth-child(even) td { background: #f7f7f7; }
-.fth-party-skills { font-size: 7.5pt; color: #555; }
+/* ── DM Screen / Party Summary ───────────────────────────── */
+.fth-dm-screen { margin: 0 auto; }
+.fth-dm-screen > h1 { font-size: 14pt; color: #7a200d; border-bottom: 2px solid #7a200d; padding-bottom: 4px; margin-bottom: 8px; }
+.fth-dm-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.fth-dm-table th {
+  font-size: 7pt; font-weight: 700; text-transform: uppercase; color: #555;
+  border-bottom: 2px solid #7a200d; padding: 3px 4px; text-align: left; white-space: nowrap;
+}
+.fth-dm-table td { padding: 4px 5px; border-bottom: 1px solid #ccc; vertical-align: top; }
+.fth-dm-table tr:nth-child(even) td { background: #f9f9f9; }
+
+/* Column widths */
+.fth-dm-col-identity { width: 18%; }
+.fth-dm-col-combat { width: 12%; }
+.fth-dm-col-passives { width: 10%; }
+.fth-dm-col-spell { width: 6%; text-align: center; }
+.fth-dm-col-saves { width: 22%; }
+.fth-dm-col-skills { width: 32%; }
+
+/* Identity column */
+.fth-dm-identity { }
+.fth-dm-name { font-weight: 700; font-size: 9pt; color: #7a200d; }
+.fth-dm-details { font-size: 7pt; color: #555; }
+.fth-dm-senses { font-size: 6.5pt; color: #777; font-style: italic; margin-top: 2px; }
+
+/* Combat stats */
+.fth-dm-combat { }
+.fth-dm-stat { display: inline-block; margin-right: 6px; white-space: nowrap; }
+.fth-dm-label { font-size: 6.5pt; color: #666; text-transform: uppercase; }
+.fth-dm-val { font-weight: 700; font-size: 9pt; }
+
+/* Passives */
+.fth-dm-passives { white-space: nowrap; }
+.fth-dm-passive { display: inline-block; margin-right: 4px; font-size: 8pt; }
+
+/* Spell DC */
+.fth-dm-spelldc { text-align: center; font-weight: 600; }
+
+/* Saves */
+.fth-dm-saves { font-size: 7pt; }
+.fth-dm-save { display: inline-block; margin-right: 4px; white-space: nowrap; }
+.fth-dm-save:nth-child(3n)::after { content: ""; display: block; }
+
+/* Skills */
+.fth-dm-skills { font-size: 7pt; color: #444; line-height: 1.4; }
+
+/* ── Session Tracking Cards ─────────────────────────────────── */
+.fth-track-section { margin-top: 16px; }
+.fth-track-section h2 { font-size: 12pt; color: #7a200d; border-bottom: 1px solid #7a200d; margin-bottom: 8px; }
+.fth-track-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+.fth-track-card {
+  border: 1.5px solid #7a200d; border-radius: 4px; padding: 6px 8px;
+  background: #fefcfb; break-inside: avoid; font-size: 8pt;
+}
+.fth-track-header {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 6px;
+}
+.fth-track-name { font-weight: 700; font-size: 10pt; color: #7a200d; }
+.fth-track-ac { font-weight: 600; font-size: 9pt; }
+
+.fth-track-body { }
+.fth-track-row { display: flex; align-items: center; margin-bottom: 3px; gap: 6px; }
+.fth-track-label { font-weight: 600; font-size: 7pt; text-transform: uppercase; color: #555; min-width: 55px; }
+.fth-track-max { font-size: 9pt; font-weight: 600; }
+.fth-track-box {
+  flex: 1; height: 16px; border: 1px solid #999; border-radius: 2px;
+  background: #fff; max-width: 60px;
+}
+.fth-track-box-sm { max-width: 40px; height: 14px; }
+.fth-track-checks { font-size: 10pt; letter-spacing: 1px; }
+.fth-track-inline { font-size: 8pt; }
+
+/* Death saves */
+.fth-death-success { color: #2d6a2d; margin-right: 8px; }
+.fth-death-fail { color: #7a200d; }
+
+/* Spell slots */
+.fth-track-slots { align-items: flex-start; }
+.fth-slots-grid { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+.fth-slot-row { white-space: nowrap; font-size: 9pt; }
+.fth-slot-lvl {
+  display: inline-block; width: 14px; height: 14px; line-height: 14px;
+  text-align: center; background: #7a200d; color: #fff; border-radius: 2px;
+  font-size: 7pt; font-weight: 600; margin-right: 2px;
+}
+
+/* Conditions */
+.fth-track-conditions {
+  display: flex; flex-wrap: wrap; gap: 2px 6px;
+  margin-top: 4px; padding-top: 4px; border-top: 1px dashed #ccc;
+}
+.fth-cond { font-size: 7pt; white-space: nowrap; }
 
 /* ── Print Media ──────────────────────────────────────────── */
 @media print {
   body { padding: 0; }
   @page { margin: 0.4in; }
 
-  /* Keep sections together - avoid breaking inside */
+  /* SUBSECTIONS: Keep these atomic units together - never break inside */
   .fth-statblock { break-inside: avoid; }
+  .fth-action-group { break-inside: avoid; }
   .fth-feat-group { break-inside: avoid; }
   .fth-spell-level { break-inside: avoid; }
   .fth-spell-card { break-inside: avoid; }
-  .fth-action-group { break-inside: avoid; }
   .fth-inv-container-group { break-inside: avoid; }
-  .fth-party-table tr { break-inside: avoid; }
+  .fth-dm-table tr { break-inside: avoid; }
+  .fth-track-card { break-inside: avoid; }
+  .fth-combat { break-inside: avoid; }
+  .fth-abilities-saves-row { break-inside: avoid; }
+  .fth-skills { break-inside: avoid; }
 
-  /* Section titles should not be orphaned at bottom of page */
+  /* Section titles must stay with following content */
   .fth-section-title { break-after: avoid; }
   h3 { break-after: avoid; }
 
-  /* Main sections prefer to stay together when possible */
-  .fth-actions { break-inside: avoid-page; }
-  .fth-features { break-inside: avoid-page; }
-  .fth-inventory { break-inside: avoid-page; }
-  .fth-spellcasting { break-inside: avoid-page; }
+  /* PARENT SECTIONS: Allow breaks between subsections to avoid large gaps */
+  /* These sections CAN break, but only between their child subsections */
+  .fth-actions { break-before: auto; }
+  .fth-features { break-before: auto; }
+  .fth-inventory { break-before: auto; }
+  .fth-spellcasting { break-before: auto; }
 
   /* Spell cards always on new page */
   .fth-spell-cards-page { page-break-before: always; }
@@ -341,7 +433,14 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 
   /* Background removal for print */
   .fth-stat-box { background: none !important; }
-  .fth-party-table tr:nth-child(even) td { background: none !important; }
+  .fth-dm-table tr:nth-child(even) td { background: none !important; }
+}
+
+/* DM Screen prints in landscape */
+@media print {
+  .fth-dm-screen {
+    @page { size: landscape; margin: 0.3in; }
+  }
 }
 
 @media print and (min-width: 0) {

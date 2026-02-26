@@ -1182,45 +1182,159 @@ export class Dnd5eRenderer extends BaseRenderer {
       </div>`;
   }
 
-  /* ── Party Summary ─────────────────────────────────────── */
+  /* ── Party Summary (DM Screen Style) ─────────────────────── */
 
   renderPartySummary(data: PartySummaryData, options: PrintOptions): string {
     const rows = data.members.map(m => {
-      const skillsStr = m.topSkills.map(s => `${esc(s.name)} ${signStr(s.total)}`).join(", ");
+      // Saves - show all 6 with proficiency indicator
+      const savesStr = m.saves.map(s => {
+        const prof = s.proficient ? "●" : "";
+        return `<span class="fth-dm-save">${prof}${s.key} ${signStr(s.mod)}</span>`;
+      }).join(" ");
+
+      // Proficient skills - compact format
+      const skillsStr = m.proficientSkills
+        .map(s => `${s.abbr} ${signStr(s.mod)}`)
+        .join(", ") || "—";
+
+      // Passives as compact grid
+      const passivesStr = `
+        <span class="fth-dm-passive" title="Perception">👁${m.passives.perception}</span>
+        <span class="fth-dm-passive" title="Insight">💭${m.passives.insight}</span>
+        <span class="fth-dm-passive" title="Investigation">🔍${m.passives.investigation}</span>
+      `;
+
       return `<tr>
-        <td>${esc(m.name)}</td>
-        <td>${esc(m.classes)}</td>
-        <td>${esc(m.species)}</td>
-        <td>${m.ac}</td>
-        <td>${m.hp.value}/${m.hp.max}</td>
-        <td>${m.spellDC ?? "—"}</td>
-        <td>${signStr(m.initiative)}</td>
-        <td>${m.passivePerception}</td>
-        <td>${signStr(m.proficiency)}</td>
-        <td class="fth-party-skills">${skillsStr}</td>
+        <td class="fth-dm-identity">
+          <div class="fth-dm-name">${esc(m.name)}</div>
+          <div class="fth-dm-details">${esc(m.classes)} • Lvl ${m.level}</div>
+          <div class="fth-dm-details">${esc(m.species)} • ${esc(m.background)}</div>
+          <div class="fth-dm-senses">${esc(m.senses)}</div>
+        </td>
+        <td class="fth-dm-combat">
+          <div class="fth-dm-stat"><span class="fth-dm-label">AC</span> <span class="fth-dm-val">${m.ac}</span></div>
+          <div class="fth-dm-stat"><span class="fth-dm-label">HP</span> <span class="fth-dm-val">${m.hp.max}</span></div>
+          <div class="fth-dm-stat"><span class="fth-dm-label">Prof</span> <span class="fth-dm-val">${signStr(m.proficiency)}</span></div>
+          <div class="fth-dm-stat"><span class="fth-dm-label">Init</span> <span class="fth-dm-val">${signStr(m.initiative)}</span></div>
+        </td>
+        <td class="fth-dm-passives">${passivesStr}</td>
+        <td class="fth-dm-spelldc">${m.spellDC ? `DC ${m.spellDC}` : "—"}</td>
+        <td class="fth-dm-saves">${savesStr}</td>
+        <td class="fth-dm-skills">${skillsStr}</td>
       </tr>`;
     }).join("");
 
+    // Build tracking cards for each party member
+    const trackingCards = data.members.map(m => {
+      // HP tracking
+      const hpTrack = `
+        <div class="fth-track-row">
+          <span class="fth-track-label">HP</span>
+          <span class="fth-track-max">/${m.hp.max}</span>
+          <span class="fth-track-box"></span>
+        </div>
+        <div class="fth-track-row">
+          <span class="fth-track-label">Temp HP</span>
+          <span class="fth-track-box fth-track-box-sm"></span>
+        </div>`;
+
+      // Death saves
+      const deathSaves = `
+        <div class="fth-track-row">
+          <span class="fth-track-label">Death</span>
+          <span class="fth-track-inline">
+            <span class="fth-death-success">✓ ☐☐☐</span>
+            <span class="fth-death-fail">✗ ☐☐☐</span>
+          </span>
+        </div>`;
+
+      // Short rest tracking (2 per long rest typically)
+      const shortRest = `
+        <div class="fth-track-row">
+          <span class="fth-track-label">Short Rest</span>
+          <span class="fth-track-checks">☐☐</span>
+        </div>`;
+
+      // Exhaustion (6 levels)
+      const exhaustion = `
+        <div class="fth-track-row">
+          <span class="fth-track-label">Exhaustion</span>
+          <span class="fth-track-checks">①②③④⑤⑥</span>
+        </div>`;
+
+      // Spell slots - compact display
+      let spellSlotsHtml = "";
+      if (m.spellSlots.length > 0 || m.pactSlots) {
+        const slotsRows = m.spellSlots.map(s => {
+          const checks = "☐".repeat(s.max);
+          return `<span class="fth-slot-row"><span class="fth-slot-lvl">${s.level}</span>${checks}</span>`;
+        }).join("");
+
+        const pactRow = m.pactSlots
+          ? `<span class="fth-slot-row"><span class="fth-slot-lvl">P${m.pactSlots.level}</span>${"☐".repeat(m.pactSlots.max)}</span>`
+          : "";
+
+        spellSlotsHtml = `
+          <div class="fth-track-row fth-track-slots">
+            <span class="fth-track-label">Slots</span>
+            <div class="fth-slots-grid">${slotsRows}${pactRow}</div>
+          </div>`;
+      }
+
+      // Common conditions
+      const conditions = `
+        <div class="fth-track-conditions">
+          <span class="fth-cond">☐Prone</span>
+          <span class="fth-cond">☐Blind</span>
+          <span class="fth-cond">☐Deaf</span>
+          <span class="fth-cond">☐Poison</span>
+          <span class="fth-cond">☐Fear</span>
+          <span class="fth-cond">☐Rstrn</span>
+          <span class="fth-cond">☐Invis</span>
+          <span class="fth-cond">☐Stun</span>
+          <span class="fth-cond">☐Charm</span>
+          <span class="fth-cond">☐Incap</span>
+          <span class="fth-cond">☐Grap</span>
+          <span class="fth-cond">☐Conc</span>
+        </div>`;
+
+      return `
+        <div class="fth-track-card">
+          <div class="fth-track-header">
+            <span class="fth-track-name">${esc(m.name)}</span>
+            <span class="fth-track-ac">AC ${m.ac}</span>
+          </div>
+          <div class="fth-track-body">
+            ${hpTrack}
+            ${deathSaves}
+            ${shortRest}
+            ${exhaustion}
+            ${spellSlotsHtml}
+            ${conditions}
+          </div>
+        </div>`;
+    }).join("");
+
     return `
-      <div class="fth-party fth-paper-${options.paperSize}">
-        <h1>${esc(data.name)}</h1>
-        <table class="fth-party-table">
+      <div class="fth-dm-screen fth-paper-${options.paperSize}">
+        <h1>${esc(data.name)} — DM Reference</h1>
+        <table class="fth-dm-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Class</th>
-              <th>Species</th>
-              <th>AC</th>
-              <th>HP</th>
-              <th>Spell DC</th>
-              <th>Init</th>
-              <th>Pass. Perc</th>
-              <th>Prof</th>
-              <th>Top Skills</th>
+              <th class="fth-dm-col-identity">Character</th>
+              <th class="fth-dm-col-combat">Combat</th>
+              <th class="fth-dm-col-passives">Passives</th>
+              <th class="fth-dm-col-spell">Spell</th>
+              <th class="fth-dm-col-saves">Saving Throws</th>
+              <th class="fth-dm-col-skills">Proficient Skills</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
+        <div class="fth-track-section">
+          <h2>Session Tracking</h2>
+          <div class="fth-track-grid">${trackingCards}</div>
+        </div>
       </div>`;
   }
 

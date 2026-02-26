@@ -46,10 +46,45 @@ function getSheetType(app: any): SheetType | null {
   const actorType: string = doc.type ?? "";
   if (actorType === "character") return "character";
   if (actorType === "npc") return "npc";
+
+  // dnd5e 5.x has TWO separate actor types for groups:
+  // - "group" actor type: Used for parties (system.type.value can be "party" or "encounter")
+  // - "encounter" actor type: A dedicated actor type for encounter groups
+  if (actorType === "encounter") {
+    Log.debug("encounter actor type detected", { name: doc.name });
+    return "encounter";
+  }
+
   if (actorType === "group") {
-    // dnd5e groups have system.type.value = "party" | "encounter" | etc.
+    // Group actors use system.type.value to distinguish party vs encounter
     const groupType: string = doc.system?.type?.value ?? "";
-    return groupType === "party" ? "party" : "encounter";
+
+    // Check if any members are player characters (m.actor is a ForeignDocumentField)
+    const members = doc.system?.members ?? [];
+    const hasPlayerCharacters = members.some((m: any) => {
+      // m.actor might be an Actor document or an ID string depending on resolution
+      const actor = m.actor;
+      if (!actor) return false;
+      // If it's already resolved to an Actor document
+      if (typeof actor === "object" && actor.type === "character") return true;
+      // If it's just an ID, we can't determine the type here
+      return false;
+    });
+
+    Log.debug("group type detection", {
+      name: doc.name,
+      groupType,
+      memberCount: members.length,
+      hasPlayerCharacters,
+    });
+
+    // If explicitly set to party, or contains player characters, treat as party
+    if (groupType === "party" || hasPlayerCharacters) {
+      return "party";
+    }
+
+    // All other groups (encounter, empty groupType, etc.) are encounters
+    return "encounter";
   }
   return null;
 }
