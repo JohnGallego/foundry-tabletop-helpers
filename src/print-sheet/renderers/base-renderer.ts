@@ -1,6 +1,8 @@
 /**
  * Abstract base for system-specific HTML renderers.
  * Each game system (dnd5e, pf2e, etc.) provides its own subclass.
+ *
+ * Rendering methods are async to support template-based rendering.
  */
 
 import type { PrintOptions } from "../types";
@@ -9,16 +11,16 @@ export abstract class BaseRenderer {
   abstract readonly systemId: string;
 
   /** Render a character sheet as an HTML string */
-  abstract renderCharacter(data: any, options: PrintOptions): string;
+  abstract renderCharacter(data: unknown, options: PrintOptions): Promise<string>;
 
   /** Render an NPC stat block as an HTML string */
-  abstract renderNPC(data: any, options: PrintOptions): string;
+  abstract renderNPC(data: unknown, options: PrintOptions): Promise<string>;
 
   /** Render multiple NPC stat blocks for an encounter group */
-  abstract renderEncounterGroup(data: any, options: PrintOptions): string;
+  abstract renderEncounterGroup(data: unknown, options: PrintOptions): Promise<string>;
 
   /** Render a party summary table */
-  abstract renderPartySummary(data: any, options: PrintOptions): string;
+  abstract renderPartySummary(data: unknown, options: PrintOptions): Promise<string>;
 
   /** Return the CSS for print styling (injected into the print window) */
   abstract getStyles(): string;

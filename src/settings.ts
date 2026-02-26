@@ -1,5 +1,15 @@
 import { Log, MOD } from "./logger";
-import type { PaperSize, PortraitMode, PrintOptions, SheetType } from "./print-sheet/types";
+import type { PaperSize, PortraitMode, SheetType } from "./print-sheet/types";
+import type { Level } from "./logger";
+import {
+  getGame,
+  getFormApplicationClass,
+  getHandlebars,
+  getUI,
+  getPlayerUsers,
+  getSetting,
+  setSetting,
+} from "./types";
 
 export type RotMode = 90 | 180;
 
@@ -65,11 +75,12 @@ export function getDefaultPrintOptions(sheetType: SheetType): DefaultPrintOption
 }
 
 export function registerSettings(): void {
-  const G: any = (globalThis as any).game;
-  if (!G?.settings) return;
+  const game = getGame();
+  const settings = game?.settings;
+  if (!settings) return;
 
   // Log level
-  G.settings.register(MOD, "logLevel", {
+  settings.register(MOD, "logLevel", {
     name: "Log Level",
     hint: "Controls verbosity of console logs for Foundry Tabletop Helpers.",
     scope: "client",
@@ -83,11 +94,11 @@ export function registerSettings(): void {
       debug: "debug",
     },
     default: "info",
-    onChange: (v: string) => Log.setLevel(v as any),
+    onChange: (v: unknown) => Log.setLevel(v as Level),
   });
 
   // Rotation mode (90/180)
-  G.settings.register(MOD, "rotationMode", {
+  settings.register(MOD, "rotationMode", {
     name: "Rotation",
     hint: "How much each press rotates: 90° steps or 180° flip.",
     scope: "client",
@@ -98,7 +109,7 @@ export function registerSettings(): void {
   });
 
   // Animations toggle
-  G.settings.register(MOD, "enableAnimations", {
+  settings.register(MOD, "enableAnimations", {
     name: "Animations",
     hint: "Enable snappy rotation animations with a polished easing curve.",
     scope: "client",
@@ -108,7 +119,7 @@ export function registerSettings(): void {
   });
 
   // Optional legacy V1 support
-  G.settings.register(MOD, "supportV1", {
+  settings.register(MOD, "supportV1", {
     name: "Add header button to V1 windows (legacy)",
     hint: "Enable only if you need the Flip 180° button on V1 applications (deprecated since V13).",
     scope: "client",
@@ -120,7 +131,7 @@ export function registerSettings(): void {
   /* ── Print Sheet Settings ─────────────────────────────────── */
 
   // Print button visibility
-  G.settings.register(MOD, "showPrintButton", {
+  settings.register(MOD, "showPrintButton", {
     name: "Show Print Button",
     hint: "Show the Print button on character, NPC, and group sheets.",
     scope: "client",
@@ -130,7 +141,7 @@ export function registerSettings(): void {
   });
 
   // Preview button visibility
-  G.settings.register(MOD, "showPreviewButton", {
+  settings.register(MOD, "showPreviewButton", {
     name: "Show Preview Button",
     hint: "Show a Preview button that opens the print view without printing (useful for digital reference).",
     scope: "client",
@@ -140,7 +151,7 @@ export function registerSettings(): void {
   });
 
   // Show print options dialog
-  G.settings.register(MOD, "showPrintOptionsDialog", {
+  settings.register(MOD, "showPrintOptionsDialog", {
     name: "Show Print Options Dialog",
     hint: "When enabled, shows the print options dialog each time. When disabled, uses saved default options.",
     scope: "client",
@@ -152,7 +163,7 @@ export function registerSettings(): void {
   // Default print options (stored as JSON, not shown in config UI)
   // Each sheet type has its own default options
   for (const sheetType of ["character", "npc", "encounter", "party"] as const) {
-    G.settings.register(MOD, `printDefaults_${sheetType}`, {
+    settings.register(MOD, `printDefaults_${sheetType}`, {
       name: `Print Defaults (${sheetType})`,
       hint: `Default print options for ${sheetType} sheets.`,
       scope: "client",
@@ -163,7 +174,7 @@ export function registerSettings(): void {
   }
 
   // Target players list (GM-only; stored as CSV; hidden - configured via submenu)
-  G.settings.register(MOD, "targetUserIds", {
+  settings.register(MOD, "targetUserIds", {
     name: "Target Players (storage)",
     hint: "Internal storage for selected player IDs.",
     scope: "world",
@@ -175,10 +186,13 @@ export function registerSettings(): void {
 
   // GM-only submenu to configure target players with checkboxes
   try {
-    const Base: any = (globalThis as any).FormApplication || class {};
-    class TargetPlayersForm extends Base {
+    // FormApplication inheritance requires careful typing - use base class pattern
+    const FormAppBase = getFormApplicationClass() ?? class {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const BaseWithDefaults = FormAppBase as any;
+    class TargetPlayersForm extends BaseWithDefaults {
       static get defaultOptions() {
-        const base: any = (Base as any).defaultOptions ?? {};
+        const base = BaseWithDefaults.defaultOptions ?? {};
         return Object.assign({}, base, {
           id: `${MOD}-target-players`,
           title: "Target Players",
@@ -187,21 +201,20 @@ export function registerSettings(): void {
         });
       }
       async getData() {
-        const G: any = (globalThis as any).game;
         const selected = new Set(targetUserIds());
-        const users = (G?.users ?? []).filter((u: any) => !u?.isGM);
+        const users = getPlayerUsers();
         return {
-          users: users.map((u: any) => ({ id: u.id, name: u.name, selected: selected.has(u.id), isActive: u.active })),
+          users: users.map((u) => ({ id: u.id, name: u.name, selected: selected.has(u.id), isActive: u.active })),
         };
       }
-      async _updateObject(_event: any, formData: any) {
-        const raw = (formData as any)["userIds"];
-        const ids: string[] = Array.isArray(raw) ? raw : raw ? [String(raw)] : [];
-        await (globalThis as any).game?.settings?.set(MOD, "targetUserIds", ids.join(","));
+      async _updateObject(_event: Event, formData: Record<string, unknown>) {
+        const raw = formData["userIds"];
+        const ids: string[] = Array.isArray(raw) ? (raw as string[]) : raw ? [String(raw)] : [];
+        await setSetting(MOD, "targetUserIds", ids.join(","));
       }
     }
 
-    G.settings.registerMenu(MOD, "targetUsersMenu", {
+    settings.registerMenu(MOD, "targetUsersMenu", {
       name: "Target Players",
       label: "Configure",
       hint: "Choose which players are affected by rotation macros.",
@@ -215,17 +228,20 @@ export function registerSettings(): void {
 
   // Print Defaults submenu
   try {
-    const Base: any = (globalThis as any).FormApplication || class {};
+    // FormApplication inheritance requires careful typing - use base class pattern
+    const FormAppBase = getFormApplicationClass() ?? class {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const BaseWithDefaults = FormAppBase as any;
 
     // Register Handlebars helper for equality check
-    const Handlebars: any = (globalThis as any).Handlebars;
-    if (Handlebars && !Handlebars.helpers?.eq) {
-      Handlebars.registerHelper("eq", (a: any, b: any) => a === b);
+    const Hbs = getHandlebars();
+    if (Hbs && !Hbs.helpers?.eq) {
+      Hbs.registerHelper("eq", (a: unknown, b: unknown) => a === b);
     }
 
-    class PrintDefaultsForm extends Base {
+    class PrintDefaultsForm extends BaseWithDefaults {
       static get defaultOptions() {
-        const base: any = (Base as any).defaultOptions ?? {};
+        const base = BaseWithDefaults.defaultOptions ?? {};
         return Object.assign({}, base, {
           id: `${MOD}-print-defaults`,
           title: "Print Defaults",
@@ -255,23 +271,22 @@ export function registerSettings(): void {
         return { sheetTypes };
       }
 
-      async _updateObject(_event: any, formData: any) {
-        const G: any = (globalThis as any).game;
+      async _updateObject(_event: Event, formData: Record<string, unknown>) {
         for (const sheetType of ["character", "npc", "encounter", "party"] as SheetType[]) {
-          const paperSize = formData[`${sheetType}_paperSize`] ?? "letter";
-          const portrait = formData[`${sheetType}_portrait`] ?? "portrait";
+          const paperSize = (formData[`${sheetType}_paperSize`] as PaperSize) ?? "letter";
+          const portrait = (formData[`${sheetType}_portrait`] as PortraitMode) ?? "portrait";
           const sections: Record<string, boolean> = {};
           for (const sKey of Object.keys(SECTION_DEFAULTS[sheetType])) {
             sections[sKey] = !!formData[`${sheetType}_section_${sKey}`];
           }
           const options: DefaultPrintOptions = { paperSize, portrait, sections };
-          await G?.settings?.set(MOD, `printDefaults_${sheetType}`, JSON.stringify(options));
+          await setSetting(MOD, `printDefaults_${sheetType}`, JSON.stringify(options));
         }
-        (globalThis as any).ui?.notifications?.info?.("Print defaults saved.");
+        getUI()?.notifications?.info?.("Print defaults saved.");
       }
     }
 
-    G.settings.registerMenu(MOD, "printDefaultsMenu", {
+    settings.registerMenu(MOD, "printDefaultsMenu", {
       name: "Print Defaults",
       label: "Configure",
       hint: "Set default print options for each sheet type (paper size, image, sections).",
@@ -286,71 +301,43 @@ export function registerSettings(): void {
 
 
 export const rotationMode = (): RotMode => {
-  try {
-    const v = (globalThis as any).game?.settings?.get(MOD, "rotationMode");
-    return Number(v) === 180 ? 180 : 90;
-  } catch {
-    return 90;
-  }
+  const v = getSetting<string>(MOD, "rotationMode");
+  return Number(v) === 180 ? 180 : 90;
 };
 
 export const rotationLabel = () => (rotationMode() === 180 ? "Flip 180°" : "Rotate 90°");
 
 export const animationsEnabled = (): boolean => {
-  try {
-    return Boolean((globalThis as any).game?.settings?.get(MOD, "enableAnimations"));
-  } catch {
-    return true;
-  }
+  return getSetting<boolean>(MOD, "enableAnimations") ?? true;
 };
 
 export const supportV1 = (): boolean => {
-  try {
-    return Boolean((globalThis as any).game?.settings?.get(MOD, "supportV1"));
-  } catch {
-    return false;
-  }
+  return getSetting<boolean>(MOD, "supportV1") ?? false;
 };
 
 export const targetUserIds = (): string[] => {
-  try {
-    const raw = String((globalThis as any).game?.settings?.get(MOD, "targetUserIds") ?? "");
-    return raw.split(",").map(s => s.trim()).filter(Boolean);
-  } catch {
-    return [];
-  }
+  const raw = getSetting<string>(MOD, "targetUserIds") ?? "";
+  return raw.split(",").map(s => s.trim()).filter(Boolean);
 };
 
 /* ── Print Settings Getters ────────────────────────────────── */
 
 export const showPrintButton = (): boolean => {
-  try {
-    return Boolean((globalThis as any).game?.settings?.get(MOD, "showPrintButton"));
-  } catch {
-    return true;
-  }
+  return getSetting<boolean>(MOD, "showPrintButton") ?? true;
 };
 
 export const showPreviewButton = (): boolean => {
-  try {
-    return Boolean((globalThis as any).game?.settings?.get(MOD, "showPreviewButton"));
-  } catch {
-    return true;
-  }
+  return getSetting<boolean>(MOD, "showPreviewButton") ?? true;
 };
 
 export const showPrintOptionsDialog = (): boolean => {
-  try {
-    return Boolean((globalThis as any).game?.settings?.get(MOD, "showPrintOptionsDialog"));
-  } catch {
-    return true;
-  }
+  return getSetting<boolean>(MOD, "showPrintOptionsDialog") ?? true;
 };
 
 /** Get saved print defaults for a sheet type, or return standard defaults */
 export const getPrintDefaults = (sheetType: SheetType): DefaultPrintOptions => {
   try {
-    const raw = (globalThis as any).game?.settings?.get(MOD, `printDefaults_${sheetType}`);
+    const raw = getSetting<string>(MOD, `printDefaults_${sheetType}`);
     if (raw) {
       return JSON.parse(raw) as DefaultPrintOptions;
     }
@@ -363,7 +350,7 @@ export const getPrintDefaults = (sheetType: SheetType): DefaultPrintOptions => {
 /** Save print defaults for a sheet type */
 export const setPrintDefaults = async (sheetType: SheetType, options: DefaultPrintOptions): Promise<void> => {
   try {
-    await (globalThis as any).game?.settings?.set(MOD, `printDefaults_${sheetType}`, JSON.stringify(options));
+    await setSetting(MOD, `printDefaults_${sheetType}`, JSON.stringify(options));
   } catch (e) {
     Log.warn(`Failed to save print defaults for ${sheetType}`, e);
   }

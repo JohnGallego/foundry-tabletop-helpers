@@ -5,6 +5,7 @@
  */
 
 import { Log } from "../logger";
+import { getUI } from "../types";
 
 /**
  * Build the full HTML document for the print/preview window.
@@ -34,7 +35,7 @@ function openWindow(bodyHtml: string, css: string, title: string): Window | null
   const win = window.open("", "_blank");
   if (!win) {
     Log.warn("window blocked by browser popup blocker");
-    (globalThis as any).ui?.notifications?.warn?.(
+    getUI()?.notifications?.warn?.(
       "Window was blocked. Please allow popups for this site.",
     );
     return null;

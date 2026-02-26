@@ -9,19 +9,19 @@ export const Log = {
   setLevel(level: Level) {
     currentLevel = level;
   },
-  error(...args: any[]) {
+  error(...args: unknown[]) {
     if (["error", "warn", "info", "debug"].includes(currentLevel))
       console.error(...prefix(), ...args);
   },
-  warn(...args: any[]) {
+  warn(...args: unknown[]) {
     if (["warn", "info", "debug"].includes(currentLevel))
       console.warn(...prefix(), ...args);
   },
-  info(...args: any[]) {
+  info(...args: unknown[]) {
     if (["info", "debug"].includes(currentLevel))
       console.info(...prefix(), ...args);
   },
-  debug(...args: any[]) {
+  debug(...args: unknown[]) {
     if (["debug"].includes(currentLevel)) console.debug(...prefix(), ...args);
   },
   group(label: string) {

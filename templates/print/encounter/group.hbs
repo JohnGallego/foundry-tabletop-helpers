@@ -1,0 +1,13 @@
+{{!-- Encounter Group Template --}}
+{{!-- Renders multiple NPC stat blocks for an encounter --}}
+
+<div class="fth-encounter {{paperClass}}">
+  <h1 class="fth-encounter-title">{{name}}</h1>
+  
+  <div class="fth-encounter-blocks">
+    {{#each npcBlocks}}
+    {{{this}}}
+    {{/each}}
+  </div>
+</div>
+

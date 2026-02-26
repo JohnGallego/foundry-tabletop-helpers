@@ -1,0 +1,130 @@
+{{!-- Party Summary Template --}}
+{{!-- Renders a DM reference sheet with party statistics and session tracking --}}
+
+<div class="fth-dm-screen {{paperClass}}">
+  <h1>{{name}} — DM Reference</h1>
+  
+  {{!-- Party Stats Table --}}
+  <table class="fth-dm-table">
+    <thead>
+      <tr>
+        <th class="fth-dm-col-identity">Character</th>
+        <th class="fth-dm-col-combat">Combat</th>
+        <th class="fth-dm-col-passives">Passives</th>
+        <th class="fth-dm-col-spell">Spell</th>
+        <th class="fth-dm-col-saves">Saving Throws</th>
+        <th class="fth-dm-col-skills">Proficient Skills</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each members}}
+      <tr>
+        <td class="fth-dm-identity">
+          <div class="fth-dm-name">{{name}}</div>
+          <div class="fth-dm-details">{{classInfo}}</div>
+          <div class="fth-dm-details">{{speciesBackground}}</div>
+          <div class="fth-dm-senses">{{senses}}</div>
+        </td>
+        <td class="fth-dm-combat">
+          <div class="fth-dm-stat"><span class="fth-dm-label">AC</span> <span class="fth-dm-val">{{ac}}</span></div>
+          <div class="fth-dm-stat"><span class="fth-dm-label">HP</span> <span class="fth-dm-val">{{hpMax}}</span></div>
+          <div class="fth-dm-stat"><span class="fth-dm-label">Prof</span> <span class="fth-dm-val">{{proficiency}}</span></div>
+          <div class="fth-dm-stat"><span class="fth-dm-label">Init</span> <span class="fth-dm-val">{{initiative}}</span></div>
+        </td>
+        <td class="fth-dm-passives">
+          <span class="fth-dm-passive" title="Perception">{{passivePerception}}</span>
+          <span class="fth-dm-passive" title="Insight">{{passiveInsight}}</span>
+          <span class="fth-dm-passive" title="Investigation">{{passiveInvestigation}}</span>
+        </td>
+        <td class="fth-dm-spelldc">{{spellDcDisplay}}</td>
+        <td class="fth-dm-saves">
+          {{#each saves}}
+          <span class="fth-dm-save">{{profIcon}}{{key}} {{mod}}</span>
+          {{/each}}
+        </td>
+        <td class="fth-dm-skills">{{skillsDisplay}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  {{!-- Session Tracking Cards --}}
+  <div class="fth-track-section">
+    <h2>Session Tracking</h2>
+    <div class="fth-track-grid">
+      {{#each trackingCards}}
+      <div class="fth-track-card">
+        <div class="fth-track-header">
+          <span class="fth-track-name">{{name}}</span>
+          <span class="fth-track-ac">AC {{ac}}</span>
+        </div>
+        <div class="fth-track-body">
+          {{!-- HP Tracking --}}
+          <div class="fth-track-row">
+            <span class="fth-track-label">HP</span>
+            <span class="fth-track-max">/{{hpMax}}</span>
+            <span class="fth-track-box"></span>
+          </div>
+          <div class="fth-track-row">
+            <span class="fth-track-label">Temp HP</span>
+            <span class="fth-track-box fth-track-box-sm"></span>
+          </div>
+
+          {{!-- Death Saves --}}
+          <div class="fth-track-row">
+            <span class="fth-track-label">Death</span>
+            <span class="fth-track-inline">
+              <span class="fth-death-success">✓ ☐☐☐</span>
+              <span class="fth-death-fail">✗ ☐☐☐</span>
+            </span>
+          </div>
+
+          {{!-- Short Rest --}}
+          <div class="fth-track-row">
+            <span class="fth-track-label">Short Rest</span>
+            <span class="fth-track-checks">☐☐</span>
+          </div>
+
+          {{!-- Exhaustion --}}
+          <div class="fth-track-row">
+            <span class="fth-track-label">Exhaustion</span>
+            <span class="fth-track-checks">①②③④⑤⑥</span>
+          </div>
+
+          {{!-- Spell Slots --}}
+          {{#if hasSpellSlots}}
+          <div class="fth-track-row fth-track-slots">
+            <span class="fth-track-label">Slots</span>
+            <div class="fth-slots-grid">
+              {{#each spellSlots}}
+              <span class="fth-slot-row"><span class="fth-slot-lvl">{{level}}</span>{{checkboxes}}</span>
+              {{/each}}
+              {{#if ../hasPactSlot}}
+              <span class="fth-slot-row"><span class="fth-slot-lvl">{{../pactSlotDisplay}}</span></span>
+              {{/if}}
+            </div>
+          </div>
+          {{/if}}
+
+          {{!-- Common Conditions --}}
+          <div class="fth-track-conditions">
+            <span class="fth-cond">☐Prone</span>
+            <span class="fth-cond">☐Blind</span>
+            <span class="fth-cond">☐Deaf</span>
+            <span class="fth-cond">☐Poison</span>
+            <span class="fth-cond">☐Fear</span>
+            <span class="fth-cond">☐Rstrn</span>
+            <span class="fth-cond">☐Invis</span>
+            <span class="fth-cond">☐Stun</span>
+            <span class="fth-cond">☐Charm</span>
+            <span class="fth-cond">☐Incap</span>
+            <span class="fth-cond">☐Grap</span>
+            <span class="fth-cond">☐Conc</span>
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>
+

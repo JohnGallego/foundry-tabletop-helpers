@@ -5,6 +5,7 @@
  */
 
 import { Log } from "../logger";
+import { getGame, getUI, getHooks } from "../types";
 import {
   getPrintDefaults,
   showPrintButton,
@@ -15,6 +16,7 @@ import { getExtractor } from "./extractors/base-extractor";
 import { getRenderer } from "./renderers/base-renderer";
 import { showPrintOptionsDialog } from "./print-options-dialog";
 import { openPrintWindow, openPreviewWindow } from "./print-window";
+import { preloadPrintTemplates, registerPrintHelpers } from "./renderers/template-engine";
 import type { PrintOptions, SheetType } from "./types";
 
 // Import system extractors & renderers so they self-register
@@ -144,21 +146,21 @@ async function extractAndRender(
   }
   Log.info("data extracted", { sheetType, data });
 
-  // Render HTML
+  // Render HTML (async to support template-based rendering)
   Log.info("rendering HTML", { sheetType });
   let html: string;
   switch (sheetType) {
     case "character":
-      html = renderer.renderCharacter(data, options);
+      html = await renderer.renderCharacter(data, options);
       break;
     case "npc":
-      html = renderer.renderNPC(data, options);
+      html = await renderer.renderNPC(data, options);
       break;
     case "encounter":
-      html = renderer.renderEncounterGroup(data, options);
+      html = await renderer.renderEncounterGroup(data, options);
       break;
     case "party":
-      html = renderer.renderPartySummary(data, options);
+      html = await renderer.renderPartySummary(data, options);
       break;
   }
   Log.info("HTML rendered", { sheetType, htmlLength: html?.length });
@@ -171,11 +173,11 @@ async function extractAndRender(
  */
 async function handlePrint(app: any, sheetType: SheetType): Promise<void> {
   const doc = app.document;
-  const systemId: string = (globalThis as any).game?.system?.id ?? "unknown";
+  const systemId: string = getGame()?.system?.id ?? "unknown";
 
   const extractor = getExtractor(systemId);
   if (!extractor) {
-    (globalThis as any).ui?.notifications?.warn?.(
+    getUI()?.notifications?.warn?.(
       `Print sheets not yet supported for system: ${systemId}`,
     );
     return;
@@ -183,7 +185,7 @@ async function handlePrint(app: any, sheetType: SheetType): Promise<void> {
 
   const renderer = getRenderer(systemId);
   if (!renderer) {
-    (globalThis as any).ui?.notifications?.warn?.(
+    getUI()?.notifications?.warn?.(
       `Print renderer not available for system: ${systemId}`,
     );
     return;
@@ -198,8 +200,7 @@ async function handlePrint(app: any, sheetType: SheetType): Promise<void> {
     Log.info("print flow complete", { sheetType, name: doc.name });
   } catch (err) {
     Log.error("print flow failed", { sheetType, name: doc.name, err });
-    console.error("FTH Print Error:", err);
-    (globalThis as any).ui?.notifications?.error?.(
+    getUI()?.notifications?.error?.(
       `Print failed: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
@@ -211,11 +212,11 @@ async function handlePrint(app: any, sheetType: SheetType): Promise<void> {
  */
 async function handlePreview(app: any, sheetType: SheetType): Promise<void> {
   const doc = app.document;
-  const systemId: string = (globalThis as any).game?.system?.id ?? "unknown";
+  const systemId: string = getGame()?.system?.id ?? "unknown";
 
   const extractor = getExtractor(systemId);
   if (!extractor) {
-    (globalThis as any).ui?.notifications?.warn?.(
+    getUI()?.notifications?.warn?.(
       `Print sheets not yet supported for system: ${systemId}`,
     );
     return;
@@ -223,7 +224,7 @@ async function handlePreview(app: any, sheetType: SheetType): Promise<void> {
 
   const renderer = getRenderer(systemId);
   if (!renderer) {
-    (globalThis as any).ui?.notifications?.warn?.(
+    getUI()?.notifications?.warn?.(
       `Print renderer not available for system: ${systemId}`,
     );
     return;
@@ -238,8 +239,7 @@ async function handlePreview(app: any, sheetType: SheetType): Promise<void> {
     Log.info("preview flow complete", { sheetType, name: doc.name });
   } catch (err) {
     Log.error("preview flow failed", { sheetType, name: doc.name, err });
-    console.error("FTH Preview Error:", err);
-    (globalThis as any).ui?.notifications?.error?.(
+    getUI()?.notifications?.error?.(
       `Preview failed: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
@@ -248,8 +248,16 @@ async function handlePreview(app: any, sheetType: SheetType): Promise<void> {
 /* ── Hook registration ─────────────────────────────────────── */
 
 export function registerPrintSheetHooks(): void {
+  // Register Handlebars helpers for print templates
+  registerPrintHelpers();
+
+  // Preload print templates (async, but we don't await - templates will be ready by the time user prints)
+  preloadPrintTemplates().catch(err => {
+    Log.error("Failed to preload print templates", err);
+  });
+
   // Add print and preview buttons to V2 application headers
-  (globalThis as any).Hooks?.on?.(
+  getHooks()?.on?.(
     "getHeaderControlsApplicationV2",
     (app: any, controls: any[]) =>
       safe(() => {

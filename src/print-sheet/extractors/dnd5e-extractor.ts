@@ -5,21 +5,21 @@
  */
 
 import { Log } from "../../logger";
+import { getGame } from "../../types";
 import { BaseExtractor, registerExtractor } from "./base-extractor";
 import type { PrintOptions, SectionDef, SheetType } from "../types";
 import type {
   CharacterData, NPCData, EncounterGroupData, PartySummaryData,
-  PartyMemberSummary, FeatureData, AttackData, CharacterActions, WeaponActionData,
+  PartyMemberSummary, FeatureData, CharacterActions, WeaponActionData,
 } from "./dnd5e-types";
 import type {
   Dnd5eDamageData, Dnd5eRecoveryData, Dnd5eUsesData,
-  Dnd5eAttackActivityData, Dnd5eSaveActivityData, Dnd5eBaseActivityData,
-  Dnd5eWeaponSystemData, Dnd5eRangeData,
+  Dnd5eSaveActivityData, Dnd5eRangeData,
   Dnd5eEmbedContext, Dnd5eEmbedAction, Dnd5eEmbedActionSections,
 } from "./dnd5e-system-types";
-import { getFirstFromSetOrArray, toArray } from "./dnd5e-system-types";
+import { getFirstFromSetOrArray } from "./dnd5e-system-types";
 import {
-  ABILITY_KEYS, abilityLabel, buildFavoritesSet, resolveTraitSet,
+  buildFavoritesSet, resolveTraitSet,
   extractAbilities, extractSkills, extractCombat, extractDetails,
   extractTraits, extractSpellcasting, extractInventory, extractFeatures,
 } from "./dnd5e-extract-helpers";
@@ -64,7 +64,7 @@ export class Dnd5eExtractor extends BaseExtractor {
 
   /* ── Character ──────────────────────────────────────────── */
 
-  async extractCharacter(actor: any, options: PrintOptions): Promise<CharacterData> {
+  async extractCharacter(actor: any, _options: PrintOptions): Promise<CharacterData> {
     Log.info("dnd5e: extracting character", { name: actor?.name });
     const favorites = buildFavoritesSet(actor);
 
@@ -495,10 +495,10 @@ export class Dnd5eExtractor extends BaseExtractor {
                         damageFormula.includes("@dex");
       }
       if (!damageTypes) {
+        const baseTypes = sys?.damage?.base?.types;
+        const typesArray: string[] = baseTypes ? Array.from(baseTypes as Iterable<string>) : [];
         damageTypes = labels.damageTypes ??
-          Array.from(sys?.damage?.base?.types ?? [])
-            .map((t: string) => this.capitalizeFirst(t))
-            .join(", ") ?? "";
+          typesArray.map((t) => this.capitalizeFirst(t)).join(", ") ?? "";
       }
 
       // Calculate the ability modifier for this weapon
@@ -652,7 +652,7 @@ export class Dnd5eExtractor extends BaseExtractor {
     actor: any,
     ctx: Dnd5eEmbedContext,
     favorites: Set<string>,
-    options: PrintOptions,
+    _options: PrintOptions,
   ): Promise<NPCData> {
     const details = actor.system?.details ?? {};
     const attrs = actor.system?.attributes ?? {};
@@ -830,44 +830,6 @@ export class Dnd5eExtractor extends BaseExtractor {
   }
 
   /**
-   * Parse a uses label string (e.g., "3/Day", "Recharge 5-6") into our uses structure.
-   */
-  private parseUsesLabel(label: string, usesData?: any): FeatureData["uses"] {
-    if (!label) return null;
-
-    // Handle "Recharge X-6" or "Recharge 6"
-    const rechargeMatch = label.match(/Recharge\s*(\d+)(?:[–-]6)?/i);
-    if (rechargeMatch) {
-      return {
-        value: usesData?.value ?? 0,
-        max: usesData?.max ?? 1,
-        recovery: label, // Keep the full recharge text
-      };
-    }
-
-    // Handle "X/Day", "X/Short Rest", "X/Long Rest"
-    const usesMatch = label.match(/(\d+)\s*\/\s*(.+)/i);
-    if (usesMatch) {
-      const max = parseInt(usesMatch[1]) || 1;
-      const period = usesMatch[2].trim();
-      return {
-        value: usesData?.value ?? max,
-        max,
-        recovery: period.toLowerCase() === "day" ? "day" :
-                  period.toLowerCase().includes("short") ? "sr" :
-                  period.toLowerCase().includes("long") ? "lr" : period,
-      };
-    }
-
-    // Default: return the raw label as recovery
-    return {
-      value: usesData?.value ?? 0,
-      max: usesData?.max ?? 0,
-      recovery: label,
-    };
-  }
-
-  /**
    * Extract item uses data from dnd5e 5.x structure.
    * Handles various recovery formats:
    * - uses.recovery as Array<{period, formula, type}>
@@ -956,7 +918,7 @@ export class Dnd5eExtractor extends BaseExtractor {
    * Extract senses from embed context or actor.
    * Falls back to actor.system.attributes.senses if needed.
    */
-  private extractSensesFromContext(ctx: Dnd5eEmbedContext, actor: any): { key: string; value: number | string }[] {
+  private extractSensesFromContext(_ctx: Dnd5eEmbedContext, actor: any): { key: string; value: number | string }[] {
     const senses: { key: string; value: number | string }[] = [];
     const attrSenses = actor.system?.attributes?.senses ?? {};
 
@@ -1000,7 +962,7 @@ export class Dnd5eExtractor extends BaseExtractor {
   /**
    * Fallback: Manual NPC extraction (when _prepareEmbedContext is not available).
    */
-  private async extractNPCManual(actor: any, favorites: Set<string>, options: PrintOptions): Promise<NPCData> {
+  private async extractNPCManual(actor: any, favorites: Set<string>, _options: PrintOptions): Promise<NPCData> {
     Log.debug("Using manual NPC extraction", { name: actor.name });
     const items = actor.items ?? [];
 
@@ -1292,7 +1254,7 @@ export class Dnd5eExtractor extends BaseExtractor {
 
   /* ── Party Summary ──────────────────────────────────────── */
 
-  async extractPartySummary(group: any, options: PrintOptions): Promise<PartySummaryData> {
+  async extractPartySummary(group: any, _options: PrintOptions): Promise<PartySummaryData> {
     Log.info("dnd5e: extracting party summary", { name: group?.name });
 
     const members = this.getGroupMembers(group);
@@ -1418,7 +1380,7 @@ export class Dnd5eExtractor extends BaseExtractor {
 
     // Fallback: if the group has an items collection with actor links
     if (actors.length === 0 && group.system?.members) {
-      const game = (globalThis as any).game;
+      const game = getGame();
       if (Array.isArray(group.system.members)) {
         for (const ref of group.system.members) {
           const id = ref.actor ?? ref;
@@ -1474,7 +1436,7 @@ export class Dnd5eExtractor extends BaseExtractor {
 
       if (dmgInfo) {
         // Replace patterns like "7 ()" or "7()" with "7 (2d6)"
-        description = description.replace(/(\d+)\s*\(\s*\)/g, (match, avg) => {
+        description = description.replace(/(\d+)\s*\(\s*\)/g, (_match: string, avg: string) => {
           // Use the formula we found, or just the damage dice part
           return `${avg} (${dmgInfo.formula})`;
         });
@@ -1572,7 +1534,6 @@ export class Dnd5eExtractor extends BaseExtractor {
   /** Extract attack/damage data from an item's activities */
   private extractAttackData(item: any, actor?: any): FeatureData["attack"] | undefined {
     // Handle weapons and feats with damage activities
-    const isWeapon = item.type === "weapon";
     const activities = item.system?.activities;
     if (!activities) return undefined;
 

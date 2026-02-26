@@ -7,6 +7,7 @@
  */
 
 import { Log } from "../../logger";
+import { getGame } from "../../types";
 
 /**
  * Query a Foundry compendium pack by collection id and entry name.
@@ -17,7 +18,7 @@ export async function getCompendiumEntry(
   entryName: string,
 ): Promise<any | null> {
   try {
-    const pack: any = (globalThis as any).game?.packs?.get?.(packId);
+    const pack: any = getGame()?.packs?.get?.(packId);
     if (!pack) {
       Log.debug(`compendium pack not found: ${packId}`);
       return null;
@@ -46,7 +47,7 @@ export async function getCompendiumEntries(
 ): Promise<Map<string, any>> {
   const results = new Map<string, any>();
   try {
-    const pack: any = (globalThis as any).game?.packs?.get?.(packId);
+    const pack: any = getGame()?.packs?.get?.(packId);
     if (!pack) return results;
     await pack.getIndex();
     for (const name of entryNames) {

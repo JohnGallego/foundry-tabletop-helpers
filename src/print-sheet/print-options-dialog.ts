@@ -6,6 +6,7 @@
  */
 
 import { Log } from "../logger";
+import { getDialogClass } from "../types";
 import type { DefaultPrintOptions } from "../settings";
 import type { PaperSize, PortraitMode, PrintOptions, SectionDef, SheetType } from "./types";
 
@@ -127,7 +128,7 @@ export async function showPrintOptionsDialog(
   sections: SectionDef[],
   defaults?: DefaultPrintOptions,
 ): Promise<PrintOptions | null> {
-  const DialogClass: any = (globalThis as any).Dialog;
+  const DialogClass = getDialogClass();
   if (!DialogClass) {
     Log.warn("Dialog class not available; using defaults");
     const sectionDefaults: Record<string, boolean> = {};
@@ -141,15 +142,18 @@ export async function showPrintOptionsDialog(
 
   const content = buildDialogContent(sheetType, sections, defaults);
 
+  // Cast to a more usable type since we've already verified it exists
+  const Dialog = DialogClass as new (options: Record<string, unknown>) => { render: (force: boolean) => void };
+
   return new Promise<PrintOptions | null>((resolve) => {
-    new DialogClass({
+    new Dialog({
       title: `Print ${SHEET_LABELS[sheetType]}`,
       content,
       buttons: {
         print: {
           icon: '<i class="fa-solid fa-print"></i>',
           label: "Print",
-          callback: (html: any) => resolve(parseForm(html, sections)),
+          callback: (html: HTMLElement | JQuery) => resolve(parseForm(html, sections)),
         },
         cancel: {
           icon: '<i class="fa-solid fa-xmark"></i>',

@@ -3,6 +3,7 @@
  * Kept separate from the main extractor class to stay manageable.
  */
 
+import { getConfig } from "../../types";
 import type {
   AbilityData, SkillData, CombatData, CharacterDetails, ClassInfo,
   TraitData, SpellcastingData, SpellSlotData, SpellData,
@@ -10,8 +11,7 @@ import type {
 } from "./dnd5e-types";
 import type {
   Dnd5eAbilityData, Dnd5eAbilitiesData, Dnd5eAbilitySaveData,
-  Dnd5eSkillData, Dnd5eSkillsData, Dnd5eTraitData,
-  Dnd5eActorAttributesData, Dnd5eActorDetailsData,
+  Dnd5eTraitData,
 } from "./dnd5e-system-types";
 import { toArray } from "./dnd5e-system-types";
 
@@ -41,12 +41,14 @@ const FEAT_CATEGORY_LABELS: Record<string, string> = {
 /* ── Label helpers ────────────────────────────────────────── */
 
 export function abilityLabel(key: string): string {
-  const cfg = (globalThis as any).CONFIG?.DND5E?.abilities;
+  const cfg = (getConfig()?.DND5E as Record<string, unknown> | undefined)?.abilities as
+    Record<string, { label?: string }> | undefined;
   return cfg?.[key]?.label ?? ABILITY_LABELS[key] ?? key.toUpperCase();
 }
 
 function skillLabel(key: string): string {
-  const cfg = (globalThis as any).CONFIG?.DND5E?.skills;
+  const cfg = (getConfig()?.DND5E as Record<string, unknown> | undefined)?.skills as
+    Record<string, { label?: string }> | undefined;
   return cfg?.[key]?.label ?? SKILL_LABELS[key] ?? key;
 }
 

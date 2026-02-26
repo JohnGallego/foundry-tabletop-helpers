@@ -32,13 +32,22 @@ fs.copyFileSync(
   path.join(root, "dist", "README.md")
 );
 
-/** Copy templates (if present) */
+/** Copy templates recursively (if present) */
+function copyDirRecursive(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 const tplDir = path.join(root, "templates");
 if (fs.existsSync(tplDir)) {
-  const outDir = path.join(root, "dist", "templates");
-  fs.mkdirSync(outDir, { recursive: true });
-  for (const entry of fs.readdirSync(tplDir)) {
-    fs.copyFileSync(path.join(tplDir, entry), path.join(outDir, entry));
-  }
+  copyDirRecursive(tplDir, path.join(root, "dist", "templates"));
 }
 console.log("Manifest built → dist/module.json");

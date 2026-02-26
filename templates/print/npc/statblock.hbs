@@ -1,0 +1,91 @@
+{{!-- NPC Stat Block Template --}}
+{{!-- Renders a complete D&D 5e (2024) style stat block --}}
+
+<div class="{{blockClass}} {{paperClass}}">
+  {{!-- Header --}}
+  <div class="fth-sb-header">
+    {{#if hasPortrait}}
+    <img class="fth-sb-portrait" src="{{portraitUrl}}" alt="">
+    {{/if}}
+    <h1>{{name}}</h1>
+    <div class="fth-sb-meta">{{meta}}</div>
+  </div>
+  <hr class="fth-sb-divider">
+
+  {{!-- Core Stats --}}
+  {{#if showStats}}
+  <div class="fth-sb-stats">
+    <p><strong>AC</strong> {{{ac}}} &nbsp; <strong>Initiative</strong> {{initiative}}</p>
+    <p><strong>HP</strong> {{{hp}}}</p>
+    <p><strong>Speed</strong> {{speed}}</p>
+  </div>
+  <hr class="fth-sb-divider">
+  {{/if}}
+
+  {{!-- Abilities Table --}}
+  {{#if showAbilities}}
+  <table class="fth-sb-abilities fth-sb-abilities-2024">
+    <thead>
+      <tr>
+        <th></th><th></th><th>Mod</th><th>Save</th>
+        <th></th><th></th><th>Mod</th><th>Save</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each abilityRows}}
+      <tr>
+        {{#if left}}
+        <th>{{left.key}}</th>
+        <td>{{left.value}}</td>
+        <td>{{left.mod}}</td>
+        <td>{{left.save}}</td>
+        {{else}}
+        <td></td><td></td><td></td><td></td>
+        {{/if}}
+        {{#if right}}
+        <th>{{right.key}}</th>
+        <td>{{right.value}}</td>
+        <td>{{right.mod}}</td>
+        <td>{{right.save}}</td>
+        {{else}}
+        <td></td><td></td><td></td><td></td>
+        {{/if}}
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  <hr class="fth-sb-divider">
+  {{/if}}
+
+  {{!-- Traits (skills, resistances, senses, languages, CR) --}}
+  {{#if traitLines.length}}
+  <div class="fth-sb-traits">
+    {{#each traitLines}}
+    <p><strong>{{label}}</strong> {{{value}}}</p>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{!-- Feature Sections (Traits, Actions, Bonus Actions, etc.) --}}
+  {{#each featureSections}}
+  {{#if hasEntries}}
+  <div class="fth-sb-section">
+    <div class="fth-sb-section-title">{{title}}</div>
+    {{#if intro}}
+    <p class="fth-sb-trait"><em>{{intro}}</em></p>
+    {{/if}}
+    {{#each entries}}
+    <p class="fth-sb-trait">
+      <strong>{{nameWithUses}}.</strong>
+      {{#if isHtml}}
+      {{{description}}}
+      {{else}}
+      {{description}}
+      {{/if}}
+    </p>
+    {{/each}}
+  </div>
+  {{/if}}
+  {{/each}}
+</div>
+
