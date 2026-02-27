@@ -192,7 +192,7 @@ export function transformCharacterToViewModel(
     inventory,
     hasInventory: inventory.items.length > 0,
     currency,
-    hasCurrency: currency.coins.some(c => c.hasCoins),
+    hasCurrency: true, // Always show currency widget
     spellCards,
     hasSpellCards: spellCards.length > 0,
     backstory: data.backstory,
@@ -679,6 +679,10 @@ function buildInventoryItem(i: InventoryItem, isIndented: boolean): InventoryIte
     ? `${i.price.value} ${i.price.denomination}`
     : "";
 
+  // Format weight display (total weight = quantity × unit weight)
+  const totalWeight = i.weight ? i.quantity * i.weight : 0;
+  const weight = totalWeight > 0 ? `${Math.round(totalWeight * 100) / 100} lb` : "";
+
   return {
     eqIndicator: i.equipped ? "■" : "—",
     imgUrl: i.img || "",
@@ -693,6 +697,8 @@ function buildInventoryItem(i: InventoryItem, isIndented: boolean): InventoryIte
     quantityDisplay: i.quantity > 1 ? `×${i.quantity}` : "",
     cost,
     hasCost: !!cost,
+    weight,
+    hasWeight: !!weight,
     isContainerGroup: false,
     containerItems: [],
   };

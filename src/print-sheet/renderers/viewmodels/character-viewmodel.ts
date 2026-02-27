@@ -273,6 +273,8 @@ export interface InventoryItemViewModel {
   quantityDisplay: string; // "×3" or "" if 1
   cost: string;           // "50 gp" or ""
   hasCost: boolean;
+  weight: string;         // "2 lb" or ""
+  hasWeight: boolean;
   // Container groups
   isContainerGroup: boolean;
   containerItems: InventoryItemViewModel[];

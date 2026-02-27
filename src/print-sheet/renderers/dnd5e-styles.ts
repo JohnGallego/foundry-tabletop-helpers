@@ -458,6 +458,8 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   background: #faf8f5;
   padding: 16px;
   line-height: 1.35;
+  max-width: 8.5in;
+  margin: 0 auto;
 }
 
 /* ─── Header ───────────────────────────────────────────────────────────── */
@@ -473,18 +475,20 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   margin-bottom: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
 }
-.fth-pro-header-left { }
-.fth-pro-portrait-frame {
-  width: 72px; height: 72px;
-  border: 2px solid #d4a574;
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+.fth-pro-header-portrait {
+  height: 80px;
+  width: 80px;
+  flex-shrink: 0;
 }
-.fth-pro-portrait { width: 100%; height: 100%; object-fit: cover; }
+.fth-pro-portrait {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
 .fth-pro-header-center { text-align: center; }
 .fth-pro-name {
-  font-size: 22pt;
+  font-size: 24pt;
   font-weight: 700;
   color: #f4e4bc;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
@@ -516,38 +520,37 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   color: #e74c3c;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
-.fth-pro-hp-current, .fth-pro-hp-temp {
+.fth-pro-hp-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 2px;
+  gap: 8px;
+  margin-top: 4px;
 }
-.fth-pro-hp-current-label, .fth-pro-hp-temp-label {
+.fth-pro-hp-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.fth-pro-hp-cell-label {
   font-size: 6pt;
-  color: #999;
+  color: #d4a574;
   text-transform: uppercase;
 }
 .fth-pro-hp-box {
   display: inline-block;
-  width: 32px; height: 16px;
+  width: 36px;
+  height: 18px;
   border: 1px solid #666;
   background: #fff;
   border-radius: 2px;
 }
-.fth-pro-hp-box-sm {
-  display: inline-block;
-  width: 24px; height: 14px;
-  border: 1px solid #666;
-  background: #e8e8e8;
-  border-radius: 2px;
-}
 
-/* ─── Stats Bar ────────────────────────────────────────────────────────── */
-.fth-pro-stats-bar {
+/* ─── Core Stats Row (Stats + Saves + Death Saves) ────────────────────── */
+.fth-pro-core-row {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 10px;
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
@@ -555,6 +558,7 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   background: linear-gradient(145deg, #f5f0e6 0%, #e8dcc8 100%);
   border: 2px solid #8b7355;
   border-radius: 8px;
@@ -574,6 +578,53 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   color: #666;
   letter-spacing: 0.5px;
 }
+
+/* ─── Compact Saves Card (in core row) ─────────────────────────────────── */
+.fth-pro-core-card {
+  background: linear-gradient(145deg, #f5f0e6 0%, #e8dcc8 100%);
+  border: 2px solid #8b7355;
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.fth-pro-core-card-title {
+  font-size: 7pt;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.5px;
+  text-align: center;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.fth-pro-saves-compact { min-width: 100px; }
+.fth-pro-saves-mini {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 8px;
+}
+.fth-pro-save-mini {
+  font-size: 8pt;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.fth-pro-save-mini-val {
+  font-weight: 700;
+  color: #2c1810;
+  min-width: 20px;
+}
+
+/* ─── Compact Death Saves Card (in core row) ───────────────────────────── */
+.fth-pro-death-compact { min-width: 70px; }
+.fth-pro-death-mini { font-size: 9pt; }
+.fth-pro-death-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0;
+}
+.fth-pro-death-success { color: #2d6a2d; }
+.fth-pro-death-fail { color: #a02020; }
 
 /* ─── Ability Scores (Hex Layout) ──────────────────────────────────────── */
 .fth-pro-abilities {
@@ -1021,6 +1072,53 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-pro-feat strong { color: #2c1810; }
 .fth-pro-feat-desc { color: #555; }
 
+/* ─── Currency Widget (in card) ────────────────────────────────────────── */
+.fth-pro-currency-card .fth-pro-currency-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.fth-pro-currency-card .fth-pro-currency-current { margin-bottom: 6px; }
+.fth-pro-coin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 40px;
+}
+.fth-pro-coin-icon { font-size: 14pt; }
+.fth-pro-coin-val {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #2c1810;
+}
+.fth-pro-coin-label {
+  font-size: 6pt;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: 0.5px;
+}
+.fth-pro-currency-input {
+  padding-top: 6px;
+  border-top: 1px dashed #c9b896;
+}
+.fth-pro-coin-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.fth-pro-coin-input-box {
+  width: 36px;
+  height: 20px;
+  border: 1px solid #c9b896;
+  border-radius: 3px;
+  background: #fff;
+  text-align: center;
+  font-size: 9pt;
+  font-family: inherit;
+  color: #2c1810;
+}
+
 /* ─── Inventory Section ────────────────────────────────────────────────── */
 .fth-pro-inv-weight {
   font-size: 9pt;
@@ -1045,7 +1143,11 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   border-radius: 2px;
   object-fit: cover;
 }
+.fth-pro-inv-eq { font-size: 8pt; color: #666; width: 12px; }
 .fth-pro-inv-name { flex: 1; }
+.fth-pro-inv-qty { font-size: 7pt; color: #666; margin-left: 4px; }
+.fth-pro-inv-wt { font-size: 7pt; color: #888; margin-left: 4px; }
+.fth-pro-inv-cost { font-size: 7pt; color: #888; margin-left: 4px; }
 .fth-pro-inv-meta { font-size: 7pt; color: #888; }
 .fth-pro-inv-container { margin-bottom: 4px; }
 .fth-pro-inv-container-head { font-weight: 600; }

@@ -198,6 +198,47 @@
   {{/if}}
   {{/if}}
 
+  {{!-- Spellcasting Section (after Actions for combat focus) --}}
+  {{#if showSpells}}
+  {{#if hasSpellcasting}}
+  <section class="fth-pro-section fth-pro-spellcasting">
+    <div class="fth-pro-section-header">
+      <span class="fth-pro-section-icon">✨</span>
+      <h2>Spellcasting</h2>
+      <div class="fth-pro-spell-stats">
+        <span class="fth-pro-spell-stat"><strong>Mod</strong> {{spellcasting.modifier}}</span>
+        <span class="fth-pro-spell-stat"><strong>Attack</strong> {{spellcasting.attackMod}}</span>
+        <span class="fth-pro-spell-stat"><strong>DC</strong> {{spellcasting.saveDC}}</span>
+      </div>
+    </div>
+
+    {{#each spellcasting.spellLevels}}
+    <div class="fth-pro-spell-level">
+      <div class="fth-pro-spell-level-header">
+        <span class="fth-pro-level-name">{{levelLabel}}</span>
+        {{#if hasSlots}}<span class="fth-pro-slots">{{slotCheckboxes}} Slots</span>{{/if}}
+      </div>
+      <table class="fth-pro-spell-table">
+        <thead><tr><th>Name</th><th>Time</th><th>Range</th><th>Hit/DC</th><th>Effect</th><th>Notes</th></tr></thead>
+        <tbody>
+          {{#each spells}}
+          <tr>
+            <td class="fth-pro-spell-name">{{#if favStar}}<span class="fth-fav">{{favStar}}</span>{{/if}}{{name}} {{tags}}</td>
+            <td>{{time}}</td>
+            <td>{{range}}</td>
+            <td>{{hitDc}}</td>
+            <td>{{effect}}</td>
+            <td class="fth-pro-spell-notes">{{notes}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{/each}}
+  </section>
+  {{/if}}
+  {{/if}}
+
   {{!-- Two Column Layout: Skills/Senses + Proficiencies/Defenses --}}
   <div class="fth-pro-columns">
     <div class="fth-pro-col-left">
@@ -284,49 +325,34 @@
           <span class="fth-pro-rest-checks">☐</span>
         </div>
       </div>
+
+      {{!-- Currency Widget --}}
+      {{#if hasCurrency}}
+      <div class="fth-pro-card fth-pro-currency-card">
+        <div class="fth-pro-card-header">
+          <span class="fth-pro-card-icon">💰</span>
+          <h2>Currency</h2>
+        </div>
+        <div class="fth-pro-currency-row fth-pro-currency-current">
+          {{#each currency.coins}}
+          <div class="fth-pro-coin">
+            <span class="fth-pro-coin-icon">{{icon}}</span>
+            <span class="fth-pro-coin-val">{{amountDisplay}}</span>
+            <span class="fth-pro-coin-label">{{abbr}}</span>
+          </div>
+          {{/each}}
+        </div>
+        <div class="fth-pro-currency-row fth-pro-currency-input">
+          {{#each currency.coins}}
+          <div class="fth-pro-coin-input">
+            <input type="text" class="fth-pro-coin-input-box" aria-label="{{abbr}} change">
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
     </div>
   </div>
-
-  {{!-- Spellcasting Section --}}
-  {{#if showSpells}}
-  {{#if hasSpellcasting}}
-  <section class="fth-pro-section fth-pro-spellcasting">
-    <div class="fth-pro-section-header">
-      <span class="fth-pro-section-icon">✨</span>
-      <h2>Spellcasting</h2>
-      <div class="fth-pro-spell-stats">
-        <span class="fth-pro-spell-stat"><strong>Mod</strong> {{spellcasting.modifier}}</span>
-        <span class="fth-pro-spell-stat"><strong>Attack</strong> {{spellcasting.attackMod}}</span>
-        <span class="fth-pro-spell-stat"><strong>DC</strong> {{spellcasting.saveDC}}</span>
-      </div>
-    </div>
-
-    {{#each spellcasting.spellLevels}}
-    <div class="fth-pro-spell-level">
-      <div class="fth-pro-spell-level-header">
-        <span class="fth-pro-level-name">{{levelLabel}}</span>
-        {{#if hasSlots}}<span class="fth-pro-slots">{{slotCheckboxes}} Slots</span>{{/if}}
-      </div>
-      <table class="fth-pro-spell-table">
-        <thead><tr><th>Name</th><th>Time</th><th>Range</th><th>Hit/DC</th><th>Effect</th><th>Notes</th></tr></thead>
-        <tbody>
-          {{#each spells}}
-          <tr>
-            <td class="fth-pro-spell-name">{{#if favStar}}<span class="fth-fav">{{favStar}}</span>{{/if}}{{name}} {{tags}}</td>
-            <td>{{time}}</td>
-            <td>{{range}}</td>
-            <td>{{hitDc}}</td>
-            <td>{{effect}}</td>
-            <td class="fth-pro-spell-notes">{{notes}}</td>
-          </tr>
-          {{/each}}
-        </tbody>
-      </table>
-    </div>
-    {{/each}}
-  </section>
-  {{/if}}
-  {{/if}}
 
   {{!-- Features Section --}}
   {{#if showFeatures}}
@@ -360,33 +386,6 @@
       <span class="fth-pro-inv-weight">{{inventory.totalWeight}}</span>
     </div>
 
-    {{!-- Currency Widget --}}
-    {{#if hasCurrency}}
-    <div class="fth-pro-currency">
-      <div class="fth-pro-currency-row fth-pro-currency-current">
-        {{#each currency.coins}}
-        <div class="fth-pro-coin {{#unless hasCoins}}fth-pro-coin-empty{{/unless}}">
-          <span class="fth-pro-coin-icon">{{icon}}</span>
-          <span class="fth-pro-coin-val">{{amountDisplay}}</span>
-          <span class="fth-pro-coin-label">{{abbr}}</span>
-        </div>
-        {{/each}}
-        <div class="fth-pro-coin fth-pro-coin-total">
-          <span class="fth-pro-coin-label">Total:</span>
-          <span class="fth-pro-coin-val">{{currency.totalGpValue}}</span>
-        </div>
-      </div>
-      <div class="fth-pro-currency-row fth-pro-currency-input">
-        {{#each currency.coins}}
-        <div class="fth-pro-coin-input">
-          <span class="fth-pro-coin-icon-sm">{{icon}}</span>
-          <span class="fth-pro-coin-box">☐☐☐☐</span>
-        </div>
-        {{/each}}
-      </div>
-    </div>
-    {{/if}}
-
     <div class="fth-pro-inv-grid">
       {{#each inventory.items}}
       {{#if isContainerGroup}}
@@ -396,6 +395,7 @@
           {{#if hasImg}}<img class="fth-pro-inv-icon" src="{{imgUrl}}" alt="">{{/if}}
           <span class="fth-pro-inv-name">{{{favStar}}}{{name}}</span>
           {{#if quantityDisplay}}<span class="fth-pro-inv-qty">{{quantityDisplay}}</span>{{/if}}
+          {{#if hasWeight}}<span class="fth-pro-inv-wt">{{weight}}</span>{{/if}}
           {{#if hasCost}}<span class="fth-pro-inv-cost">{{cost}}</span>{{/if}}
           {{#if usesDisplay}}<span class="fth-pro-uses">{{usesDisplay}}</span>{{/if}}
         </div>
@@ -405,6 +405,7 @@
           {{#if hasImg}}<img class="fth-pro-inv-icon" src="{{imgUrl}}" alt="">{{/if}}
           <span class="fth-pro-inv-name">{{{favStar}}}{{name}}</span>
           {{#if quantityDisplay}}<span class="fth-pro-inv-qty">{{quantityDisplay}}</span>{{/if}}
+          {{#if hasWeight}}<span class="fth-pro-inv-wt">{{weight}}</span>{{/if}}
           {{#if hasCost}}<span class="fth-pro-inv-cost">{{cost}}</span>{{/if}}
           {{#if usesDisplay}}<span class="fth-pro-uses">{{usesDisplay}}</span>{{/if}}
         </div>
@@ -416,6 +417,7 @@
         {{#if hasImg}}<img class="fth-pro-inv-icon" src="{{imgUrl}}" alt="">{{/if}}
         <span class="fth-pro-inv-name">{{{favStar}}}{{name}}</span>
         {{#if quantityDisplay}}<span class="fth-pro-inv-qty">{{quantityDisplay}}</span>{{/if}}
+        {{#if hasWeight}}<span class="fth-pro-inv-wt">{{weight}}</span>{{/if}}
         {{#if hasCost}}<span class="fth-pro-inv-cost">{{cost}}</span>{{/if}}
         {{#if usesDisplay}}<span class="fth-pro-uses">{{usesDisplay}}</span>{{/if}}
       </div>
