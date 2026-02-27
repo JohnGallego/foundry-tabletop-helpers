@@ -4,42 +4,36 @@ A set of quality-of-life helpers for Foundry VTT, optimized for touchscreen tabl
 
 ## Features
 
-### 🖨️ Print Character Sheets
-Generate print-ready character sheets optimized for physical use at the table.
+### 🖨️ Print & Preview Sheets
+Generate print-ready sheets for your characters, NPCs, encounters, and party — optimized for physical use at the table or as a digital PDF reference.
 
-**Pro Sheet Style** — A premium character sheet designed to look like a high-quality printed RPG product:
-- Clean, light-themed layout optimized for printing (saves ink, high readability)
-- Organized sections: Header, Combat Stats, Abilities, Senses, Actions, Spellcasting, Skills, Proficiencies, Features, Inventory
-- Currency tracking widget with write-in boxes for session use
-- **Intelligent feature summaries** — verbose class features and feats are automatically condensed for print:
-  - *Curated SRD summaries* — hand-crafted, high-quality summaries for SRD 2024 content (Alert, Grappler, Magic Initiate, Sneak Attack, and more)
-  - *Runtime structural parser* — for PHB, DMG, or homebrew content the module hasn't seen before, it reads the description you already own and extracts the bold-headed benefit pattern (`**Benefit Name.** First sentence.`) on the fly — no copyrighted text is ever bundled
-  - *Qualified partial matching* — a Cleric's "Spellcasting (Cleric)" correctly matches the Spellcasting summary while unrelated features like "Skilled" are never confused with "Ki"
-  - *Live variable resolution* — Foundry's internal `[[lookup @prof]]` placeholders are replaced with real values (e.g. `proficiency bonus 3`) before printing, eliminating `(currently )` artefacts; character-specific tokens like sneak attack dice count, ki points, and lay on hands pool are also resolved against the current character
-- Page-break aware layout to keep related sections together
+- **Premium layout** — clean, light-themed design that saves ink and stays readable at the table
+- **Everything in one place** — ability scores, saves, combat stats, actions, spellcasting, skills, features, inventory, and backstory all on a single organized sheet
+- **Smart feature summaries** — class features and feats are automatically condensed into concise, table-ready descriptions that show your character's actual values (e.g. "Sneak Attack: 3d6", "Ki Points: 5")
+- **Currency tracking widget** — write-in boxes for tracking gold, silver, and copper during a session
+- **Configurable sections** — choose exactly which sections to include each time you print
 
-**Supported Print Types:**
-- **Characters** — Full character sheets with all details
-- **NPCs** — Monster/NPC stat blocks
-- **Parties** — Summary of all party members
-- **Encounters** — Multiple NPC stat blocks grouped together
+**Supported sheet types:**
+- **Characters** — full character sheets with all details
+- **NPCs** — monster/NPC stat blocks
+- **Parties** — a summary table of all party members
+- **Encounters** — multiple NPC stat blocks grouped on one sheet
 
-**How to Use:**
-1. Right-click an Actor in the sidebar → "Print Sheet"
-2. Select print options (style, sections to include)
-3. Print or save as PDF
+**How to use:**
+1. Right-click any Actor in the sidebar → **"FTTH - Print"** or **"FTTH - Preview"**
+2. Select which sections to include and your paper size
+3. Print, or save as PDF from your browser's print dialog
 
 ### 🔄 Window Rotation
 - Adds a Rotate/Flip control to application windows. Default rotates 90° per press; optionally switch to 180° flip in settings.
 - Includes prebuilt macros to rotate all open windows (90° clockwise/counterclockwise, and 180°). A world compendium "FTH Macros" is auto-created for drag-and-drop.
 
 ## Settings
-- Rotation: Choose how much each press rotates
-  - Rotate 90° (default): cycles 0 → 90 → 180 → 270 → 0
-  - Flip 180°: toggles 0 ↔ 180°
-- Animations: Enable or disable snappy rotation animations (default: enabled). Uses a polished easing curve for a professional feel.
-
-- Log Level: Controls console verbosity (set to debug when troubleshooting).
+- **Print Access** *(GM only)* — Control who can use the print and preview features: everyone (default) or GM only.
+- **Print Defaults** — Set default paper size and which sections are pre-selected for each sheet type.
+- **Rotation** — Choose how much each press rotates: 90° steps (default) or 180° flip.
+- **Animations** — Enable or disable snappy rotation animations (default: enabled).
+- **Log Level** — Controls console verbosity (set to "debug" when troubleshooting).
 ## Macros
 - On world load, if you are the GM, the module ensures a world compendium named "FTH Macros" containing:
   - Rotate All 90° (CW)

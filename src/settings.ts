@@ -13,8 +13,8 @@ import {
 
 export type RotMode = 90 | 180;
 
-/** Character sheet visual style */
-export type CharacterSheetStyle = "classic" | "pro";
+/** Who may access print/preview features */
+export type PrintAccess = "everyone" | "gm";
 
 /** Default print options structure */
 export interface DefaultPrintOptions {
@@ -133,38 +133,19 @@ export function registerSettings(): void {
 
   /* ── Print Sheet Settings ─────────────────────────────────── */
 
-  // Character sheet style (Classic vs Pro)
-  settings.register(MOD, "characterSheetStyle", {
-    name: "Character Sheet Style",
-    hint: "Choose the visual style for printed character sheets. 'Pro' offers a premium, RPG-inspired look. 'Classic' is clean and functional.",
-    scope: "client",
+  // Print access (GM-configurable, world-scoped)
+  settings.register(MOD, "printAccess", {
+    name: "Print Access",
+    hint: "Control who can use the Print and Preview features. 'Everyone' lets players print their own characters. 'GM Only' hides the buttons for players.",
+    scope: "world",
     config: true,
     type: String,
     choices: {
-      pro: "Pro (Premium RPG Style)",
-      classic: "Classic (Clean & Functional)",
+      everyone: "Everyone",
+      gm: "GM Only",
     },
-    default: "pro",
-  });
-
-  // Print button visibility
-  settings.register(MOD, "showPrintButton", {
-    name: "Show Print Button",
-    hint: "Show the Print button on character, NPC, and group sheets.",
-    scope: "client",
-    config: true,
-    type: Boolean,
-    default: true,
-  });
-
-  // Preview button visibility
-  settings.register(MOD, "showPreviewButton", {
-    name: "Show Preview Button",
-    hint: "Show a Preview button that opens the print view without printing (useful for digital reference).",
-    scope: "client",
-    config: true,
-    type: Boolean,
-    default: true,
+    default: "everyone",
+    restricted: true,
   });
 
   // Show print options dialog
@@ -339,12 +320,13 @@ export const targetUserIds = (): string[] => {
 
 /* ── Print Settings Getters ────────────────────────────────── */
 
-export const showPrintButton = (): boolean => {
-  return getSetting<boolean>(MOD, "showPrintButton") ?? true;
-};
-
-export const showPreviewButton = (): boolean => {
-  return getSetting<boolean>(MOD, "showPreviewButton") ?? true;
+/** Returns true if the current user is allowed to use print/preview features. */
+export const canUsePrintFeature = (): boolean => {
+  const access = getSetting<string>(MOD, "printAccess") ?? "everyone";
+  if (access === "gm") {
+    return getGame()?.user?.isGM ?? false;
+  }
+  return true;
 };
 
 export const showPrintOptionsDialog = (): boolean => {
@@ -373,8 +355,4 @@ export const setPrintDefaults = async (sheetType: SheetType, options: DefaultPri
   }
 };
 
-/** Get the character sheet visual style preference */
-export const getCharacterSheetStyle = (): CharacterSheetStyle => {
-  const style = getSetting<string>(MOD, "characterSheetStyle");
-  return style === "classic" ? "classic" : "pro";
-};
+

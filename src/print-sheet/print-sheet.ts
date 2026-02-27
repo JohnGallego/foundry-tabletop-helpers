@@ -8,8 +8,7 @@ import { Log } from "../logger";
 import { getGame, getUI, getHooks } from "../types";
 import {
   getPrintDefaults,
-  showPrintButton,
-  showPreviewButton,
+  canUsePrintFeature,
   showPrintOptionsDialog as showPrintOptionsDialogSetting,
 } from "../settings";
 import { getExtractor } from "./extractors/base-extractor";
@@ -282,34 +281,31 @@ export function registerPrintSheetHooks(): void {
         const sheetType = getSheetType(app);
         if (!sheetType) return;
 
-        // Add Preview button (if enabled)
-        if (showPreviewButton()) {
-          controls.unshift({
-            icon: "fa-solid fa-eye",
-            label: "Preview",
-            action: "fth-preview-sheet",
-            visible: true,
-            onClick: () => handlePreview(app, sheetType),
-          });
-        }
+        // Only show buttons if the current user has print access
+        if (!canUsePrintFeature()) return;
 
-        // Add Print button (if enabled)
-        if (showPrintButton()) {
-          controls.unshift({
-            icon: "fa-solid fa-print",
-            label: "Print",
-            action: "fth-print-sheet",
-            visible: true,
-            onClick: () => handlePrint(app, sheetType),
-          });
-        }
+        // Add Preview button
+        controls.unshift({
+          icon: "fa-solid fa-eye",
+          label: "FTTH - Preview",
+          action: "fth-preview-sheet",
+          visible: true,
+          onClick: () => handlePreview(app, sheetType),
+        });
+
+        // Add Print button
+        controls.unshift({
+          icon: "fa-solid fa-print",
+          label: "FTTH - Print",
+          action: "fth-print-sheet",
+          visible: true,
+          onClick: () => handlePrint(app, sheetType),
+        });
 
         Log.debug("added print/preview buttons", {
           app: app?.constructor?.name,
           appId: app?.appId,
           sheetType,
-          printButton: showPrintButton(),
-          previewButton: showPreviewButton(),
         });
       }, "print-sheet:getHeaderControlsApplicationV2"),
   );

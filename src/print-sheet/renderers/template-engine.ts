@@ -30,8 +30,7 @@ export async function preloadPrintTemplates(): Promise<void> {
   const templates = [
     // NPC stat block
     "npc/statblock.hbs",
-    // Character sheets (classic and pro styles)
-    "character/sheet.hbs",
+    // Character sheet
     "character/pro-sheet.hbs",
     // Party summary (DM reference)
     "party/summary.hbs",
@@ -154,13 +153,11 @@ export async function renderNPCStatBlock<T>(data: T): Promise<string> {
 }
 
 /**
- * Render a character sheet using templates.
+ * Render a character sheet using the pro-sheet template.
  * @param data - The CharacterViewModel data
- * @param style - "classic" or "pro" (default: "pro")
  */
-export async function renderCharacterSheet<T>(data: T, style: "classic" | "pro" = "pro"): Promise<string> {
-  const templatePath = style === "pro" ? "character/pro-sheet.hbs" : "character/sheet.hbs";
-  return renderPrintTemplate(templatePath, data);
+export async function renderCharacterSheet<T>(data: T): Promise<string> {
+  return renderPrintTemplate("character/pro-sheet.hbs", data);
 }
 
 /**
