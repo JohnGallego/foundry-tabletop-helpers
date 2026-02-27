@@ -11,7 +11,11 @@ Generate print-ready character sheets optimized for physical use at the table.
 - Clean, light-themed layout optimized for printing (saves ink, high readability)
 - Organized sections: Header, Combat Stats, Abilities, Senses, Actions, Spellcasting, Skills, Proficiencies, Features, Inventory
 - Currency tracking widget with write-in boxes for session use
-- Automatic feature summaries — verbose class features and feats are replaced with concise, new-player-friendly descriptions
+- **Intelligent feature summaries** — verbose class features and feats are automatically condensed for print:
+  - *Curated SRD summaries* — hand-crafted, high-quality summaries for SRD 2024 content (Alert, Grappler, Magic Initiate, Sneak Attack, and more)
+  - *Runtime structural parser* — for PHB, DMG, or homebrew content the module hasn't seen before, it reads the description you already own and extracts the bold-headed benefit pattern (`**Benefit Name.** First sentence.`) on the fly — no copyrighted text is ever bundled
+  - *Qualified partial matching* — a Cleric's "Spellcasting (Cleric)" correctly matches the Spellcasting summary while unrelated features like "Skilled" are never confused with "Ki"
+  - *Live variable resolution* — Foundry's internal `[[lookup @prof]]` placeholders are replaced with real values (e.g. `proficiency bonus 3`) before printing, eliminating `(currently )` artefacts; character-specific tokens like sneak attack dice count, ki points, and lay on hands pool are also resolved against the current character
 - Page-break aware layout to keep related sections together
 
 **Supported Print Types:**

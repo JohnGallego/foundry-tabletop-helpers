@@ -325,7 +325,11 @@ export class Dnd5eExtractor extends BaseExtractor {
 
       const featureData: FeatureData = {
         name: item.name ?? "",
-        description: this.stripEnrichedText(item.system?.description?.value ?? "", actor.name),
+        description: this.stripEnrichedText(
+          item.system?.description?.value ?? "",
+          actor.name,
+          typeof actor.getRollData === "function" ? actor.getRollData() : undefined,
+        ),
         uses: null,
         isFavorite: favorites.has(item.id) || favorites.has(item.uuid),
         itemType: item.type,
@@ -831,7 +835,11 @@ export class Dnd5eExtractor extends BaseExtractor {
     }
 
     // Strip Foundry-specific enriched text for print (removes inline rolls, UUID links, etc.)
-    description = this.stripEnrichedText(description, actor?.name);
+    description = this.stripEnrichedText(
+      description,
+      actor?.name,
+      typeof actor?.getRollData === "function" ? actor.getRollData() : undefined,
+    );
 
     return {
       name,
@@ -1427,10 +1435,15 @@ export class Dnd5eExtractor extends BaseExtractor {
       });
     }
 
-    // Strip Foundry enriched text placeholders from description
-    // Pass actor name to resolve [[lookup @name]] placeholders
+    // Strip Foundry enriched text placeholders from description.
+    // Pass actor name and roll data so [[lookup @name]] and [[lookup @variable]]
+    // placeholders resolve to real values instead of leaving empty gaps.
     let description = item.system?.description?.value ?? "";
-    description = this.stripEnrichedText(description, actor?.name);
+    description = this.stripEnrichedText(
+      description,
+      actor?.name,
+      typeof actor?.getRollData === "function" ? actor.getRollData() : undefined,
+    );
 
     // Check for empty damage placeholders like "7 ()" and fill them with damage from activities
     if (description.includes("()") || /\d+\s*\(\s*\)/.test(description)) {
@@ -1960,9 +1973,15 @@ export class Dnd5eExtractor extends BaseExtractor {
   /**
    * Strip Foundry enriched text placeholders and resolve UUID references.
    * Converts @UUID[...]{DisplayName} to just "DisplayName"
-   * Converts [[lookup @name lowercase]] to "the creature" (generic fallback)
+   * Converts [[lookup @name lowercase]] to actor name or "the creature"
+   * Converts [[lookup @variable]] to the resolved value from rollData when available,
+   * so placeholders like "(currently [[lookup @prof]])" become "(currently 3)".
+   *
+   * @param html      Raw HTML from the description field.
+   * @param actorName Actor name for @name resolution.
+   * @param rollData  Optional actor.getRollData() output for @variable resolution.
    */
-  private stripEnrichedText(html: string, actorName?: string): string {
+  private stripEnrichedText(html: string, actorName?: string, rollData?: Record<string, unknown>): string {
     return html
       // @UUID[Compendium.xxx.xxx]{DisplayName} -> "DisplayName"
       .replace(/@UUID\[[^\]]+\]\{([^}]+)\}/g, "$1")
@@ -1970,6 +1989,18 @@ export class Dnd5eExtractor extends BaseExtractor {
       .replace(/\[\[lookup\s+@name\s+lowercase\]\]/gi, actorName?.toLowerCase() ?? "the creature")
       // [[lookup @name]] -> actor name or "The creature"
       .replace(/\[\[lookup\s+@name\]\]/gi, actorName ?? "The creature")
+      // [[lookup @variable]] — resolve via roll data when available, otherwise strip.
+      .replace(/\[\[lookup\s+@([a-zA-Z0-9_.]+)(?:\s+[a-z]+)?\]\]/gi, (_match, path: string) => {
+        if (rollData) {
+          let current: unknown = rollData;
+          for (const segment of path.split(".")) {
+            if (current == null || typeof current !== "object") { current = undefined; break; }
+            current = (current as Record<string, unknown>)[segment];
+          }
+          if (current !== undefined && current !== null) return String(current);
+        }
+        return "";
+      })
       // [[/item Name]] -> "Name" (preserve the item name)
       .replace(/\[\[\/item\s+([^\]]+)\]\]/gi, "$1")
       // Remove other placeholders like [[/attack]], [[/damage average]], etc.

@@ -570,10 +570,32 @@ function getCategoryLabel(category: string): string {
 }
 
 /**
+ * Walk a dot-separated path (e.g. "abilities.dex.mod") through a nested object,
+ * returning the terminal value or undefined if any segment is missing.
+ *
+ * Used to resolve [[lookup @abilities.dex.mod]] style Foundry placeholders against
+ * the actor's getRollData() output.
+ */
+function resolveRollDataPath(data: Record<string, unknown>, path: string): unknown {
+  let current: unknown = data;
+  for (const segment of path.split(".")) {
+    if (current == null || typeof current !== "object") return undefined;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
+}
+
+/**
  * Strip Foundry-specific enriched text for clean print output.
  * Handles @UUID references, [[lookup]] placeholders, and HTML tags.
+ *
+ * @param html     Raw HTML string from the item/actor description field.
+ * @param rollData Optional actor roll data (from `actor.getRollData()`). When
+ *                 provided, `[[lookup @variable]]` placeholders are resolved to
+ *                 their actual values instead of being blanked out. This prevents
+ *                 artefacts like "(currently )" where the number was stripped away.
  */
-function stripEnrichedText(html: string): string {
+function stripEnrichedText(html: string, rollData?: Record<string, unknown>): string {
   return html
     // @UUID[Compendium.xxx.xxx]{DisplayName} -> "DisplayName"
     .replace(/@UUID\[[^\]]+\]\{([^}]+)\}/g, "$1")
@@ -581,6 +603,15 @@ function stripEnrichedText(html: string): string {
     .replace(/\[\[lookup\s+@name\s+lowercase\]\]/gi, "the creature")
     // [[lookup @name]] -> "The creature"
     .replace(/\[\[lookup\s+@name\]\]/gi, "The creature")
+    // [[lookup @variable]] — resolve via roll data when available, otherwise strip.
+    // The pattern optionally allows trailing modifier words like "lowercase".
+    .replace(/\[\[lookup\s+@([a-zA-Z0-9_.]+)(?:\s+[a-z]+)?\]\]/gi, (_match, path: string) => {
+      if (rollData) {
+        const value = resolveRollDataPath(rollData, path);
+        if (value !== undefined && value !== null) return String(value);
+      }
+      return "";
+    })
     // [[/item Name]] -> "Name"
     .replace(/\[\[\/item\s+([^\]]+)\]\]/gi, "$1")
     // Remove other placeholders like [[/attack]], [[/damage average]], etc.
@@ -653,13 +684,19 @@ export function extractFeatures(actor: any, favorites: Set<string>): FeatureGrou
   const featItems = actor.items?.filter?.((i: any) => i.type === "feat") ?? [];
   const groups = new Map<string, FeatureData[]>();
 
+  // Resolve actor roll data once so [[lookup @variable]] placeholders in feature
+  // descriptions are replaced with real character values (e.g. proficiency bonus).
+  const rollData: Record<string, unknown> =
+    typeof actor.getRollData === "function" ? (actor.getRollData() as Record<string, unknown>) : {};
+
   for (const item of featItems) {
     const category = item.system?.type?.value ?? "other";
     const categoryLabel = getCategoryLabel(category);
 
-    // Strip enriched text (UUID links, placeholders) for clean print output
+    // Strip enriched text (UUID links, placeholders) for clean print output.
+    // Pass rollData so [[lookup @prof]] etc. resolve to actual numbers.
     const rawDescription = item.system?.description?.value ?? "";
-    const cleanDescription = stripEnrichedText(rawDescription);
+    const cleanDescription = stripEnrichedText(rawDescription, rollData);
 
     const feature: FeatureData = {
       name: item.name ?? "",

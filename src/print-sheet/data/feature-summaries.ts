@@ -1,7 +1,41 @@
 /**
+ * Context derived from the character's current stats used to interpolate
+ * placeholders (e.g. {sneakAttackDice}) inside summary strings.
+ * All fields are optional/nullable — if a value cannot be computed (because
+ * the character doesn't have the relevant class) the placeholder is left as "?".
+ */
+export interface SummaryContext {
+  /** Total character level */
+  level: number;
+  /** Proficiency bonus (e.g. 3) */
+  proficiencyBonus: number;
+  /** Per-class levels, used to derive class-specific resources */
+  classes: { name: string; level: number }[];
+  /** Sneak attack damage dice string, e.g. "3d6". null if not a rogue. */
+  sneakAttackDice: string | null;
+  /** Total ki points (= monk level). null if not a monk. */
+  kiPoints: number | null;
+  /** Lay on Hands HP pool (= 5 × paladin level). null if not a paladin. */
+  layOnHandsPool: number | null;
+  /** Sorcery points (= sorcerer level). null if not a sorcerer. */
+  sorceryPoints: number | null;
+  /** Bardic Inspiration die size ("d6"/"d8"/"d10"/"d12"). null if not a bard. */
+  bardicInspirationDie: string | null;
+}
+
+/**
  * Curated summaries for features with lengthy descriptions.
  * Keys are lowercase feature names for case-insensitive matching.
  * Only include features where the original description is excessively long.
+ *
+ * Placeholders supported (resolved via SummaryContext):
+ *   {level}               – total character level
+ *   {proficiencyBonus}    – proficiency bonus prefixed with "+" (e.g. "+3")
+ *   {sneakAttackDice}     – Sneak Attack damage dice (e.g. "3d6")
+ *   {kiPoints}            – ki points (monk level)
+ *   {layOnHandsPool}      – Lay on Hands HP pool (5 × paladin level)
+ *   {sorceryPoints}       – sorcery points (sorcerer level)
+ *   {bardicInspirationDie} – Bardic Inspiration die ("d6"–"d12")
  */
 export const FEATURE_SUMMARIES: Record<string, string> = {
   // ─── Class Features: Cleric ─────────────────────────────────────────────────
@@ -22,7 +56,7 @@ export const FEATURE_SUMMARIES: Record<string, string> = {
   "extra attack (3)": "Attack four times when you take the Attack action.",
 
   // ─── Class Features: Rogue ──────────────────────────────────────────────────
-  "sneak attack": "Once per turn, deal extra damage (see class table) when you hit with a finesse/ranged weapon and have advantage OR an ally within 5ft of target. No disadvantage required.",
+  "sneak attack": "Once per turn, deal extra {sneakAttackDice} damage when you hit with a finesse/ranged weapon and have advantage OR an ally within 5ft of target. No disadvantage required.",
   "cunning action": "Bonus action to Dash, Disengage, or Hide.",
   "uncanny dodge": "Reaction when hit by an attack you can see: halve the damage.",
   "evasion": "DEX saves for half damage: take no damage on success, half on failure.",
@@ -41,7 +75,7 @@ export const FEATURE_SUMMARIES: Record<string, string> = {
   // ─── Class Features: Paladin ────────────────────────────────────────────────
   "spellcasting (paladin)": "Prepare CHA mod + half paladin level spells daily from the paladin list. Use holy symbol as focus.",
   "divine smite": "When you hit with a melee weapon, expend a spell slot to deal +2d8 radiant damage (+1d8 per slot level above 1st, max 5d8). +1d8 vs undead/fiends.",
-  "lay on hands": "Touch a creature to restore HP from your pool (5 × paladin level). Or spend 5 HP from the pool to cure one disease or neutralize one poison.",
+  "lay on hands": "Touch a creature to restore HP from your pool ({layOnHandsPool} HP). Or spend 5 HP from the pool to cure one disease or neutralize one poison.",
   "divine sense": "As an action, detect celestials, fiends, and undead within 60ft not behind total cover. Also detect consecrated/desecrated places. Uses = 1 + CHA mod per long rest.",
   "aura of protection": "You and friendly creatures within 10ft (30ft at 18th) gain a bonus to saving throws equal to your CHA modifier (minimum +1) while you're conscious.",
   "aura of courage": "You and friendly creatures within 10ft (30ft at 18th) can't be frightened while you're conscious.",
@@ -60,7 +94,7 @@ export const FEATURE_SUMMARIES: Record<string, string> = {
 
   // ─── Class Features: Bard ───────────────────────────────────────────────────
   "spellcasting (bard)": "CHA is your spellcasting ability. You know a set number of spells (see class table). You can use a musical instrument as a spellcasting focus.",
-  "bardic inspiration": "Bonus action to give one creature within 60ft an Inspiration die (d6, increases at higher levels). Within 10 minutes, they can add it to one ability check, attack roll, or saving throw.",
+  "bardic inspiration": "Bonus action to give one creature within 60ft an Inspiration die ({bardicInspirationDie}). Within 10 minutes, they can add it to one ability check, attack roll, or saving throw.",
   "song of rest": "During a short rest, you or friendly creatures who hear your performance regain extra HP when spending Hit Dice (1d6, increases at higher levels).",
   "countercharm": "As an action, start a performance lasting until end of your next turn. You and friendly creatures within 30ft have advantage on saves vs frightened/charmed.",
   "magical secrets": "Choose two spells from any class's spell list. They count as bard spells for you and don't count against spells known.",
@@ -68,7 +102,7 @@ export const FEATURE_SUMMARIES: Record<string, string> = {
   // ─── Class Features: Monk ───────────────────────────────────────────────────
   "unarmored defense (monk)": "While not wearing armor or a shield, AC = 10 + DEX mod + WIS mod.",
   "martial arts": "While unarmed or using monk weapons and not wearing armor/shield: use DEX for attack/damage, roll martial arts die for damage, bonus action unarmed strike after Attack action.",
-  "ki": "You have ki points equal to your monk level. Spend them on special abilities. All ki points restore on short or long rest.",
+  "ki": "You have {kiPoints} ki points. Spend them on special abilities. All ki points restore on short or long rest.",
   "flurry of blows": "After Attack action, spend 1 ki to make two unarmed strikes as a bonus action.",
   "patient defense": "Spend 1 ki to take Dodge as a bonus action.",
   "step of the wind": "Spend 1 ki to Disengage or Dash as a bonus action; your jump distance is doubled this turn.",
@@ -97,7 +131,7 @@ export const FEATURE_SUMMARIES: Record<string, string> = {
 
   // ─── Class Features: Sorcerer ───────────────────────────────────────────────
   "spellcasting (sorcerer)": "CHA is your spellcasting ability. You know a set number of spells (see class table). You can use an arcane focus.",
-  "font of magic": "You have sorcery points equal to your sorcerer level. Convert spell slots to sorcery points or vice versa. Restore all on long rest.",
+  "font of magic": "You have {sorceryPoints} sorcery points. Convert spell slots to sorcery points or vice versa. Restore all on long rest.",
   "metamagic": "You can modify spells using Metamagic options, spending sorcery points. You can use only one Metamagic option per spell unless otherwise noted.",
   "sorcerous restoration": "On a short rest, regain 4 sorcery points.",
 
@@ -141,10 +175,10 @@ export const FEATURE_SUMMARIES: Record<string, string> = {
   "mobile": "+10 speed. When you Dash, difficult terrain doesn't cost extra movement. When you make a melee attack against a creature, you don't provoke opportunity attacks from it this turn.",
   "crossbow expert": "Ignore loading on crossbows you're proficient with. No disadvantage on ranged attacks within 5ft. When you Attack with a one-handed weapon, bonus action attack with a hand crossbow.",
   "resilient": "+1 to chosen ability score. Gain proficiency in saving throws using that ability.",
-  "alert": "+5 to initiative. Can't be surprised while conscious. Hidden creatures don't gain advantage on attacks against you.",
+  "alert": "Add your Proficiency Bonus to Initiative rolls. After rolling Initiative, you can swap your result with one willing ally in the same combat (neither of you can be Incapacitated).",
   "tough": "Your HP maximum increases by 2 × your level. Each time you gain a level, your HP max increases by 2.",
   "observant": "+5 to passive Perception and passive Investigation. You can read lips if you can see and understand the language.",
-  "magic initiate": "Learn two cantrips and one 1st-level spell from a chosen class's list. Cast the 1st-level spell once per long rest. Your spellcasting ability is the class's ability.",
+  "magic initiate": "Choose Cleric, Druid, or Wizard. Learn 2 cantrips and 1 level-1 spell from that list. The spell is always prepared; cast it once without a slot (recharges on Long Rest), or use any spell slot you have. On each new character level, you can swap one chosen spell for another of the same level from the same list. INT, WIS, or CHA is your spellcasting ability. Repeatable (different list each time).",
   "ritual caster": "You gain a ritual book with two 1st-level ritual spells. You can cast spells from the book as rituals. You can copy new rituals you find into the book.",
   "elemental adept": "Choose a damage type (acid, cold, fire, lightning, or thunder). Spells you cast ignore resistance to that type. When you roll damage, treat any 1 as a 2.",
   "inspiring leader": "Spend 10 minutes to give up to 6 creatures (including yourself) temporary HP equal to your level + CHA modifier. Creatures can only benefit once per rest.",
@@ -154,44 +188,197 @@ export const FEATURE_SUMMARIES: Record<string, string> = {
   "defensive duelist": "While wielding a finesse weapon, use reaction to add proficiency bonus to AC against one attack that would hit you.",
   "athlete": "+1 STR or DEX. Standing from prone costs only 5ft. Climbing doesn't cost extra movement. Running long/high jumps require only 5ft movement.",
   "charger": "When you Dash, use bonus action to make one melee attack (+5 damage) or shove a creature.",
-  "grappler": "Advantage on attacks against creatures you're grappling. You can use an action to try to pin a grappled creature (both restrained until grapple ends).",
+  "grappler": "+1 STR or DEX (max 20). When you hit with an Unarmed Strike as part of the Attack action, you can use both the Damage and Grapple options (once per turn). Advantage on attacks against creatures you are grappling. No extra movement required to move a grappled creature of your size or smaller.",
   "tavern brawler": "+1 STR or CON. Proficient with improvised weapons. Unarmed strikes deal 1d4. When you hit with unarmed/improvised, bonus action to grapple.",
-  "savage attacker": "Once per turn, when you roll damage for a melee weapon attack, you can reroll the weapon's damage dice and use either total.",
+  "savage attacker": "Once per turn when you hit a target with a weapon, roll the weapon's damage dice twice and use either result.",
   "skulker": "You can try to hide when lightly obscured. Missing a ranged attack while hidden doesn't reveal your position. Dim light doesn't impose disadvantage on Perception.",
   "medium armor master": "No disadvantage on Stealth in medium armor. Max DEX bonus to AC in medium armor is +3 instead of +2.",
   "heavily armored": "+1 STR. You gain proficiency with heavy armor.",
   "heavily armored master": "While wearing heavy armor, reduce bludgeoning, piercing, and slashing damage from nonmagical weapons by 3.",
   "shield master": "Bonus action to shove with your shield after Attack action. Add shield's AC bonus to DEX saves vs effects targeting only you. On successful DEX save for half damage, use reaction to take no damage.",
+  // NOTE: Musician and Crafter are 2024 PHB-only content — they are NOT part of the
+  // CC-BY-4.0 SRD (feats24/origin-feats returns 404 for both). No summaries may be
+  // provided for them to avoid copyright infringement.
 };
 
-const MAX_DESCRIPTION_LENGTH = 500;
+const MAX_DESCRIPTION_LENGTH = 750;
+
+/**
+ * Replace {placeholder} tokens inside a summary string with values from a
+ * SummaryContext. Any placeholder whose corresponding value is null/undefined
+ * is replaced with "?" so the output is always human-readable.
+ */
+function interpolate(text: string, ctx: SummaryContext): string {
+  return text
+    .replace(/\{level\}/g, String(ctx.level))
+    .replace(/\{proficiencyBonus\}/g, `+${ctx.proficiencyBonus}`)
+    .replace(/\{sneakAttackDice\}/g, ctx.sneakAttackDice ?? "?")
+    .replace(/\{kiPoints\}/g, ctx.kiPoints != null ? String(ctx.kiPoints) : "?")
+    .replace(/\{layOnHandsPool\}/g, ctx.layOnHandsPool != null ? String(ctx.layOnHandsPool) : "?")
+    .replace(/\{sorceryPoints\}/g, ctx.sorceryPoints != null ? String(ctx.sorceryPoints) : "?")
+    .replace(/\{bardicInspirationDie\}/g, ctx.bardicInspirationDie ?? "?");
+}
+
+/**
+ * Attempt to extract a concise summary from a feature description by parsing
+ * the standard dnd5e benefit format:
+ *
+ *   <p><strong>Benefit Name.</strong> First sentence of explanation...</p>
+ *
+ * This is used as the middle step in the fallback chain for descriptions that
+ * exceed MAX_DESCRIPTION_LENGTH but have no curated summary. Because parsing
+ * occurs at runtime from content already loaded in the user's Foundry instance,
+ * this approach is legally safe for any content (PHB, third-party, homebrew).
+ *
+ * @param html  Raw HTML description (after Foundry enriched-text stripping,
+ *              but before generic HTML tag removal). `<p>`, `<strong>`, and
+ *              `<table>` tags are expected to be present.
+ * @returns     A condensed plain-text summary, or `null` if the description
+ *              does not follow the structured benefit pattern or if the result
+ *              would still exceed MAX_DESCRIPTION_LENGTH.
+ */
+export function extractStructuredSummary(html: string): string | null {
+  if (!html || !html.trim()) return null;
+
+  // Remove <table>…</table> blocks entirely — tables (like Fast Crafting) are
+  // not distillable into inline text and are the primary cause of overflow.
+  const withoutTables = html.replace(/<table[\s\S]*?<\/table>/gi, "");
+
+  // Extract individual <p>…</p> blocks to avoid bleeding across paragraphs.
+  const paragraphPattern = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  const benefits: string[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = paragraphPattern.exec(withoutTables)) !== null) {
+    const inner = match[1];
+
+    // Look for the dnd5e structured benefit pattern:
+    //   <strong>Heading text</strong> followed by a period (inside or immediately after the tag)
+    // Handles both `<strong>Name.</strong>` and `<strong>Name</strong>.`
+    const headingPattern = /<strong[^>]*>([\s\S]*?)<\/strong>\.?\s*/i;
+    const headingMatch = headingPattern.exec(inner);
+    if (!headingMatch) continue;
+
+    // Strip any HTML inside the heading (e.g. <strong><em>Name</em></strong>)
+    const headingRaw = headingMatch[1].replace(/<[^>]*>/g, "").trim();
+
+    // Remove trailing period from heading if present (we'll add our own separator)
+    const heading = headingRaw.replace(/\.$/, "").trim();
+    if (!heading) continue;
+
+    // Get the text after the <strong> block — this is the benefit description
+    const afterHeading = inner.slice(headingMatch.index + headingMatch[0].length);
+
+    // Strip remaining HTML tags to get plain text
+    const plainText = afterHeading.replace(/<[^>]*>/g, "").trim();
+    if (!plainText) continue;
+
+    // Extract only the first sentence (ends at . ! or ?)
+    const sentenceEnd = plainText.search(/[.!?]/);
+    const firstSentence = sentenceEnd >= 0
+      ? plainText.slice(0, sentenceEnd + 1).trim()
+      : plainText.trim();
+
+    if (firstSentence) {
+      benefits.push(`${heading}: ${firstSentence}`);
+    }
+  }
+
+  // Require at least 2 structured benefits — if there's only one, the description
+  // probably isn't using the structured format and truncation is more appropriate.
+  if (benefits.length < 2) return null;
+
+  const result = benefits.join(" ");
+
+  // If structural parsing didn't actually shorten it enough, don't use it.
+  if (result.length > MAX_DESCRIPTION_LENGTH) return null;
+
+  return result;
+}
 
 /**
  * Get a summary for a feature if one exists, otherwise truncate long descriptions.
- * @param name The feature name
- * @param description The original description
- * @returns The summary, truncated description, or original description
+ * Pass an optional SummaryContext to resolve character-specific placeholders
+ * (e.g. {sneakAttackDice}, {proficiencyBonus}) in the curated summary strings.
+ *
+ * Fallback chain (in order):
+ *   1. Curated SRD summary map (exact match)
+ *   2. Curated SRD summary map (partial match)
+ *   3. Runtime structural parser — extracts <strong>Heading.</strong> benefits
+ *      from the raw HTML the user already owns (legal for any content)
+ *   4. Dumb truncation at MAX_DESCRIPTION_LENGTH
+ *
+ * @param name        The feature name
+ * @param description The plain-text (HTML-stripped) description
+ * @param context     Optional character context for placeholder interpolation
+ * @param rawHtml     Optional raw HTML description for structural parsing (step 3)
+ * @returns           The summary, structurally extracted text, truncated description, or original
  */
-export function getFeatureSummary(name: string, description: string): string {
+export function getFeatureSummary(
+  name: string,
+  description: string,
+  context?: SummaryContext,
+  rawHtml?: string,
+): string {
   const key = name.toLowerCase().trim();
-  
-  // Check for exact match
+
+  // Step 1 — Check for exact match in curated map
   if (FEATURE_SUMMARIES[key]) {
-    return FEATURE_SUMMARIES[key];
+    const summary = FEATURE_SUMMARIES[key];
+    return context ? interpolate(summary, context) : summary;
   }
-  
-  // Check for partial match (e.g., "Spellcasting (Cleric)" matches "spellcasting (cleric)")
+
+  // Step 2 — Qualified-name partial match.
+  //
+  // Only allow a match when the feature key starts with the summary key (or vice versa)
+  // AND the next character is the start of a recognised qualifier:
+  //   • " ("  → parenthetical class/variant, e.g. "Spellcasting (Cleric)"
+  //   • ": "  → colon subtype, e.g. "Channel Divinity: Sacred Weapon"
+  //
+  // This prevents short keys like "ki" or "rage" from matching unrelated feature names
+  // such as "skilled" (contains "ki"), "storage" (contains "rage"), etc.
+  //
+  // When multiple summary keys match (shouldn't happen with well-formed data, but
+  // possible), prefer the LONGEST key so "spellcasting (cleric)" beats "spellcasting".
+  const qualifiedSeparators = [" (", ": "];
+
+  const isQualifiedMatch = (longer: string, shorter: string): boolean => {
+    if (!longer.startsWith(shorter)) return false;
+    const rest = longer.slice(shorter.length);
+    return rest === "" || qualifiedSeparators.some(sep => rest.startsWith(sep));
+  };
+
+  let bestKey: string | null = null;
+  let bestSummary: string | null = null;
+
   for (const [summaryKey, summary] of Object.entries(FEATURE_SUMMARIES)) {
-    if (key.includes(summaryKey) || summaryKey.includes(key)) {
-      return summary;
+    if (isQualifiedMatch(key, summaryKey) || isQualifiedMatch(summaryKey, key)) {
+      // Prefer longest matching key for specificity
+      if (bestKey === null || summaryKey.length > bestKey.length) {
+        bestKey = summaryKey;
+        bestSummary = summary;
+      }
     }
   }
-  
-  // No summary found - truncate if needed
-  if (description.length > MAX_DESCRIPTION_LENGTH) {
-    return description.slice(0, MAX_DESCRIPTION_LENGTH).trimEnd() + "…";
+
+  if (bestSummary !== null) {
+    return context ? interpolate(bestSummary, context) : bestSummary;
   }
-  
-  return description;
+
+  // Step 3 — Runtime structural parsing from raw HTML (safe for any user-owned content)
+  if (description.length > MAX_DESCRIPTION_LENGTH && rawHtml) {
+    const structural = extractStructuredSummary(rawHtml);
+    if (structural) return context ? interpolate(structural, context) : structural;
+  }
+
+  // Step 4 — Dumb truncation fallback
+  if (description.length > MAX_DESCRIPTION_LENGTH) {
+    const truncated = description.slice(0, MAX_DESCRIPTION_LENGTH).trimEnd() + "…";
+    return context ? interpolate(truncated, context) : truncated;
+  }
+
+  // Return full description, still applying interpolation so {token} placeholders
+  // in homebrew/PHB descriptions resolve to real character values.
+  return context ? interpolate(description, context) : description;
 }
 

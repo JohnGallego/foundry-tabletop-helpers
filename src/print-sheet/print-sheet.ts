@@ -94,6 +94,24 @@ function getSheetType(app: any): SheetType | null {
 /* ── Print/Preview flow ───────────────────────────────────── */
 
 /**
+ * Derive a human-readable window title from the document and sheet type.
+ * Format: the document name, with a fallback when the name is absent.
+ * The caller prefixes "Foundry Tabletop Helpers - " via buildDocument().
+ */
+function getWindowTitle(doc: any, sheetType: SheetType): string {
+  const name: string | undefined = doc?.name?.trim() || undefined;
+  switch (sheetType) {
+    case "character":
+    case "npc":
+      return name ?? "Sheet";
+    case "encounter":
+      return name ?? "Encounter Sheet";
+    case "party":
+      return name ?? "Party Sheet";
+  }
+}
+
+/**
  * Get print options: show dialog or use saved defaults based on settings.
  * Returns null if cancelled (only possible when dialog is shown).
  */
@@ -196,7 +214,7 @@ async function handlePrint(app: any, sheetType: SheetType): Promise<void> {
 
   try {
     const html = await extractAndRender(doc, sheetType, options, extractor, renderer);
-    openPrintWindow(html, renderer.getStyles());
+    openPrintWindow(html, renderer.getStyles(), getWindowTitle(doc, sheetType));
     Log.info("print flow complete", { sheetType, name: doc.name });
   } catch (err) {
     Log.error("print flow failed", { sheetType, name: doc.name, err });
@@ -235,7 +253,7 @@ async function handlePreview(app: any, sheetType: SheetType): Promise<void> {
 
   try {
     const html = await extractAndRender(doc, sheetType, options, extractor, renderer);
-    openPreviewWindow(html, renderer.getStyles());
+    openPreviewWindow(html, renderer.getStyles(), getWindowTitle(doc, sheetType));
     Log.info("preview flow complete", { sheetType, name: doc.name });
   } catch (err) {
     Log.error("preview flow failed", { sheetType, name: doc.name, err });

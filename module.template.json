@@ -1,7 +1,7 @@
 {
     "id": "foundry-tabletop-helpers",
     "title": "Foundry Tabletop Helpers",
-    "description": "QoL helpers for touchscreen tables. Adds a Rotate/Flip control to windows (90° by default; optional 180° flip).",
+    "description": "QoL helpers for Foundry VTT. Generates print-ready character sheets, NPC stat blocks, party summaries, and encounter sheets with intelligent feature summaries, live variable resolution, and runtime structural parsing of PHB/homebrew content. Also adds a Rotate/Flip control to application windows.",
     "version": "0.0.0-PLACEHOLDER",
     "authors": [
         {

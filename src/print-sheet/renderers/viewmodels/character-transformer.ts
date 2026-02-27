@@ -17,7 +17,7 @@ import type {
   CurrencyData,
 } from "../../extractors/dnd5e-types";
 import type { PrintOptions } from "../../types";
-import { getFeatureSummary } from "../../data/feature-summaries";
+import { getFeatureSummary, type SummaryContext } from "../../data/feature-summaries";
 import type {
   CharacterViewModel,
   PassiveScoreViewModel,
@@ -93,6 +93,50 @@ const MASTERY_DESCRIPTIONS: Record<string, string> = {
   vex: "If you hit a creature, you have Advantage on your next attack roll against that creature before the end of your next turn.",
 };
 
+/* ── Summary Context ────────────────────────────────────────── */
+
+/**
+ * Build a SummaryContext from extracted CharacterData.
+ * Computes class-derived values (sneak attack dice, ki points, etc.) so that
+ * curated feature summaries can be interpolated with real character numbers.
+ */
+function buildSummaryContext(data: CharacterData): SummaryContext {
+  const classes = data.details.classes;
+
+  const classLevel = (name: string): number => {
+    const found = classes.find(c => c.name.toLowerCase() === name.toLowerCase());
+    return found ? found.level : 0;
+  };
+
+  const rogueLevel = classLevel("rogue");
+  const monkLevel = classLevel("monk");
+  const paladinLevel = classLevel("paladin");
+  const sorcererLevel = classLevel("sorcerer");
+  const bardLevel = classLevel("bard");
+
+  // Sneak Attack: 1d6 per 2 rogue levels (rounded up)
+  const sneakDiceCount = rogueLevel > 0 ? Math.ceil(rogueLevel / 2) : 0;
+  const sneakAttackDice = sneakDiceCount > 0 ? `${sneakDiceCount}d6` : null;
+
+  // Bardic Inspiration die: d6 → d8 (lvl 5) → d10 (lvl 10) → d12 (lvl 15)
+  let bardicInspirationDie: string | null = null;
+  if (bardLevel >= 15) bardicInspirationDie = "d12";
+  else if (bardLevel >= 10) bardicInspirationDie = "d10";
+  else if (bardLevel >= 5) bardicInspirationDie = "d8";
+  else if (bardLevel > 0) bardicInspirationDie = "d6";
+
+  return {
+    level: data.details.level,
+    proficiencyBonus: data.combat.proficiency,
+    classes: classes.map(c => ({ name: c.name, level: c.level })),
+    sneakAttackDice,
+    kiPoints: monkLevel > 0 ? monkLevel : null,
+    layOnHandsPool: paladinLevel > 0 ? 5 * paladinLevel : null,
+    sorceryPoints: sorcererLevel > 0 ? sorcererLevel : null,
+    bardicInspirationDie,
+  };
+}
+
 /* ── Main Transformer ───────────────────────────────────────── */
 
 export function transformCharacterToViewModel(
@@ -140,6 +184,9 @@ export function transformCharacterToViewModel(
   // Build skills
   const skills = buildSkills(data.skills);
 
+  // Build summary context for feature interpolation
+  const summaryContext = buildSummaryContext(data);
+
   // Action names for filtering features
   const actionNames = new Set(
     [...data.actions.actions, ...data.actions.bonusActions, ...data.actions.reactions, ...data.actions.other]
@@ -147,7 +194,7 @@ export function transformCharacterToViewModel(
   );
 
   // Build actions
-  const actions = buildActions(data.actions);
+  const actions = buildActions(data.actions, summaryContext);
   const hasActions = actions.hasWeapons || actions.otherActions.length > 0 ||
     actions.bonusActions.length > 0 || actions.reactions.length > 0;
 
@@ -156,7 +203,7 @@ export function transformCharacterToViewModel(
   const spellCards = data.spellcasting ? buildSpellCards(data.spellcasting) : [];
 
   // Build features
-  const featureGroups = buildFeatureGroups(data.features, data.proficiencies, data.traits.languages, actionNames);
+  const featureGroups = buildFeatureGroups(data.features, data.proficiencies, data.traits.languages, actionNames, summaryContext);
 
   // Build proficiencies
   const proficiencies = buildProficiencies(data.proficiencies, data.traits.languages);
@@ -377,7 +424,7 @@ function buildSkills(skills: SkillData[]): SkillViewModel[] {
 
 /* ── Actions ────────────────────────────────────────────────── */
 
-function buildActions(actions: CharacterActions): ActionsViewModel {
+function buildActions(actions: CharacterActions, ctx: SummaryContext): ActionsViewModel {
   const usedMasteries = new Set<string>();
 
   // Weapons
@@ -401,14 +448,16 @@ function buildActions(actions: CharacterActions): ActionsViewModel {
     }
   }
 
+  const buildItem = (f: FeatureData) => buildActionItem(f, ctx);
+
   return {
     weapons,
     hasWeapons: weapons.length > 0,
     combatActionsRef: "Attack, Dash, Disengage, Dodge, Grapple, Help, Hide, Ready, Search, Shove, Use an Object",
-    otherActions: actions.actions.length > 0 ? [{ title: "Other Actions", items: actions.actions.map(buildActionItem), hasItems: true }] : [],
-    bonusActions: actions.bonusActions.length > 0 ? [{ title: "Bonus Actions", items: actions.bonusActions.map(buildActionItem), hasItems: true }] : [],
-    reactions: actions.reactions.length > 0 ? [{ title: "Reactions", items: actions.reactions.map(buildActionItem), hasItems: true }] : [],
-    other: actions.other.length > 0 ? [{ title: "Other", items: actions.other.map(buildActionItem), hasItems: true }] : [],
+    otherActions: actions.actions.length > 0 ? [{ title: "Other Actions", items: actions.actions.map(buildItem), hasItems: true }] : [],
+    bonusActions: actions.bonusActions.length > 0 ? [{ title: "Bonus Actions", items: actions.bonusActions.map(buildItem), hasItems: true }] : [],
+    reactions: actions.reactions.length > 0 ? [{ title: "Reactions", items: actions.reactions.map(buildItem), hasItems: true }] : [],
+    other: actions.other.length > 0 ? [{ title: "Other", items: actions.other.map(buildItem), hasItems: true }] : [],
     masteryDescriptions,
     hasMasteryDescriptions: masteryDescriptions.length > 0,
   };
@@ -430,7 +479,7 @@ function buildWeaponRow(w: WeaponActionData): WeaponRowViewModel {
   };
 }
 
-function buildActionItem(f: FeatureData): ActionItemViewModel {
+function buildActionItem(f: FeatureData, ctx: SummaryContext): ActionItemViewModel {
   const fav = f.isFavorite ? "★ " : "";
   let usesDisplay = "";
   let checkboxes = "";
@@ -442,7 +491,9 @@ function buildActionItem(f: FeatureData): ActionItemViewModel {
   }
 
   const rawDesc = f.description ? stripHtml(f.description) : "";
-  const desc = getFeatureSummary(f.name, rawDesc);
+  // Pass f.description (HTML with <strong> structure intact) as rawHtml so the
+  // structural parser can extract benefit headings for PHB/homebrew content.
+  const desc = getFeatureSummary(f.name, rawDesc, ctx, f.description || undefined);
 
   return {
     favStar: fav,
@@ -578,6 +629,7 @@ function buildFeatureGroups(
   _proficiencies: { armor: string[]; weapons: string[]; tools: string[]; weaponMasteries: string[] },
   _languages: string[],
   actionNames: Set<string>,
+  ctx: SummaryContext,
 ): FeatureGroupViewModel[] {
   return groups
     .map(g => {
@@ -586,13 +638,13 @@ function buildFeatureGroups(
 
       return {
         category: esc(g.category),
-        features: filteredFeatures.map(buildFeatureItem),
+        features: filteredFeatures.map(f => buildFeatureItem(f, ctx)),
       };
     })
     .filter((g): g is FeatureGroupViewModel => g !== null);
 }
 
-function buildFeatureItem(f: FeatureData): FeatureItemViewModel {
+function buildFeatureItem(f: FeatureData, ctx: SummaryContext): FeatureItemViewModel {
   let usesDisplay = "";
   let checkboxes = "";
 
@@ -603,7 +655,9 @@ function buildFeatureItem(f: FeatureData): FeatureItemViewModel {
   }
 
   const rawDesc = f.description ? stripHtml(f.description) : "";
-  const descText = replaceAdvDisText(esc(getFeatureSummary(f.name, rawDesc)));
+  // Pass f.description (HTML with <strong> structure intact) as rawHtml so the
+  // structural parser can extract benefit headings for PHB/homebrew content.
+  const descText = replaceAdvDisText(esc(getFeatureSummary(f.name, rawDesc, ctx, f.description || undefined)));
 
   return {
     favStar: f.isFavorite ? "★ " : "",

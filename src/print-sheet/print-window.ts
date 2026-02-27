@@ -16,7 +16,7 @@ function buildDocument(bodyHtml: string, css: string, title: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} – Foundry Tabletop Helpers</title>
+  <title>Foundry Tabletop Helpers - ${title}</title>
   <style>${css}</style>
 </head>
 <body>
@@ -52,8 +52,8 @@ function openWindow(bodyHtml: string, css: string, title: string): Window | null
  * Open a new browser window containing the rendered HTML and CSS,
  * then trigger the browser's print dialog.
  */
-export function openPrintWindow(bodyHtml: string, css: string): void {
-  const win = openWindow(bodyHtml, css, "Print Sheet");
+export function openPrintWindow(bodyHtml: string, css: string, title: string): void {
+  const win = openWindow(bodyHtml, css, title);
   if (!win) return;
 
   // Small delay to let the browser render before triggering print
@@ -69,8 +69,8 @@ export function openPrintWindow(bodyHtml: string, css: string): void {
  * Open a new browser window containing the rendered HTML and CSS
  * for preview only (no print dialog).
  */
-export function openPreviewWindow(bodyHtml: string, css: string): void {
-  const win = openWindow(bodyHtml, css, "Preview Sheet");
+export function openPreviewWindow(bodyHtml: string, css: string, title: string): void {
+  const win = openWindow(bodyHtml, css, title);
   if (!win) return;
 
   win.setTimeout(() => {
