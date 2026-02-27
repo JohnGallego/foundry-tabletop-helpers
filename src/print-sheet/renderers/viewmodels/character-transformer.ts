@@ -17,6 +17,7 @@ import type {
   CurrencyData,
 } from "../../extractors/dnd5e-types";
 import type { PrintOptions } from "../../types";
+import { getFeatureSummary } from "../../data/feature-summaries";
 import type {
   CharacterViewModel,
   PassiveScoreViewModel,
@@ -440,7 +441,8 @@ function buildActionItem(f: FeatureData): ActionItemViewModel {
     checkboxes = "☐".repeat(f.uses.max);
   }
 
-  const desc = f.description ? stripHtml(f.description) : "";
+  const rawDesc = f.description ? stripHtml(f.description) : "";
+  const desc = getFeatureSummary(f.name, rawDesc);
 
   return {
     favStar: fav,
@@ -600,7 +602,8 @@ function buildFeatureItem(f: FeatureData): FeatureItemViewModel {
     checkboxes = "☐".repeat(f.uses.max);
   }
 
-  const descText = f.description ? replaceAdvDisText(esc(stripHtml(f.description))) : "";
+  const rawDesc = f.description ? stripHtml(f.description) : "";
+  const descText = replaceAdvDisText(esc(getFeatureSummary(f.name, rawDesc)));
 
   return {
     favStar: f.isFavorite ? "★ " : "",

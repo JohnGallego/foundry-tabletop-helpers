@@ -468,12 +468,12 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   grid-template-columns: auto 1fr auto;
   gap: 16px;
   align-items: center;
-  background: linear-gradient(135deg, #2c1810 0%, #4a2c2a 50%, #2c1810 100%);
-  border: 3px solid #8b4513;
+  background: linear-gradient(145deg, #f8f5f0 0%, #e8e2d8 100%);
+  border: 2px solid #8b7355;
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 .fth-pro-header-portrait {
   height: 80px;
@@ -485,40 +485,39 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   width: 100%;
   object-fit: cover;
   border-radius: 4px;
+  border: 1px solid #8b7355;
 }
 .fth-pro-header-center { text-align: center; }
 .fth-pro-name {
   font-size: 24pt;
   font-weight: 700;
-  color: #f4e4bc;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  color: #2c1810;
   margin: 0;
   letter-spacing: 1px;
 }
 .fth-pro-subtitle {
   font-size: 10pt;
-  color: #d4a574;
+  color: #5a4a3a;
   font-style: italic;
   margin-top: 2px;
 }
 .fth-pro-header-right { text-align: center; }
 .fth-pro-hp-block {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid #8b4513;
+  background: #fff;
+  border: 1px solid #8b7355;
   border-radius: 6px;
   padding: 8px 12px;
 }
 .fth-pro-hp-label {
   font-size: 7pt;
   text-transform: uppercase;
-  color: #d4a574;
+  color: #5a4a3a;
   letter-spacing: 1px;
 }
 .fth-pro-hp-max {
   font-size: 20pt;
   font-weight: 700;
-  color: #e74c3c;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  color: #c0392b;
 }
 .fth-pro-hp-row {
   display: flex;
@@ -533,14 +532,14 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 }
 .fth-pro-hp-cell-label {
   font-size: 6pt;
-  color: #d4a574;
+  color: #5a4a3a;
   text-transform: uppercase;
 }
 .fth-pro-hp-box {
   display: inline-block;
   width: 36px;
   height: 18px;
-  border: 1px solid #666;
+  border: 1px solid #8b7355;
   background: #fff;
   border-radius: 2px;
 }
@@ -626,42 +625,80 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-pro-death-success { color: #2d6a2d; }
 .fth-pro-death-fail { color: #a02020; }
 
+/* ─── Compact Rest Card (in core row) ──────────────────────────────────── */
+.fth-pro-rest-compact { min-width: 70px; }
+.fth-pro-rest-mini { font-size: 9pt; }
+.fth-pro-rest-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0;
+}
+.fth-pro-rest-icon { color: #c9a227; }
+
 /* ─── Ability Scores (Hex Layout) ──────────────────────────────────────── */
 .fth-pro-abilities {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   flex-wrap: wrap;
 }
 .fth-pro-ability-hex {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(180deg, #4a2c2a 0%, #2c1810 100%);
-  border: 2px solid #d4a574;
+  background: linear-gradient(145deg, #f8f5f0 0%, #e8e2d8 100%);
+  border: 2px solid #8b7355;
   border-radius: 6px;
   padding: 8px 10px;
   min-width: 52px;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .fth-pro-ability-mod {
   font-size: 16pt;
   font-weight: 700;
-  color: #f4e4bc;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  color: #2c1810;
   line-height: 1;
 }
 .fth-pro-ability-name {
   font-size: 6pt;
   text-transform: uppercase;
-  color: #d4a574;
+  color: #5a4a3a;
   letter-spacing: 1px;
   margin: 2px 0;
 }
 .fth-pro-ability-score {
   font-size: 8pt;
-  color: #999;
+  color: #666;
+}
+
+/* ─── Senses Row (under abilities) ─────────────────────────────────────── */
+.fth-pro-senses-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.fth-pro-sense-item {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 9pt;
+}
+.fth-pro-sense-val {
+  font-weight: 700;
+  color: #2c1810;
+}
+.fth-pro-sense-lbl {
+  color: #666;
+}
+.fth-pro-senses-row .fth-pro-senses-extra {
+  font-size: 8pt;
+  color: #666;
+  font-style: italic;
 }
 
 /* ─── Two Column Layout ────────────────────────────────────────────────── */
@@ -670,6 +707,8 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-bottom: 12px;
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 .fth-pro-col-left, .fth-pro-col-right {
   display: flex;
@@ -1072,33 +1111,41 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 .fth-pro-feat strong { color: #2c1810; }
 .fth-pro-feat-desc { color: #555; }
 
-/* ─── Currency Widget (in card) ────────────────────────────────────────── */
-.fth-pro-currency-card .fth-pro-currency-row {
-  display: flex;
-  justify-content: space-around;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.fth-pro-currency-card .fth-pro-currency-current { margin-bottom: 6px; }
-.fth-pro-coin {
+/* ─── Currency Widget (standalone, centered above inventory) ───────────── */
+.fth-pro-currency-standalone {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 40px;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 8px 16px;
+  background: #f8f5f0;
+  border: 1px solid #c9b896;
+  border-radius: 6px;
 }
-.fth-pro-coin-icon { font-size: 14pt; }
-.fth-pro-coin-val {
-  font-size: 11pt;
-  font-weight: 700;
+.fth-pro-currency-standalone .fth-pro-currency-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.fth-pro-coin-compact {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.fth-pro-coin-icon-sm { font-size: 10pt; }
+.fth-pro-coin-val-sm {
+  font-size: 9pt;
+  font-weight: 600;
   color: #2c1810;
 }
-.fth-pro-coin-label {
-  font-size: 6pt;
+.fth-pro-coin-label-sm {
+  font-size: 7pt;
   text-transform: uppercase;
   color: #888;
-  letter-spacing: 0.5px;
 }
-.fth-pro-currency-input {
+.fth-pro-currency-standalone .fth-pro-currency-input {
   padding-top: 6px;
   border-top: 1px dashed #c9b896;
 }
@@ -1107,14 +1154,14 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   flex-direction: column;
   align-items: center;
 }
-.fth-pro-coin-input-box {
-  width: 36px;
-  height: 20px;
-  border: 1px solid #c9b896;
+.fth-pro-coin-input-box-lg {
+  width: 80px;
+  height: 24px;
+  border: 1px solid #8b7355;
   border-radius: 3px;
   background: #fff;
   text-align: center;
-  font-size: 9pt;
+  font-size: 10pt;
   font-family: inherit;
   color: #2c1810;
 }

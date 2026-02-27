@@ -81,6 +81,15 @@
         <div class="fth-pro-death-mini-row"><span class="fth-pro-death-fail">✗</span> ☐☐☐</div>
       </div>
     </div>
+
+    {{!-- Rest (compact) --}}
+    <div class="fth-pro-core-card fth-pro-rest-compact">
+      <div class="fth-pro-core-card-title">Rest</div>
+      <div class="fth-pro-rest-mini">
+        <div class="fth-pro-rest-mini-row"><span class="fth-pro-rest-icon">☀</span> {{{shortRestCheckboxes}}}</div>
+        <div class="fth-pro-rest-mini-row"><span class="fth-pro-rest-icon">✨</span> ☐</div>
+      </div>
+    </div>
   </div>
 
   {{!-- Ability Scores - Hex/Shield style --}}
@@ -95,6 +104,19 @@
     {{/each}}
   </section>
   {{/if}}
+
+  {{!-- Passive Senses (under ability scores) --}}
+  <div class="fth-pro-senses-row">
+    {{#each passives}}
+    <div class="fth-pro-sense-item">
+      <span class="fth-pro-sense-val">{{value}}</span>
+      <span class="fth-pro-sense-lbl">{{label}}</span>
+    </div>
+    {{/each}}
+    {{#if sensesLine}}
+    <div class="fth-pro-sense-item fth-pro-senses-extra">{{sensesLine}}</div>
+    {{/if}}
+  </div>
 
   {{!-- Actions Section (first, full width) --}}
   {{#if showActions}}
@@ -260,25 +282,6 @@
         </div>
       </div>
       {{/if}}
-
-      {{!-- Passive Senses --}}
-      <div class="fth-pro-card fth-pro-passives-card">
-        <div class="fth-pro-card-header">
-          <span class="fth-pro-card-icon">👁</span>
-          <h2>Senses</h2>
-        </div>
-        <div class="fth-pro-passives-row">
-          {{#each passives}}
-          <div class="fth-pro-passive">
-            <span class="fth-pro-passive-val">{{value}}</span>
-            <span class="fth-pro-passive-lbl">{{label}}</span>
-          </div>
-          {{/each}}
-        </div>
-        {{#if sensesLine}}
-        <div class="fth-pro-senses-extra">{{sensesLine}}</div>
-        {{/if}}
-      </div>
     </div>
 
     <div class="fth-pro-col-right">
@@ -309,48 +312,6 @@
         <div class="fth-pro-defenses-content">{{{defensesLine}}}</div>
       </div>
       {{/if}}
-
-      {{!-- Rest Tracking --}}
-      <div class="fth-pro-card fth-pro-rest-card">
-        <div class="fth-pro-card-header">
-          <span class="fth-pro-card-icon">☀</span>
-          <h2>Rest Tracking</h2>
-        </div>
-        <div class="fth-pro-rest-row">
-          <span class="fth-pro-rest-label">Short Rests</span>
-          <span class="fth-pro-rest-checks">{{{shortRestCheckboxes}}}</span>
-        </div>
-        <div class="fth-pro-rest-row">
-          <span class="fth-pro-rest-label">Inspiration</span>
-          <span class="fth-pro-rest-checks">☐</span>
-        </div>
-      </div>
-
-      {{!-- Currency Widget --}}
-      {{#if hasCurrency}}
-      <div class="fth-pro-card fth-pro-currency-card">
-        <div class="fth-pro-card-header">
-          <span class="fth-pro-card-icon">💰</span>
-          <h2>Currency</h2>
-        </div>
-        <div class="fth-pro-currency-row fth-pro-currency-current">
-          {{#each currency.coins}}
-          <div class="fth-pro-coin">
-            <span class="fth-pro-coin-icon">{{icon}}</span>
-            <span class="fth-pro-coin-val">{{amountDisplay}}</span>
-            <span class="fth-pro-coin-label">{{abbr}}</span>
-          </div>
-          {{/each}}
-        </div>
-        <div class="fth-pro-currency-row fth-pro-currency-input">
-          {{#each currency.coins}}
-          <div class="fth-pro-coin-input">
-            <input type="text" class="fth-pro-coin-input-box" aria-label="{{abbr}} change">
-          </div>
-          {{/each}}
-        </div>
-      </div>
-      {{/if}}
     </div>
   </div>
 
@@ -374,6 +335,28 @@
     </div>
   </section>
   {{/if}}
+  {{/if}}
+
+  {{!-- Currency Widget (centered, above inventory) --}}
+  {{#if hasCurrency}}
+  <div class="fth-pro-currency-standalone">
+    <div class="fth-pro-currency-row fth-pro-currency-current">
+      {{#each currency.coins}}
+      <div class="fth-pro-coin-compact">
+        <span class="fth-pro-coin-icon-sm">{{icon}}</span>
+        <span class="fth-pro-coin-val-sm">{{amountDisplay}}</span>
+        <span class="fth-pro-coin-label-sm">{{abbr}}</span>
+      </div>
+      {{/each}}
+    </div>
+    <div class="fth-pro-currency-row fth-pro-currency-input">
+      {{#each currency.coins}}
+      <div class="fth-pro-coin-input">
+        <input type="text" class="fth-pro-coin-input-box-lg" aria-label="{{abbr}} change">
+      </div>
+      {{/each}}
+    </div>
+  </div>
   {{/if}}
 
   {{!-- Inventory Section --}}
