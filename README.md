@@ -1,11 +1,33 @@
 # Foundry Tabletop Helpers
 
-A small set of quality-of-life helpers for touchscreen tabletop play in Foundry VTT.
+A set of quality-of-life helpers for Foundry VTT, optimized for touchscreen tabletop play and physical printing.
 
-Current features:
+## Features
+
+### 🖨️ Print Character Sheets
+Generate print-ready character sheets optimized for physical use at the table.
+
+**Pro Sheet Style** — A premium character sheet designed to look like a high-quality printed RPG product:
+- Clean, light-themed layout optimized for printing (saves ink, high readability)
+- Organized sections: Header, Combat Stats, Abilities, Senses, Actions, Spellcasting, Skills, Proficiencies, Features, Inventory
+- Currency tracking widget with write-in boxes for session use
+- Automatic feature summaries — verbose class features and feats are replaced with concise, new-player-friendly descriptions
+- Page-break aware layout to keep related sections together
+
+**Supported Print Types:**
+- **Characters** — Full character sheets with all details
+- **NPCs** — Monster/NPC stat blocks
+- **Parties** — Summary of all party members
+- **Encounters** — Multiple NPC stat blocks grouped together
+
+**How to Use:**
+1. Right-click an Actor in the sidebar → "Print Sheet"
+2. Select print options (style, sections to include)
+3. Print or save as PDF
+
+### 🔄 Window Rotation
 - Adds a Rotate/Flip control to application windows. Default rotates 90° per press; optionally switch to 180° flip in settings.
 - Includes prebuilt macros to rotate all open windows (90° clockwise/counterclockwise, and 180°). A world compendium "FTH Macros" is auto-created for drag-and-drop.
-
 
 ## Settings
 - Rotation: Choose how much each press rotates
