@@ -13,6 +13,7 @@ import type {
   Dnd5eAbilityData, Dnd5eAbilitiesData, Dnd5eAbilitySaveData,
   Dnd5eTraitData,
 } from "./dnd5e-system-types";
+import { getActivityValues } from "./dnd5e-system-types";
 import { toArray } from "./dnd5e-system-types";
 
 /* ── Constants ────────────────────────────────────────────── */
@@ -364,36 +365,37 @@ export function extractSpellcasting(actor: any, favorites: Set<string>): Spellca
     let effect = "";
 
     // Try to get from activities (dnd5e 5.x)
-    const activities = sys?.activities;
-    if (activities) {
+    const activityList = getActivityValues(sys?.activities);
+    if (activityList.length > 0) {
       try {
-        const actValues = activities instanceof Map ? [...activities.values()] :
-          typeof activities.values === "function" ? [...activities.values()] :
-          Object.values(activities);
-
-        if (actValues.length > 0) {
-          const act = actValues[0];
-          // Check for attack
-          if (act?.attack?.type) {
-            attackSave = `+${attackMod}`;
+        const act = activityList[0];
+        // Check for attack
+        if (act?.attack?.type) {
+          attackSave = `+${attackMod}`;
+        }
+        // Check for save
+        if (act?.save?.dc?.calculation) {
+          // save.ability can be Set<string> or string
+          const ability = act.save.ability;
+          const saveAbility = (ability instanceof Set ? [...ability][0] : (ability ?? "")).toUpperCase().slice(0, 3);
+          attackSave = `DC ${dc}${saveAbility ? " " + saveAbility : ""}`;
+        }
+        // Check for damage/healing
+        const damageParts = act?.damage?.parts;
+        const rawDamageArr = Array.isArray(damageParts) ? damageParts :
+          damageParts instanceof Map ? Array.from(damageParts.values()) :
+          damageParts && typeof damageParts === "object" ? Object.values(damageParts) : [];
+        if (rawDamageArr.length > 0) {
+          const first = rawDamageArr[0] as unknown;
+          const formula = typeof first === "string" ? first :
+            (first !== null && typeof first === "object" && "bonus" in first && typeof (first as { bonus: unknown }).bonus === "string"
+              ? String((first as { bonus: string }).bonus) : "");
+          if (formula) {
+            // Resolve @mod
+            effect = formula.replace(/@mod/g, String(abilityMod));
           }
-          // Check for save
-          if (act?.save?.dc?.calculation) {
-            const saveAbility = (act.save.ability ?? "").toUpperCase().slice(0, 3);
-            attackSave = `DC ${dc}${saveAbility ? " " + saveAbility : ""}`;
-          }
-          // Check for damage/healing
-          const damage = act?.damage?.parts ?? act?.healing?.formula ?? [];
-          if (Array.isArray(damage) && damage.length > 0) {
-            const first = damage[0];
-            const formula = typeof first === "string" ? first : (first?.formula ?? first?.[0] ?? "");
-            if (formula) {
-              // Resolve @mod
-              effect = formula.replace(/@mod/g, String(abilityMod));
-            }
-          } else if (act?.healing?.formula) {
-            effect = String(act.healing.formula).replace(/@mod/g, String(abilityMod));
-          }
+        } else if (act?.healing?.formula) {
+          effect = String(act.healing.formula).replace(/@mod/g, String(abilityMod));
         }
       } catch { /* ignore */ }
     }
@@ -417,19 +419,14 @@ export function extractSpellcasting(actor: any, favorites: Set<string>): Spellca
     // Get higher level scaling description
     // In dnd5e 5.x, this is in the activities scaling or in the description
     let higherLevel = "";
-    if (activities) {
-      try {
-        const actValues = activities instanceof Map ? [...activities.values()] :
-          typeof activities.values === "function" ? [...activities.values()] :
-          Object.values(activities);
-        for (const act of actValues) {
-          if (act?.scaling?.formula || act?.scaling?.mode) {
-            // There's scaling info, but actual text is often in description
-            break;
-          }
+    try {
+      for (const act of getActivityValues(sys?.activities)) {
+        if (act?.scaling?.formula || act?.scaling?.mode) {
+          // There's scaling info, but actual text is often in description
+          break;
         }
-      } catch { /* ignore */ }
-    }
+      }
+    } catch { /* ignore */ }
     // Check for "At Higher Levels" section in description
     const descVal = sys?.description?.value ?? "";
     const higherMatch = descVal.match(/<p><strong>At Higher Levels[.:]?<\/strong>\s*(.*?)<\/p>/i) ||
@@ -570,19 +567,17 @@ function getCategoryLabel(category: string): string {
 }
 
 /**
- * Walk a dot-separated path (e.g. "abilities.dex.mod") through a nested object,
+ * Resolve a dot-separated path (e.g. "abilities.dex.mod") through a nested object,
  * returning the terminal value or undefined if any segment is missing.
+ *
+ * Delegates to `foundry.utils.getProperty`, which handles dot-notation traversal
+ * natively and is the canonical Foundry v13 API for this operation.
  *
  * Used to resolve [[lookup @abilities.dex.mod]] style Foundry placeholders against
  * the actor's getRollData() output.
  */
 function resolveRollDataPath(data: Record<string, unknown>, path: string): unknown {
-  let current: unknown = data;
-  for (const segment of path.split(".")) {
-    if (current == null || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[segment];
-  }
-  return current;
+  return foundry.utils.getProperty(data, path);
 }
 
 /**

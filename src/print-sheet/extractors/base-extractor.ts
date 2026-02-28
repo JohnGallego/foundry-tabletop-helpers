@@ -11,17 +11,29 @@ export abstract class BaseExtractor {
   /** Return the available section toggles for a given sheet type */
   abstract getSections(type: SheetType): SectionDef[];
 
-  /** Extract all data needed to render a character sheet */
-  abstract extractCharacter(actor: any, options: PrintOptions): Promise<any>;
+  /**
+   * Extract all data needed to render a character sheet.
+   * The `actor` shape is system-specific; concrete subclasses narrow this type.
+   */
+  abstract extractCharacter(actor: unknown, options: PrintOptions): Promise<unknown>;
 
-  /** Extract all data needed to render an NPC stat block */
-  abstract extractNPC(actor: any, options: PrintOptions): Promise<any>;
+  /**
+   * Extract all data needed to render an NPC stat block.
+   * The `actor` shape is system-specific; concrete subclasses narrow this type.
+   */
+  abstract extractNPC(actor: unknown, options: PrintOptions): Promise<unknown>;
 
-  /** Extract data for all actors in an encounter group */
-  abstract extractEncounterGroup(group: any, options: PrintOptions): Promise<any>;
+  /**
+   * Extract data for all actors in an encounter group.
+   * The `group` shape is system-specific; concrete subclasses narrow this type.
+   */
+  abstract extractEncounterGroup(group: unknown, options: PrintOptions): Promise<unknown>;
 
-  /** Extract party summary data from a party group */
-  abstract extractPartySummary(group: any, options: PrintOptions): Promise<any>;
+  /**
+   * Extract party summary data from a party group.
+   * The `group` shape is system-specific; concrete subclasses narrow this type.
+   */
+  abstract extractPartySummary(group: unknown, options: PrintOptions): Promise<unknown>;
 }
 
 /* ── Extractor registry ────────────────────────────────────── */

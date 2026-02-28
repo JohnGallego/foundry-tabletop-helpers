@@ -8,16 +8,17 @@ import { Log } from "../../logger";
 import { getGame } from "../../types";
 import { BaseExtractor, registerExtractor } from "./base-extractor";
 import type { PrintOptions, SectionDef, SheetType } from "../types";
+import { SECTION_DEFINITIONS } from "../section-definitions";
 import type {
   CharacterData, NPCData, EncounterGroupData, PartySummaryData,
   PartyMemberSummary, FeatureData, CharacterActions, WeaponActionData,
 } from "./dnd5e-types";
 import type {
   Dnd5eDamageData, Dnd5eRecoveryData, Dnd5eUsesData,
-  Dnd5eSaveActivityData, Dnd5eRangeData,
+  Dnd5eSaveActivityData, Dnd5eAnyActivityData, Dnd5eRangeData,
   Dnd5eEmbedContext, Dnd5eEmbedAction, Dnd5eEmbedActionSections,
 } from "./dnd5e-system-types";
-import { getFirstFromSetOrArray } from "./dnd5e-system-types";
+import { getFirstFromSetOrArray, getActivityValues } from "./dnd5e-system-types";
 import {
   buildFavoritesSet, resolveTraitSet,
   extractAbilities, extractSkills, extractCombat, extractDetails,
@@ -28,38 +29,7 @@ export class Dnd5eExtractor extends BaseExtractor {
   readonly systemId = "dnd5e";
 
   getSections(type: SheetType): SectionDef[] {
-    switch (type) {
-      case "character":
-        return [
-          { key: "abilities",  label: "Ability Scores & Saves", default: true },
-          { key: "skills",     label: "Skills",                 default: true },
-          { key: "combat",     label: "Combat Stats",           default: true },
-          { key: "actions",    label: "Actions",                default: true },
-          { key: "features",   label: "Features & Traits",      default: true },
-          { key: "spells",     label: "Spellcasting",           default: true },
-          { key: "inventory",  label: "Inventory",              default: true },
-          { key: "backstory",  label: "Backstory & Notes",      default: true },
-          { key: "reference",  label: "Rules Reference Page",   default: true },
-        ];
-      case "npc":
-        return [
-          { key: "stats",      label: "Core Stats",             default: true },
-          { key: "traits",     label: "Traits",                 default: true },
-          { key: "actions",    label: "Actions",                default: true },
-          { key: "legendary",  label: "Legendary Actions",      default: true },
-          { key: "lair",       label: "Lair Actions",           default: true },
-          { key: "spells",     label: "Spellcasting",           default: true },
-        ];
-      case "encounter":
-        return [
-          { key: "statblocks", label: "NPC Stat Blocks",        default: true },
-        ];
-      case "party":
-        return [
-          { key: "summary",    label: "Party Summary Table",    default: true },
-          { key: "skills",     label: "Top Skills per Member",  default: true },
-        ];
-    }
+    return SECTION_DEFINITIONS[type];
   }
 
   /* ── Character ──────────────────────────────────────────── */
@@ -299,28 +269,16 @@ export class Dnd5eExtractor extends BaseExtractor {
       }
 
       // Check for activities or activation type
-      const activities = item.system?.activities;
-      const hasActivities = activities && (
-        (activities instanceof Map && activities.size > 0) ||
-        (typeof activities.size === "number" && activities.size > 0) ||
-        (typeof activities === "object" && Object.keys(activities).length > 0)
-      );
+      const actValues = getActivityValues(item.system?.activities);
       const activation = item.system?.activation?.type;
-      if (!hasActivities && !activation) continue;
+      if (actValues.length === 0 && !activation) continue;
 
       // Determine activation type
       let activationType = "action";
       if (activation) {
         activationType = activation;
-      } else if (hasActivities) {
-        try {
-          const actValues = activities instanceof Map ? [...activities.values()] :
-            typeof activities.values === "function" ? [...activities.values()] :
-            Object.values(activities);
-          if (actValues.length > 0 && actValues[0]?.activation?.type) {
-            activationType = actValues[0].activation.type;
-          }
-        } catch { /* Keep default */ }
+      } else if (actValues.length > 0 && actValues[0]?.activation?.type) {
+        activationType = actValues[0].activation.type;
       }
 
       const featureData: FeatureData = {
@@ -438,68 +396,68 @@ export class Dnd5eExtractor extends BaseExtractor {
       let hasAbilityMod = false; // Track if @mod is included in formula
 
       // Try to get damage from activities
-      const activities = sys?.activities;
-      if (activities) {
+      const activityList = getActivityValues(sys?.activities);
+      if (activityList.length > 0) {
         try {
-          const actValues = activities instanceof Map ? [...activities.values()] :
-            typeof activities.values === "function" ? [...activities.values()] :
-            Object.values(activities);
+          const activity = activityList[0];
+          // Get damage parts - can be array or Collection
+          let damageParts: unknown[] = [];
+          const rawParts = activity?.damage?.parts;
+          if (rawParts) {
+            if (Array.isArray(rawParts)) {
+              damageParts = rawParts;
+            } else if (typeof (rawParts as { forEach?: unknown }).forEach === "function") {
+              (rawParts as { forEach: (cb: (p: unknown) => void) => void }).forEach((p) => damageParts.push(p));
+            } else if (typeof rawParts === "object") {
+              damageParts = Object.values(rawParts as Record<string, unknown>);
+            }
+          }
 
-          if (actValues.length > 0) {
-            const activity = actValues[0];
-            // Get damage parts - can be array or Collection
-            let damageParts: any[] = [];
-            const rawParts = activity?.damage?.parts;
-            if (rawParts) {
-              if (Array.isArray(rawParts)) {
-                damageParts = rawParts;
-              } else if (typeof rawParts.forEach === "function") {
-                rawParts.forEach((p: any) => damageParts.push(p));
-              } else if (typeof rawParts === "object") {
-                damageParts = Object.values(rawParts);
+          if (damageParts.length > 0) {
+            const firstDamage = damageParts[0] as Record<string, unknown> | string | unknown[] | null;
+
+            // dnd5e 5.x format: {number, denomination, bonus, types}
+            if (firstDamage && typeof firstDamage === "object" && !Array.isArray(firstDamage) &&
+                (firstDamage as Record<string, unknown>).number && (firstDamage as Record<string, unknown>).denomination) {
+              const fd = firstDamage as Record<string, unknown>;
+              damageFormula = `${fd.number}d${fd.denomination}`;
+              if (fd.bonus && typeof fd.bonus === "string") {
+                damageFormula += ` + ${fd.bonus}`;
+                hasAbilityMod = fd.bonus.includes("@mod") ||
+                                fd.bonus.includes("@str") ||
+                                fd.bonus.includes("@dex");
               }
+            } else if (typeof firstDamage === "string") {
+              // Legacy string format
+              damageFormula = firstDamage;
+              hasAbilityMod = firstDamage.includes("@mod") ||
+                              firstDamage.includes("@str") ||
+                              firstDamage.includes("@dex");
+            } else if (firstDamage && typeof firstDamage === "object" && !Array.isArray(firstDamage) &&
+                       (firstDamage as Record<string, unknown>).formula) {
+              const formula = (firstDamage as Record<string, string>).formula;
+              damageFormula = formula;
+              hasAbilityMod = formula.includes("@mod") ||
+                              formula.includes("@str") ||
+                              formula.includes("@dex");
+            } else if (Array.isArray(firstDamage)) {
+              // Legacy array format: ["1d8 + @mod", "slashing"]
+              damageFormula = String(firstDamage[0] ?? "");
+              hasAbilityMod = damageFormula.includes("@mod") ||
+                              damageFormula.includes("@str") ||
+                              damageFormula.includes("@dex");
             }
 
-            if (damageParts.length > 0) {
-              const firstDamage = damageParts[0];
-
-              // dnd5e 5.x format: {number, denomination, bonus, types}
-              if (firstDamage?.number && firstDamage?.denomination) {
-                damageFormula = `${firstDamage.number}d${firstDamage.denomination}`;
-                if (firstDamage.bonus) {
-                  damageFormula += ` + ${firstDamage.bonus}`;
-                  hasAbilityMod = firstDamage.bonus.includes("@mod") ||
-                                  firstDamage.bonus.includes("@str") ||
-                                  firstDamage.bonus.includes("@dex");
-                }
-              } else if (typeof firstDamage === "string") {
-                // Legacy string format
-                damageFormula = firstDamage;
-                hasAbilityMod = firstDamage.includes("@mod") ||
-                                firstDamage.includes("@str") ||
-                                firstDamage.includes("@dex");
-              } else if (firstDamage?.formula) {
-                damageFormula = firstDamage.formula;
-                hasAbilityMod = firstDamage.formula.includes("@mod") ||
-                                firstDamage.formula.includes("@str") ||
-                                firstDamage.formula.includes("@dex");
-              } else if (Array.isArray(firstDamage)) {
-                // Legacy array format: ["1d8 + @mod", "slashing"]
-                damageFormula = firstDamage[0] ?? "";
-                hasAbilityMod = damageFormula.includes("@mod") ||
-                                damageFormula.includes("@str") ||
-                                damageFormula.includes("@dex");
-              }
-
-              // Get damage types - can be Set or Array
-              const types = firstDamage?.types;
-              if (types) {
-                const typeArr = types instanceof Set ? [...types] :
-                  Array.isArray(types) ? types : [];
-                damageTypes = typeArr.map((t: string) => this.capitalizeFirst(t)).join(", ");
-              } else if (Array.isArray(firstDamage) && firstDamage[1]) {
-                damageTypes = this.capitalizeFirst(firstDamage[1]);
-              }
+            // Get damage types - can be Set or Array
+            const types = firstDamage && typeof firstDamage === "object" && !Array.isArray(firstDamage)
+              ? (firstDamage as Record<string, unknown>).types
+              : undefined;
+            if (types) {
+              const typeArr = types instanceof Set ? [...types] :
+                Array.isArray(types) ? types : [];
+              damageTypes = (typeArr as string[]).map((t) => this.capitalizeFirst(t)).join(", ");
+            } else if (Array.isArray(firstDamage) && firstDamage[1]) {
+              damageTypes = this.capitalizeFirst(String(firstDamage[1]));
             }
           }
         } catch {
@@ -1164,26 +1122,22 @@ export class Dnd5eExtractor extends BaseExtractor {
     for (const item of weaponItems) {
       let hasPhysicalDamage = false;
 
-      const activities = item.system?.activities;
-      if (activities) {
-        const actList = activities instanceof Map ? [...activities.values()] :
-                        (typeof activities.values === "function" ? [...activities.values()] : Object.values(activities));
-
-        for (const act of actList) {
-          const damageParts = act.damage?.parts ?? [];
-          for (const part of damageParts) {
-            const types = part.types instanceof Set ? [...part.types] :
-                          (Array.isArray(part.types) ? part.types : []);
-            for (const t of types) {
-              if (physicalDamageTypes.has(t.toLowerCase())) {
-                hasPhysicalDamage = true;
-                break;
-              }
+      for (const act of getActivityValues(item.system?.activities)) {
+        const damageParts: unknown[] = Array.isArray(act.damage?.parts) ? act.damage.parts :
+          act.damage?.parts instanceof Map ? Array.from((act.damage.parts as Map<string, unknown>).values()) : [];
+        for (const part of damageParts) {
+          const p = part as { types?: Set<string> | string[] };
+          const types = p.types instanceof Set ? [...p.types] :
+                        (Array.isArray(p.types) ? p.types : []);
+          for (const t of types) {
+            if (physicalDamageTypes.has(t.toLowerCase())) {
+              hasPhysicalDamage = true;
+              break;
             }
-            if (hasPhysicalDamage) break;
           }
           if (hasPhysicalDamage) break;
         }
+        if (hasPhysicalDamage) break;
       }
 
       // Fallback: check item.system.damage if no activities
@@ -1518,36 +1472,30 @@ export class Dnd5eExtractor extends BaseExtractor {
 
     // Also check activities for recharge info if not found in uses
     if (usesData && !usesData.recovery) {
-      const activities = item.system?.activities;
-      if (activities) {
-        try {
-          const actList = activities instanceof Map ? [...activities.values()] :
-                         (typeof activities.values === "function" ? [...activities.values()] : Object.values(activities));
-          for (const act of actList) {
-            const consumption = act.consumption;
-            if (consumption?.targets) {
-              for (const target of consumption.targets) {
-                if (target.type === "itemUses" && target.target === "") {
-                  // This activity consumes item uses - check for recharge
-                  const actUses = act.uses;
-                  const actRec = actUses?.recovery?.[0];
-                  if (actRec?.period === "recharge" && actRec?.formula) {
-                    // dnd5e 5.x format: period is "recharge", formula is the min value
-                    const rechargeMin = parseInt(actRec.formula) || 6;
-                    usesData.recovery = rechargeMin === 6 ? "Recharge 6" : `Recharge ${rechargeMin}–6`;
-                    break;
-                  } else if (actRec?.period?.startsWith("recharge")) {
-                    // Legacy format
-                    const rechargeNum = parseInt(actRec.period.replace("recharge", "")) || 6;
-                    usesData.recovery = rechargeNum === 6 ? "Recharge 6" : `Recharge ${rechargeNum}–6`;
-                    break;
-                  }
+      try {
+        for (const act of getActivityValues(item.system?.activities)) {
+          const consumption = act.consumption;
+          if (consumption?.targets) {
+            for (const target of consumption.targets) {
+              if (target.type === "itemUses" && target.target === "") {
+                // This activity consumes item uses - check for recharge
+                const actRec = act.uses?.recovery?.[0];
+                if (actRec?.period === "recharge" && actRec?.formula) {
+                  // dnd5e 5.x format: period is "recharge", formula is the min value
+                  const rechargeMin = parseInt(actRec.formula) || 6;
+                  usesData.recovery = rechargeMin === 6 ? "Recharge 6" : `Recharge ${rechargeMin}–6`;
+                  break;
+                } else if (actRec?.period?.startsWith("recharge")) {
+                  // Legacy format
+                  const rechargeNum = parseInt(actRec.period.replace("recharge", "")) || 6;
+                  usesData.recovery = rechargeNum === 6 ? "Recharge 6" : `Recharge ${rechargeNum}–6`;
+                  break;
                 }
               }
             }
           }
-        } catch { /* ignore */ }
-      }
+        }
+      } catch { /* ignore */ }
     }
 
     return {
@@ -1563,27 +1511,18 @@ export class Dnd5eExtractor extends BaseExtractor {
   /** Extract attack/damage data from an item's activities */
   private extractAttackData(item: any, actor?: any): FeatureData["attack"] | undefined {
     // Handle weapons and feats with damage activities
-    const activities = item.system?.activities;
-    if (!activities) return undefined;
+    const activityValues = getActivityValues(item.system?.activities);
+    if (activityValues.length === 0) return undefined;
 
     try {
-      let activityValues: any[] = [];
-      if (activities instanceof Map) {
-        activityValues = Array.from(activities.values());
-      } else if (typeof activities.values === "function") {
-        activityValues = Array.from(activities.values());
-      } else if (typeof activities === "object" && activities !== null) {
-        activityValues = Object.values(activities);
-      }
-
       // Find an attack activity or save activity with damage
-      const attackActivity = activityValues.find((a: any) =>
+      const attackActivity: Dnd5eAnyActivityData | undefined = activityValues.find((a) =>
         a.type === "attack" || a.attack?.ability
       );
 
       // For feats/abilities, also look for save activities with damage
-      const saveActivity = activityValues.find((a: any) =>
-        a.type === "save" && a.damage?.parts?.length > 0
+      const saveActivity: Dnd5eAnyActivityData | undefined = activityValues.find((a) =>
+        a.type === "save" && !!a.damage?.parts
       );
 
       // If no attack activity and no save activity, nothing to extract
@@ -1591,8 +1530,11 @@ export class Dnd5eExtractor extends BaseExtractor {
 
       // For save-based abilities (like breath weapons), handle separately
       if (!attackActivity && saveActivity) {
-        return this.extractSaveActivityData(saveActivity, actor);
+        return this.extractSaveActivityData(saveActivity as Dnd5eSaveActivityData, actor);
       }
+
+      // attackActivity is guaranteed to be defined from this point
+      if (!attackActivity) return undefined;
 
       // Determine attack type - check multiple possible locations
       // In dnd5e 5.x, properties is a Set<string>
@@ -1672,8 +1614,15 @@ export class Dnd5eExtractor extends BaseExtractor {
       // Get damage - try multiple sources
       const damage: { avg: number; formula: string; type: string }[] = [];
 
-      // First try activity damage parts
-      let damageData = attackActivity.damage?.parts ?? [];
+      // First try activity damage parts — normalize to array regardless of runtime shape
+      const rawDamageParts = attackActivity.damage?.parts;
+      let damageData: Dnd5eDamageData[] = rawDamageParts instanceof Map
+        ? Array.from(rawDamageParts.values())
+        : Array.isArray(rawDamageParts)
+          ? rawDamageParts
+          : rawDamageParts && typeof rawDamageParts === "object"
+            ? Object.values(rawDamageParts)
+            : [];
 
       // If no activity damage, try item's base damage
       if (damageData.length === 0) {
@@ -1682,9 +1631,7 @@ export class Dnd5eExtractor extends BaseExtractor {
           const baseDice = baseDamage.number ?? 1;
           const baseDie = baseDamage.denomination ?? 8;
           const baseType = baseDamage.types?.[0] ?? baseDamage.damageType ?? weaponDamageType;
-          // Build formula with ability mod
-          const formula = `${baseDice}d${baseDie} + @mod`;
-          damageData = [{ formula, types: [baseType] }];
+          damageData = [{ number: baseDice, denomination: baseDie, bonus: "@mod", types: new Set([baseType]) }];
         }
       }
 
@@ -1837,19 +1784,10 @@ export class Dnd5eExtractor extends BaseExtractor {
    * has "7 ()" but the damage formula is stored in an activity.
    */
   private extractAnyDamageFromActivities(item: any, actor?: any): { formula: string; avg: number } | null {
-    const activities = item.system?.activities;
-    if (!activities) return null;
+    const activityValues = getActivityValues(item.system?.activities);
+    if (activityValues.length === 0) return null;
 
     try {
-      let activityValues: any[] = [];
-      if (activities instanceof Map) {
-        activityValues = Array.from(activities.values());
-      } else if (typeof activities.values === "function") {
-        activityValues = Array.from(activities.values());
-      } else if (typeof activities === "object" && activities !== null) {
-        activityValues = Object.values(activities);
-      }
-
       // Debug: Log activity structure
       Log.debug("extractAnyDamageFromActivities - activities found", {
         itemName: item.name,
@@ -2019,28 +1957,13 @@ export class Dnd5eExtractor extends BaseExtractor {
   /** Determine the activation type category for an NPC item */
   private getActivationType(item: any): string {
     // Check activities first (dnd5e 2024 style)
-    const activities = item.system?.activities;
-    if (activities) {
-      try {
-        // dnd5e activities can be a Map, Collection, or plain object
-        let activityValues: any[] = [];
-        if (activities instanceof Map) {
-          activityValues = Array.from(activities.values());
-        } else if (typeof activities.values === "function") {
-          // Collection or Map-like object
-          activityValues = Array.from(activities.values());
-        } else if (typeof activities === "object" && activities !== null) {
-          // Plain object
-          activityValues = Object.values(activities);
-        }
-
-        for (const activity of activityValues) {
-          const type = activity?.activation?.type;
-          if (type) return type;
-        }
-      } catch {
-        // If activities iteration fails, fall through to legacy activation
+    try {
+      for (const activity of getActivityValues(item.system?.activities)) {
+        const type = activity?.activation?.type;
+        if (type) return type;
       }
+    } catch {
+      // If activities iteration fails, fall through to legacy activation
     }
     // Fallback to legacy activation
     return item.system?.activation?.type ?? "none";

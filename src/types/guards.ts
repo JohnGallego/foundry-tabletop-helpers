@@ -109,6 +109,39 @@ export function getSystemId(): string {
   return getGame()?.system?.id ?? "unknown";
 }
 
+/**
+ * Parse a semver string (e.g., "4.3.2") into a numeric tuple.
+ * Non-numeric segments are treated as 0.
+ */
+function parseSemver(version: string): [number, number, number] {
+  const parts = version.split(".").map((p) => parseInt(p, 10) || 0);
+  return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0];
+}
+
+/**
+ * Check if the active system's version is at least `major.minor.patch`.
+ * Returns false if the version string cannot be determined.
+ */
+export function systemVersionAtLeast(major: number, minor = 0, patch = 0): boolean {
+  const version = getGame()?.system?.version ?? "0.0.0";
+  const [v1, v2, v3] = parseSemver(version);
+  if (v1 !== major) return v1 > major;
+  if (v2 !== minor) return v2 > minor;
+  return v3 >= patch;
+}
+
+/**
+ * Check if the dnd5e system supports the Activities model (dnd5e >= 4.0.0).
+ *
+ * The Activities model was introduced in dnd5e 4.0 and replaced the legacy
+ * "activation" + "damage.parts" pattern with a structured `item.system.activities`
+ * collection.  Code that reads activities should guard with this function so it
+ * degrades gracefully on older installs.
+ */
+export function isDnd5eActivitiesSupported(): boolean {
+  return isDnd5eWorld() && systemVersionAtLeast(4);
+}
+
 /* ── User Checks ──────────────────────────────────────────── */
 
 /**

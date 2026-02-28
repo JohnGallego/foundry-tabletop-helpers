@@ -36,6 +36,8 @@ export {
   getCompendiumCollectionClass,
   isDnd5eWorld,
   getSystemId,
+  systemVersionAtLeast,
+  isDnd5eActivitiesSupported,
   isGM,
   getCurrentUserId,
   getPlayerUsers,

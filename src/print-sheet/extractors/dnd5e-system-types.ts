@@ -499,11 +499,94 @@ export interface Dnd5eGroupSystemData {
 // HELPER TYPES
 // =============================================================================
 
-/** Activity union type */
+/** Activity union type (for when the concrete subtype is known) */
 export type Dnd5eActivityData =
   | Dnd5eAttackActivityData
   | Dnd5eSaveActivityData
   | Dnd5eBaseActivityData;
+
+/**
+ * A broad activity shape that includes every optional field accessed by the
+ * extractor layer. dnd5e activities vary by type, and the union type above is
+ * too narrow for duck-typed access patterns. Use this when you need to read
+ * optional sub-type fields without narrowing first.
+ *
+ * All non-base fields are optional so code that doesn't know the concrete
+ * activity type can still do safe optional-chaining access.
+ */
+export interface Dnd5eAnyActivityData extends Dnd5eBaseActivityData {
+  /** Attack configuration (present on "attack" activities) */
+  attack?: {
+    ability?: string;
+    bonus?: string;
+    flat?: number;
+    type?: {
+      value?: string;         // "melee" | "ranged"
+      classification?: string; // "weapon" | "spell"
+    };
+  };
+  /** Damage parts (present on "attack", "save", "damage" activities) */
+  damage?: {
+    includeBase?: boolean;
+    onSave?: string;
+    parts?: Dnd5eDamageData[] | Map<string, Dnd5eDamageData> | Record<string, Dnd5eDamageData>;
+  };
+  /** Save configuration (present on "save" activities) */
+  save?: {
+    ability?: Set<string> | string;
+    dc?: {
+      calculation?: string;
+      formula?: string;
+      value?: number;
+    };
+  };
+  /** Healing configuration (present on "heal" activities) */
+  healing?: {
+    formula?: string;
+    parts?: Dnd5eDamageData[];
+  };
+  /** Scaling configuration (present on spells and some features) */
+  scaling?: {
+    formula?: string;
+    mode?: string;
+  };
+}
+
+/**
+ * Safely extract all activity values from a dnd5e `item.system.activities` object.
+ *
+ * dnd5e 4.x/5.x stores activities as one of three shapes at runtime:
+ *   - `Map<string, ActivityData>`          — the native JS Map used internally
+ *   - A Collection instance (Map-like)     — Foundry's Collection class with `.values()`
+ *   - `Record<string, ActivityData>`       — plain object (older serialized forms)
+ *
+ * This helper normalises all three into a simple array so callers never need
+ * to repeat the three-way duck-typing logic.
+ *
+ * Returns `Dnd5eAnyActivityData[]` so callers can safely access optional
+ * sub-type fields without casting.
+ *
+ * @param activities - The raw value of `item.system.activities` (may be null/undefined).
+ * @returns An array of activity data objects; empty array when input is absent.
+ */
+export function getActivityValues(
+  activities:
+    | Map<string, Dnd5eBaseActivityData>
+    | Record<string, Dnd5eBaseActivityData>
+    | null
+    | undefined,
+): Dnd5eAnyActivityData[] {
+  if (!activities) return [];
+  if (activities instanceof Map) {
+    return Array.from(activities.values()) as Dnd5eAnyActivityData[];
+  }
+  // Foundry Collection and other Map-like objects expose `.values()`
+  if (typeof (activities as { values?: unknown }).values === "function") {
+    type Iterable = { values(): IterableIterator<Dnd5eBaseActivityData> };
+    return Array.from((activities as unknown as Iterable).values()) as Dnd5eAnyActivityData[];
+  }
+  return Object.values(activities) as Dnd5eAnyActivityData[];
+}
 
 /**
  * Helper to safely extract first value from a Set or Array.

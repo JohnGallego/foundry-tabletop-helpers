@@ -6,6 +6,7 @@
 
 import { Log } from "../logger";
 import { getGame, getUI, getHooks } from "../types";
+import { safe } from "../utils";
 import {
   getPrintDefaults,
   canUsePrintFeature,
@@ -22,12 +23,31 @@ import type { PrintOptions, SheetType } from "./types";
 import "./extractors/dnd5e-extractor";
 import "./renderers/dnd5e-renderer";
 
-function safe(fn: () => void, where: string) {
-  try {
-    fn();
-  } catch (err) {
-    Log.error(`Exception in ${where}`, err);
-  }
+/* ── Typed interfaces ──────────────────────────────────────── */
+
+/**
+ * Minimal shape of an actor document as accessed through a sheet application.
+ * Properties are optional because the object comes from a loosely-typed hook.
+ */
+interface DocumentLike {
+  readonly name?: string | null;
+  readonly type?: string;
+  readonly documentName?: string;
+  readonly constructor: { readonly documentName?: string };
+  readonly system?: {
+    readonly type?: { readonly value?: string };
+    readonly members?: ReadonlyArray<{ readonly actor?: unknown }>;
+  };
+}
+
+/**
+ * Minimal shape of an ApplicationV2 sheet that the print pipeline interacts with.
+ */
+interface SheetAppLike {
+  readonly document?: DocumentLike;
+  readonly constructor: { readonly name: string };
+  readonly appId?: number;
+  readonly id?: string;
 }
 
 /* ── Sheet type detection ──────────────────────────────────── */
@@ -36,8 +56,8 @@ function safe(fn: () => void, where: string) {
  * Determine the print SheetType from an ApplicationV2 instance.
  * Returns null if the app isn't a printable sheet.
  */
-function getSheetType(app: any): SheetType | null {
-  const doc = app?.document;
+function getSheetType(app: SheetAppLike): SheetType | null {
+  const doc = app.document;
   if (!doc) return null;
 
   const docName: string | undefined =
@@ -61,14 +81,14 @@ function getSheetType(app: any): SheetType | null {
     const groupType: string = doc.system?.type?.value ?? "";
 
     // Check if any members are player characters (m.actor is a ForeignDocumentField)
-    const members = doc.system?.members ?? [];
-    const hasPlayerCharacters = members.some((m: any) => {
-      // m.actor might be an Actor document or an ID string depending on resolution
+    const members: ReadonlyArray<{ readonly actor?: unknown }> = doc.system?.members ?? [];
+    const hasPlayerCharacters = members.some((m) => {
       const actor = m.actor;
       if (!actor) return false;
-      // If it's already resolved to an Actor document
-      if (typeof actor === "object" && actor.type === "character") return true;
-      // If it's just an ID, we can't determine the type here
+      // If it's already resolved to an Actor document, check its type
+      if (typeof actor === "object" && actor !== null && "type" in actor) {
+        return (actor as { type?: unknown }).type === "character";
+      }
       return false;
     });
 
@@ -97,8 +117,8 @@ function getSheetType(app: any): SheetType | null {
  * Format: the document name, with a fallback when the name is absent.
  * The caller prefixes "Foundry Tabletop Helpers - " via buildDocument().
  */
-function getWindowTitle(doc: any, sheetType: SheetType): string {
-  const name: string | undefined = doc?.name?.trim() || undefined;
+function getWindowTitle(doc: DocumentLike, sheetType: SheetType): string {
+  const name: string | undefined = (doc.name?.trim()) || undefined;
   switch (sheetType) {
     case "character":
     case "npc":
@@ -136,128 +156,90 @@ async function getOptions(
 
 /**
  * Extract data and render HTML for a sheet.
+ * Returns the rendered HTML string.
  */
 async function extractAndRender(
-  doc: any,
+  doc: DocumentLike,
   sheetType: SheetType,
   options: PrintOptions,
   extractor: NonNullable<ReturnType<typeof getExtractor>>,
   renderer: NonNullable<ReturnType<typeof getRenderer>>,
 ): Promise<string> {
-  // Extract data
   Log.info("extracting data", { sheetType, name: doc.name });
-  let data: any;
-  switch (sheetType) {
-    case "character":
-      data = await extractor.extractCharacter(doc, options);
-      break;
-    case "npc":
-      data = await extractor.extractNPC(doc, options);
-      break;
-    case "encounter":
-      data = await extractor.extractEncounterGroup(doc, options);
-      break;
-    case "party":
-      data = await extractor.extractPartySummary(doc, options);
-      break;
-  }
-  Log.info("data extracted", { sheetType, data });
 
-  // Render HTML (async to support template-based rendering)
+  // Extract — the concrete extractor knows the real actor shape; unknown is safe here
+  let data: unknown;
+  switch (sheetType) {
+    case "character":  data = await extractor.extractCharacter(doc, options);  break;
+    case "npc":        data = await extractor.extractNPC(doc, options);        break;
+    case "encounter":  data = await extractor.extractEncounterGroup(doc, options); break;
+    case "party":      data = await extractor.extractPartySummary(doc, options);   break;
+  }
+  Log.info("data extracted", { sheetType });
+
+  // Render — the concrete renderer knows the ViewModel shape; the cast is safe
+  // because the matching extractor/renderer pair always produces compatible data.
   Log.info("rendering HTML", { sheetType });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const d = data as any;
   let html: string;
   switch (sheetType) {
-    case "character":
-      html = await renderer.renderCharacter(data, options);
-      break;
-    case "npc":
-      html = await renderer.renderNPC(data, options);
-      break;
-    case "encounter":
-      html = await renderer.renderEncounterGroup(data, options);
-      break;
-    case "party":
-      html = await renderer.renderPartySummary(data, options);
-      break;
+    case "character":  html = await renderer.renderCharacter(d, options);      break;
+    case "npc":        html = await renderer.renderNPC(d, options);            break;
+    case "encounter":  html = await renderer.renderEncounterGroup(d, options); break;
+    case "party":      html = await renderer.renderPartySummary(d, options);   break;
   }
   Log.info("HTML rendered", { sheetType, htmlLength: html?.length });
 
   return html;
 }
 
+/** Output mode — print opens the browser print dialog; preview is display-only. */
+type OutputMode = "print" | "preview";
+
 /**
- * Handle the print button click.
+ * Shared handler for both Print and Preview button clicks.
+ * Resolves the extractor/renderer pair, gathers options, extracts + renders data,
+ * then opens the appropriate output window.
  */
-async function handlePrint(app: any, sheetType: SheetType): Promise<void> {
+async function handleOutput(app: SheetAppLike, sheetType: SheetType, mode: OutputMode): Promise<void> {
   const doc = app.document;
+  if (!doc) return;
+
   const systemId: string = getGame()?.system?.id ?? "unknown";
 
   const extractor = getExtractor(systemId);
   if (!extractor) {
-    getUI()?.notifications?.warn?.(
-      `Print sheets not yet supported for system: ${systemId}`,
-    );
+    getUI()?.notifications?.warn?.(`Print sheets not yet supported for system: ${systemId}`);
     return;
   }
 
   const renderer = getRenderer(systemId);
   if (!renderer) {
-    getUI()?.notifications?.warn?.(
-      `Print renderer not available for system: ${systemId}`,
-    );
+    getUI()?.notifications?.warn?.(`Print renderer not available for system: ${systemId}`);
     return;
   }
 
   const options = await getOptions(sheetType, extractor);
-  if (!options) return; // cancelled
+  if (!options) return; // user cancelled
 
   try {
     const html = await extractAndRender(doc, sheetType, options, extractor, renderer);
-    openPrintWindow(html, renderer.getStyles(), getWindowTitle(doc, sheetType));
-    Log.info("print flow complete", { sheetType, name: doc.name });
+    const title = getWindowTitle(doc, sheetType);
+    const styles = renderer.getStyles();
+
+    if (mode === "print") {
+      openPrintWindow(html, styles, title);
+    } else {
+      openPreviewWindow(html, styles, title);
+    }
+
+    Log.info(`${mode} flow complete`, { sheetType, name: doc.name });
   } catch (err) {
-    Log.error("print flow failed", { sheetType, name: doc.name, err });
+    const label = mode === "print" ? "Print" : "Preview";
+    Log.error(`${mode} flow failed`, { sheetType, name: doc.name, err });
     getUI()?.notifications?.error?.(
-      `Print failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
-}
-
-/**
- * Handle the preview button click.
- * Opens the sheet in a new window without triggering print.
- */
-async function handlePreview(app: any, sheetType: SheetType): Promise<void> {
-  const doc = app.document;
-  const systemId: string = getGame()?.system?.id ?? "unknown";
-
-  const extractor = getExtractor(systemId);
-  if (!extractor) {
-    getUI()?.notifications?.warn?.(
-      `Print sheets not yet supported for system: ${systemId}`,
-    );
-    return;
-  }
-
-  const renderer = getRenderer(systemId);
-  if (!renderer) {
-    getUI()?.notifications?.warn?.(
-      `Print renderer not available for system: ${systemId}`,
-    );
-    return;
-  }
-
-  const options = await getOptions(sheetType, extractor);
-  if (!options) return; // cancelled
-
-  try {
-    const html = await extractAndRender(doc, sheetType, options, extractor, renderer);
-    openPreviewWindow(html, renderer.getStyles(), getWindowTitle(doc, sheetType));
-    Log.info("preview flow complete", { sheetType, name: doc.name });
-  } catch (err) {
-    Log.error("preview flow failed", { sheetType, name: doc.name, err });
-    getUI()?.notifications?.error?.(
-      `Preview failed: ${err instanceof Error ? err.message : String(err)}`,
+      `${label} failed: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }
@@ -273,24 +255,27 @@ export function registerPrintSheetHooks(): void {
     Log.error("Failed to preload print templates", err);
   });
 
-  // Add print and preview buttons to V2 application headers
+  // Add print and preview buttons to V2 application headers.
+  // The hook provides loosely-typed app objects; we cast to SheetAppLike and
+  // validate the shape inside getSheetType() before any property access.
   getHooks()?.on?.(
     "getHeaderControlsApplicationV2",
-    (app: any, controls: any[]) =>
+    (app: unknown, controls: Record<string, unknown>[]) =>
       safe(() => {
-        const sheetType = getSheetType(app);
+        const typedApp = app as SheetAppLike;
+        const sheetType = getSheetType(typedApp);
         if (!sheetType) return;
 
         // Only show buttons if the current user has print access
         if (!canUsePrintFeature()) return;
 
-        // Add Preview button
+        // Add Preview button (unshift so it appears before Print in the header)
         controls.unshift({
           icon: "fa-solid fa-eye",
           label: "FTTH - Preview",
           action: "fth-preview-sheet",
           visible: true,
-          onClick: () => handlePreview(app, sheetType),
+          onClick: () => handleOutput(typedApp, sheetType, "preview"),
         });
 
         // Add Print button
@@ -299,12 +284,12 @@ export function registerPrintSheetHooks(): void {
           label: "FTTH - Print",
           action: "fth-print-sheet",
           visible: true,
-          onClick: () => handlePrint(app, sheetType),
+          onClick: () => handleOutput(typedApp, sheetType, "print"),
         });
 
         Log.debug("added print/preview buttons", {
-          app: app?.constructor?.name,
-          appId: app?.appId,
+          app: typedApp.constructor?.name,
+          appId: typedApp.appId,
           sheetType,
         });
       }, "print-sheet:getHeaderControlsApplicationV2"),

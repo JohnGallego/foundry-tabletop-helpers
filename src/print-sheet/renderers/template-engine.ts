@@ -5,22 +5,15 @@
  * for rendering templates with view models.
  */
 
-import { Log } from "../../logger";
+import { Log, MOD } from "../../logger";
 import { getHandlebars } from "../../types";
 
 /* ── Module Path ────────────────────────────────────────────── */
 
-const MODULE_ID = "foundry-tabletop-helpers";
-
 /** Get the full module path for a template */
 function getTemplatePath(relativePath: string): string {
-  return `modules/${MODULE_ID}/templates/print/${relativePath}`;
+  return `modules/${MOD}/templates/print/${relativePath}`;
 }
-
-/* ── Template Registry ──────────────────────────────────────── */
-
-const preloadedTemplates = new Set<string>();
-const compiledTemplates = new Map<string, HandlebarsTemplateDelegate>();
 
 /**
  * Preload templates during module init.
@@ -47,7 +40,6 @@ export async function preloadPrintTemplates(): Promise<void> {
     
     if (loadTemplates) {
       await loadTemplates(paths);
-      paths.forEach(p => preloadedTemplates.add(p));
       Log.info("Print templates preloaded", { count: paths.length });
     } else {
       Log.warn("loadTemplates not available - templates will load on demand");
@@ -102,43 +94,24 @@ export function registerPrintHelpers(): void {
 /* ── Rendering ──────────────────────────────────────────────── */
 
 /**
- * Render a template with the given data.
- * Uses Foundry's renderTemplate if available.
+ * Render a template with the given data using Foundry's renderTemplate.
+ * Foundry VTT v13 guarantees renderTemplate is available after init.
  */
 export async function renderPrintTemplate<T>(
   templatePath: string,
   data: T
 ): Promise<string> {
   const fullPath = getTemplatePath(templatePath);
-  
+
   try {
-    // Use Foundry's renderTemplate
     const g = globalThis as Record<string, unknown>;
     const renderTemplate = g.renderTemplate as ((path: string, data: unknown) => Promise<string>) | undefined;
-    
-    if (renderTemplate) {
-      return await renderTemplate(fullPath, data);
+
+    if (!renderTemplate) {
+      throw new Error("renderTemplate is not available — ensure this is called after Foundry's init hook.");
     }
-    
-    // Fallback: use compiled template from cache
-    let compiled = compiledTemplates.get(fullPath);
-    if (!compiled) {
-      const Handlebars = getHandlebars();
-      if (!Handlebars) {
-        throw new Error("Handlebars not available");
-      }
-      
-      // Fetch and compile template
-      const response = await fetch(fullPath);
-      if (!response.ok) {
-        throw new Error(`Failed to load template: ${fullPath}`);
-      }
-      const source = await response.text();
-      compiled = Handlebars.compile(source);
-      compiledTemplates.set(fullPath, compiled);
-    }
-    
-    return compiled(data);
+
+    return await renderTemplate(fullPath, data);
   } catch (err) {
     Log.error("Template render failed", { templatePath: fullPath, err });
     throw err;

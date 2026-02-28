@@ -10,7 +10,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
-    "types": ["fvtt-types"],
+    "types": ["fvtt-types", "vite/client"],
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src"]

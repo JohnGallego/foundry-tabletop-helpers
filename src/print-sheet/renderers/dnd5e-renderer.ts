@@ -7,7 +7,7 @@
  */
 
 import { BaseRenderer, registerRenderer } from "./base-renderer";
-import { getDnd5eStyles } from "./dnd5e-styles";
+import printStyles from "./dnd5e-print.css?raw";
 import {
   renderPrintTemplate,
   renderCharacterSheet,
@@ -73,7 +73,7 @@ export class Dnd5eRenderer extends BaseRenderer {
   /* ── Styles ────────────────────────────────────────────── */
 
   getStyles(): string {
-    return getDnd5eStyles();
+    return printStyles;
   }
 }
 

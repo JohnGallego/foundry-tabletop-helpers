@@ -1,5 +1,6 @@
 import { Log, MOD } from "./logger";
 import type { PaperSize, PortraitMode, SheetType } from "./print-sheet/types";
+import { getSectionDefaults, getSectionLabels, SECTION_DEFINITIONS } from "./print-sheet/section-definitions";
 import type { Level } from "./logger";
 import {
   getGame,
@@ -23,43 +24,6 @@ export interface DefaultPrintOptions {
   sections: Record<string, boolean>;
 }
 
-/** Section definitions per sheet type (mirrors dnd5e-extractor.ts) */
-/** Section definitions per sheet type (mirrors dnd5e-extractor.ts) */
-const SECTION_DEFAULTS: Record<SheetType, Record<string, boolean>> = {
-  character: {
-    abilities: true, skills: true, combat: true, actions: true,
-    features: true, spells: true, inventory: true, backstory: true, reference: true,
-  },
-  npc: {
-    stats: true, traits: true, actions: true, legendary: true, lair: true, spells: true,
-  },
-  encounter: {
-    statblocks: true,
-  },
-  party: {
-    summary: true, skills: true,
-  },
-};
-
-/** Human-readable labels for sections */
-const SECTION_LABELS: Record<SheetType, Record<string, string>> = {
-  character: {
-    abilities: "Ability Scores & Saves", skills: "Skills", combat: "Combat Stats",
-    actions: "Actions", features: "Features & Traits", spells: "Spellcasting",
-    inventory: "Inventory", backstory: "Backstory & Notes", reference: "Rules Reference Page",
-  },
-  npc: {
-    stats: "Core Stats", traits: "Traits", actions: "Actions",
-    legendary: "Legendary Actions", lair: "Lair Actions", spells: "Spellcasting",
-  },
-  encounter: {
-    statblocks: "NPC Stat Blocks",
-  },
-  party: {
-    summary: "Party Summary Table", skills: "Top Skills per Member",
-  },
-};
-
 /** Human-readable labels for sheet types */
 const SHEET_TYPE_LABELS: Record<SheetType, string> = {
   character: "Character Sheet",
@@ -73,7 +37,7 @@ export function getDefaultPrintOptions(sheetType: SheetType): DefaultPrintOption
   return {
     paperSize: "letter",
     portrait: sheetType === "character" || sheetType === "npc" ? "portrait" : "none",
-    sections: { ...SECTION_DEFAULTS[sheetType] },
+    sections: getSectionDefaults(sheetType),
   };
 }
 
@@ -191,12 +155,14 @@ export function registerSettings(): void {
     class TargetPlayersForm extends BaseWithDefaults {
       static get defaultOptions() {
         const base = BaseWithDefaults.defaultOptions ?? {};
-        return Object.assign({}, base, {
+        // foundry.utils.mergeObject is the canonical Foundry v13 pattern for defaultOptions.
+        // inplace:false ensures the base class options object is not mutated.
+        return foundry.utils.mergeObject(base, {
           id: `${MOD}-target-players`,
           title: "Target Players",
           template: `modules/${MOD}/templates/target-users.hbs`,
           width: 420,
-        });
+        }, {inplace: false});
       }
       async getData() {
         const selected = new Set(targetUserIds());
@@ -240,29 +206,31 @@ export function registerSettings(): void {
     class PrintDefaultsForm extends BaseWithDefaults {
       static get defaultOptions() {
         const base = BaseWithDefaults.defaultOptions ?? {};
-        return Object.assign({}, base, {
+        // foundry.utils.mergeObject is the canonical Foundry v13 pattern for defaultOptions.
+        // inplace:false ensures the base class options object is not mutated.
+        return foundry.utils.mergeObject(base, {
           id: `${MOD}-print-defaults`,
           title: "Print Defaults",
           template: `modules/${MOD}/templates/print-defaults.hbs`,
           width: 520,
           height: "auto",
-        });
+        }, {inplace: false});
       }
 
       async getData() {
         const sheetTypes = (["character", "npc", "encounter", "party"] as SheetType[]).map((key) => {
           const defaults = getPrintDefaults(key);
-          const sectionKeys = Object.keys(SECTION_DEFAULTS[key]);
+          const labels = getSectionLabels(key);
           return {
             key,
             label: SHEET_TYPE_LABELS[key],
             paperSize: defaults.paperSize,
             portrait: defaults.portrait,
             showPortrait: key === "character" || key === "npc",
-            sections: sectionKeys.map((sKey) => ({
-              key: sKey,
-              label: SECTION_LABELS[key][sKey] ?? sKey,
-              checked: defaults.sections[sKey] ?? true,
+            sections: SECTION_DEFINITIONS[key].map((s) => ({
+              key: s.key,
+              label: labels[s.key] ?? s.key,
+              checked: defaults.sections[s.key] ?? s.default,
             })),
           };
         });
@@ -274,8 +242,8 @@ export function registerSettings(): void {
           const paperSize = (formData[`${sheetType}_paperSize`] as PaperSize) ?? "letter";
           const portrait = (formData[`${sheetType}_portrait`] as PortraitMode) ?? "portrait";
           const sections: Record<string, boolean> = {};
-          for (const sKey of Object.keys(SECTION_DEFAULTS[sheetType])) {
-            sections[sKey] = !!formData[`${sheetType}_section_${sKey}`];
+          for (const s of SECTION_DEFINITIONS[sheetType]) {
+            sections[s.key] = !!formData[`${sheetType}_section_${s.key}`];
           }
           const options: DefaultPrintOptions = { paperSize, portrait, sections };
           await setSetting(MOD, `printDefaults_${sheetType}`, JSON.stringify(options));

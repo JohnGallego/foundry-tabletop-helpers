@@ -1,10 +1,8 @@
 /**
  * Print-optimized CSS for dnd5e character sheets, stat blocks, and summaries.
- * Returned as a string to be injected into the print window's <style> tag.
+ * Injected into the print window via Vite raw import (import css from './dnd5e-print.css?raw').
  */
 
-export function getDnd5eStyles(): string {
-  return `
 /* ── Reset & Base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -1207,7 +1205,5 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   color: #333;
   column-count: 2;
   column-gap: 20px;
-}
-`;
 }
 
