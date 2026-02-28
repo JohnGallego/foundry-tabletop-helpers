@@ -121,14 +121,14 @@ export function registerSettings(): void {
     default: true,
   });
 
-  // Optional legacy V1 support
+  // V1 application support (many core windows in v13 still use V1)
   settings.register(MOD, "supportV1", {
-    name: "Add header button to V1 windows (legacy)",
-    hint: "Enable only if you need the Flip 180° button on V1 applications (deprecated since V13).",
+    name: "Add header button to V1 windows",
+    hint: "Adds the rotation button to V1 application windows (JournalSheet, Compendium, etc). Recommended to keep enabled since many windows in Foundry v13 still use the V1 Application framework.",
     scope: "client",
     config: true,
     type: Boolean,
-    default: false,
+    default: true,
   });
 
   /* ── Print Sheet Settings ─────────────────────────────────── */
@@ -310,7 +310,7 @@ export const animationsEnabled = (): boolean => {
 };
 
 export const supportV1 = (): boolean => {
-  return getSetting<boolean>(MOD, "supportV1") ?? false;
+  return getSetting<boolean>(MOD, "supportV1") ?? true;
 };
 
 export const targetUserIds = (): string[] => {

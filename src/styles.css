@@ -29,12 +29,35 @@
 }
 
 
-/* Ensure injected Flip 180° header control matches native spacing/alignment */
-.window-header .controls [data-action="fth-rotate-dom"],
-.window-header .controls [data-action="fth-rotate"],
-.titlebar .controls [data-action="fth-rotate-dom"],
-.titlebar .controls [data-action="fth-rotate"] {
-  margin-left: 0.25rem; /* small gap from sibling controls */
+/* ── V2 standalone rotate button injected directly into the header bar ────── */
+/* Matches the visual style of Foundry's native close/minimize header buttons. */
+.fth-rotate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Match Foundry V2 header button sizing and spacing */
+  padding: 0 0.375rem;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: var(--font-size-14, 14px);
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 100ms ease, color 100ms ease;
+}
+
+.fth-rotate-btn:hover {
+  opacity: 1;
+  color: var(--color-warm-1, #ff6400);
+  background: transparent;
+}
+
+/* ── V1 header button (added via getApplicationHeaderButtons hook) ─────────── */
+/* Foundry renders V1 header buttons as <a> elements inside .window-header */
+.window-header a.fth-rotate,
+.window-header [data-action="fth-rotate"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;

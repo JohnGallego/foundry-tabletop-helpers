@@ -18,7 +18,13 @@ import {
 interface AppV2Like {
   appId?: number;
   id?: string | number;
-  window?: { element?: HTMLElement; header?: Element };
+  window?: {
+    element?: HTMLElement;
+    header?: HTMLElement;
+    controls?: HTMLButtonElement;   // the "..." toggle button
+    controlsDropdown?: HTMLDivElement;
+    close?: HTMLButtonElement;      // the X close button
+  };
   element?: HTMLElement | JQuery;
   hasFrame?: boolean;
   constructor: { name: string };
@@ -46,20 +52,7 @@ interface V1Button {
   onclick?: (e: MouseEvent) => void;
 }
 
-/** V2 header control entry */
-interface V2HeaderControl {
-  icon: string;
-  label: string;
-  action: string;
-  visible: boolean;
-  onClick: () => void;
-}
-
 /* ── Hook Registration Helpers ─────────────────────────────── */
-
-const onGetHeaderControlsApplicationV2 = (
-  fn: (app: AppV2Like, controls: V2HeaderControl[]) => void
-) => getHooks()?.on?.("getHeaderControlsApplicationV2", fn as (...args: unknown[]) => void);
 
 const onGetApplicationV1HeaderButtons = (
   fn: (app: AppV1Like, buttons: V1Button[]) => void
@@ -149,6 +142,22 @@ function isRotatableRoot(el: HTMLElement | undefined): boolean {
   const forbidden = el.closest?.("#sidebar, #hotbar, #players, #controls, #navigation, .combat-carousel, #combat-carousel");
   if (forbidden) return false;
   return true;
+}
+
+// Resolve a stable per-window ID for both V1 (numeric appId) and V2 (string id) apps.
+// V1 apps expose appId as a numeric instance property.
+// V2 apps expose id as a string getter (no numeric appId on the instance).
+function resolveAppId(app: AppV2Like): string | number | undefined {
+  // V1: appId is a numeric instance property
+  if (typeof app?.appId === "number") return app.appId;
+  // V2: id is a string accessor; accept string or number
+  if (typeof app?.id === "string" && app.id) return app.id;
+  if (typeof app?.id === "number") return app.id;
+  // Fallback: options.id
+  const oid = app?.options?.id;
+  if (typeof oid === "string" && oid) return oid;
+  if (typeof oid === "number") return oid;
+  return undefined;
 }
 
 // Build a per-window persistent key so we can remember rotation across closes/re-opens
@@ -391,10 +400,10 @@ getHooks()?.on?.("ready", () => {
 });
 
 /* ---------- Rotation State & Helpers ---------- */
-const rotationByAppId = new Map<number, RotDeg>();
+const rotationByAppId = new Map<string | number, RotDeg>();
 
 // Re-entrancy guard to prevent double toggles from duplicate handlers
-const lastToggleByAppId = new Map<number, number>();
+const lastToggleByAppId = new Map<string | number, number>();
 
 // Track currently active apps to support macro-driven rotations across all windows
 const activeApps = new Set<AppV2Like>();
@@ -420,7 +429,7 @@ function applyRotation(el: HTMLElement | undefined, deg: RotDeg): void {
 }
 
 function toggleRotation(app: AppV2Like, opts?: { mode?: RotMode; dir?: RotDir }): void {
-  const appId = typeof app?.appId === "number" ? app.appId : typeof app?.id === "number" ? app.id : undefined;
+  const appId = resolveAppId(app);
   const rootEl = resolveAppRoot(app);
   if (appId === undefined || !rootEl) {
     Log.warn("toggleRotation: missing appId or element", { appId, hasEl: !!rootEl });
@@ -459,69 +468,42 @@ function toggleRotation(app: AppV2Like, opts?: { mode?: RotMode; dir?: RotDir })
   Log.groupEnd();
 }
 
-/** Header control definition for V2 apps */
-interface HeaderControl {
-  icon: string;
-  label: string;
-  action: string;
-  visible: boolean;
-  onClick: () => void;
-}
-
-onGetHeaderControlsApplicationV2((app, controls) =>
-  safe(() => {
-    const appLike = app as AppV2Like;
-    if (isExcludedApp(appLike)) return;
-    const controlsArray = controls as HeaderControl[];
-    controlsArray.unshift({
-      icon: "fa-solid fa-arrows-rotate",
-      label: rotationLabel(),
-      action: "fth-rotate",
-      visible: true,
-      onClick: () => toggleRotation(appLike),
-    });
-    Log.debug("added V2 header control", {
-      app: appLike?.constructor?.name,
-      appId: appLike?.appId,
-    });
-  }, "getHeaderControlsApplicationV2")
-);
-
 getHooks()?.on?.("renderApplicationV2", ((app: AppV2Like) =>
   safe(() => {
     if (isExcludedApp(app)) return;
     const el = resolveAppRoot(app);
 
-    // If the official V2 header control is present, do not bind a DOM handler
-    const hasV2Btn = !!el?.querySelector?.('[data-action="fth-rotate"]');
-    if (!hasV2Btn) {
-      // Inject a fallback rotate control into the header if possible
-      const headerControls = el?.querySelector?.('.window-header .controls, .titlebar .controls') ?? null;
-      const headerContainer = headerControls ?? el?.querySelector?.('.window-header, .titlebar') ?? null;
-      let controlsEl: HTMLElement | null = headerControls as HTMLElement | null;
-      if (!controlsEl && headerContainer) {
-        // Ensure a controls container exists
-        controlsEl = headerContainer.querySelector?.(':scope .controls') as HTMLElement | null;
-        if (!controlsEl) {
-          controlsEl = document.createElement('div');
-          controlsEl.className = 'controls';
-          headerContainer.appendChild(controlsEl);
-        }
+    // Inject a standalone rotate button directly into the V2 header bar.
+    // V2 ApplicationV2.window.header is the header element; we insert our button
+    // before the close button so it sits as a native-looking header icon — NOT
+    // inside the controlsDropdown ("..." popup menu).
+    const header = app?.window?.header;
+    if (header && !header.querySelector('[data-action="fth-rotate"]')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'header-control icon fth-rotate-btn';
+      btn.dataset.action = 'fth-rotate';
+      btn.setAttribute('aria-label', rotationLabel());
+      btn.title = rotationLabel();
+      const icon = document.createElement('i');
+      icon.className = 'fa-solid fa-arrows-rotate';
+      btn.appendChild(icon);
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleRotation(app);
+      });
+      // Insert before the close button if present; otherwise append to the header
+      const closeBtn = app?.window?.close ?? header.querySelector<HTMLElement>('[data-action="close"]');
+      if (closeBtn) {
+        header.insertBefore(btn, closeBtn);
+      } else {
+        header.appendChild(btn);
       }
-      if (controlsEl && !controlsEl.querySelector?.('[data-action="fth-rotate-dom"]')) {
-        const a = document.createElement('a');
-        a.className = 'header-control icon fa-solid fa-arrows-rotate';
-        a.dataset.action = 'fth-rotate-dom';
-        a.title = rotationLabel();
-        a.addEventListener('click', () => toggleRotation(app));
-        controlsEl.appendChild(a);
-        Log.debug('injected fallback rotate control', { app: app?.constructor?.name, appId: app?.appId });
-      }
-    } else {
-      Log.debug('found V2 header control; not injecting DOM handler', { app: app?.constructor?.name, appId: app?.appId });
+      Log.debug('injected rotate button into V2 header', { app: app?.constructor?.name, id: app?.id });
     }
 
-    const appId = typeof app?.appId === "number" ? app.appId : undefined;
+    const appId = resolveAppId(app);
     if (isRotatableRoot(el)) activeApps.add(app);
 
     if (appId !== undefined) {
@@ -541,7 +523,7 @@ getHooks()?.on?.("renderApplicationV2", ((app: AppV2Like) =>
 
 getHooks()?.on?.("closeApplicationV2", ((app: AppV2Like) =>
   safe(() => {
-    const id = typeof app?.appId === "number" ? app.appId : undefined;
+    const id = resolveAppId(app);
     if (id !== undefined) {
       rotationByAppId.delete(id);
       lastToggleByAppId.delete(id);
@@ -573,7 +555,7 @@ onRenderApplicationV1((app) =>
   safe(() => {
     if (!supportV1()) return;
     const appLike = app as AppV2Like;
-    const appId = typeof appLike?.appId === "number" ? appLike.appId : undefined;
+    const appId = resolveAppId(appLike);
     const el = resolveAppRoot(appLike);
     if (isRotatableRoot(el)) activeApps.add(appLike);
 
@@ -596,7 +578,7 @@ onCloseApplicationV1((app) =>
   safe(() => {
     if (!supportV1()) return;
     const appLike = app as AppV2Like;
-    const id = typeof appLike?.appId === "number" ? appLike.appId : undefined;
+    const id = resolveAppId(appLike);
     if (id !== undefined) {
       rotationByAppId.delete(id);
       lastToggleByAppId.delete(id);
