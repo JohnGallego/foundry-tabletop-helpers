@@ -1,0 +1,100 @@
+{{!-- lpcs-tab-abilities.hbs --}}
+{{!-- Abilities tab: ability score cards, saving throws, skills, senses --}}
+<section class="lpcs-tab lpcs-tab--abilities {{#if isActiveTab}}active{{/if}}"
+         id="lpcs-tab-panel-abilities"
+         role="tabpanel"
+         aria-labelledby="lpcs-tab-btn-abilities"
+         data-tab="abilities"
+         data-group="primary"
+         {{#unless isActiveTab}}hidden{{/unless}}>
+
+  {{!-- Ability Score Grid --}}
+  <div class="lpcs-ability-grid" role="list" aria-label="Ability scores">
+    {{#each vm.abilities}}
+    <div class="lpcs-ability-card" role="listitem" data-ability="{{key}}">
+      <span class="lpcs-ability-abbr">{{abbr}}</span>
+      <span class="lpcs-ability-score" aria-label="{{label}} score {{score}}">{{score}}</span>
+      <button class="lpcs-ability-mod rollable"
+              data-action="rollAbility"
+              data-ability="{{key}}"
+              type="button"
+              aria-label="Roll {{label}} check ({{mod}})">
+        {{mod}}
+      </button>
+    </div>
+    {{/each}}
+  </div>
+
+  {{!-- Saving Throws --}}
+  <div class="lpcs-saves-section">
+    <h3 class="lpcs-section-title">Saving Throws</h3>
+    <div class="lpcs-saves-row" role="list" aria-label="Saving throws">
+      {{#each vm.saves}}
+      <button class="lpcs-save-chip {{#if proficient}}proficient{{/if}} rollable"
+              role="listitem"
+              data-action="rollSave"
+              data-ability="{{key}}"
+              type="button"
+              aria-label="{{abbr}} saving throw {{mod}}{{#if proficient}} (proficient){{/if}}">
+        <span class="lpcs-save-abbr">{{abbr}}</span>
+        <span class="lpcs-save-mod">{{mod}}</span>
+        {{#if proficient}}<span class="lpcs-save-prof-dot" aria-hidden="true">●</span>{{/if}}
+      </button>
+      {{/each}}
+    </div>
+  </div>
+
+  {{!-- Skills List --}}
+  <div class="lpcs-skills-section">
+    <h3 class="lpcs-section-title">Skills</h3>
+    <div class="lpcs-skills-list" role="list" aria-label="Skills">
+      {{#each vm.skills}}
+      <button class="lpcs-skill-row rollable"
+              role="listitem"
+              data-action="rollSkill"
+              data-skill="{{key}}"
+              type="button"
+              aria-label="{{label}} ({{ability}}) {{mod}} — passive {{passive}}">
+        <span class="lpcs-skill-prof lpcs-prof--{{profLevel}}" aria-hidden="true"></span>
+        <span class="lpcs-skill-name">{{label}}</span>
+        <span class="lpcs-skill-ability">({{ability}})</span>
+        <span class="lpcs-skill-mod">{{mod}}</span>
+        <span class="lpcs-skill-passive" aria-label="Passive {{label}} {{passive}}">{{passive}}</span>
+      </button>
+      {{/each}}
+    </div>
+  </div>
+
+  {{!-- Senses --}}
+  {{#if vm.senses.length}}
+  <div class="lpcs-senses-section">
+    <h3 class="lpcs-section-title">Senses</h3>
+    <ul class="lpcs-senses-list">
+      {{#each vm.senses}}
+      <li class="lpcs-sense-row">
+        <span class="lpcs-sense-label">{{label}}</span>
+        <span class="lpcs-sense-value">{{value}}</span>
+      </li>
+      {{/each}}
+    </ul>
+  </div>
+  {{/if}}
+
+  {{!-- Hit Dice --}}
+  {{#if vm.hitDice.length}}
+  <div class="lpcs-hitdice-section">
+    <h3 class="lpcs-section-title">Hit Dice</h3>
+    <ul class="lpcs-hitdice-list">
+      {{#each vm.hitDice}}
+      <li class="lpcs-hitdice-row">
+        <span class="lpcs-hitdice-die">{{die}}</span>
+        <span class="lpcs-hitdice-count">{{value}}/{{max}}</span>
+        <span class="lpcs-hitdice-class">{{class}}</span>
+      </li>
+      {{/each}}
+    </ul>
+  </div>
+  {{/if}}
+
+</section>
+

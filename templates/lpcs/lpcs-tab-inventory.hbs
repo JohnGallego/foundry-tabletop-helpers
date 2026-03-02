@@ -1,0 +1,63 @@
+{{!-- lpcs-tab-inventory.hbs --}}
+{{!-- Inventory tab: item list with equip state, currency, encumbrance bar --}}
+<section class="lpcs-tab lpcs-tab--inventory {{#if isActiveTab}}active{{/if}}"
+         id="lpcs-tab-panel-inventory"
+         role="tabpanel"
+         aria-labelledby="lpcs-tab-btn-inventory"
+         data-tab="inventory"
+         data-group="primary"
+         {{#unless isActiveTab}}hidden{{/unless}}>
+
+  {{!-- Currency --}}
+  <div class="lpcs-currency-bar lpcs-panel" aria-label="Currency">
+    {{#each vm.currency}}
+    <div class="lpcs-currency-coin lpcs-coin--{{key}}" aria-label="{{amount}} {{key}}">
+      <span class="lpcs-coin-amount">{{amount}}</span>
+      <span class="lpcs-coin-label">{{key}}</span>
+    </div>
+    {{/each}}
+  </div>
+
+  {{!-- Encumbrance --}}
+  {{#if vm.encumbrance.max}}
+  <div class="lpcs-encumbrance" aria-label="Encumbrance {{vm.encumbrance.value}} of {{vm.encumbrance.max}} lbs">
+    <div class="lpcs-enc-bar">
+      <div class="lpcs-enc-fill {{#if vm.encumbrance.encumbered}}encumbered{{/if}}"
+           style="width: {{vm.encumbrance.pct}}%;"></div>
+    </div>
+    <span class="lpcs-enc-label">{{vm.encumbrance.value}} / {{vm.encumbrance.max}} lb</span>
+    {{#if vm.encumbrance.encumbered}}
+    <span class="lpcs-enc-warning" aria-live="polite">Encumbered!</span>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{!-- Item List --}}
+  {{#if vm.inventory.length}}
+  <div class="lpcs-inventory-list" role="list" aria-label="Inventory items">
+    {{#each vm.inventory}}
+    <div class="lpcs-item-row {{#if equipped}}equipped{{/if}} {{#if attuned}}attuned{{/if}}"
+         role="listitem"
+         data-item-id="{{id}}">
+      {{#if img}}<img src="{{img}}" alt="" class="lpcs-item-icon" aria-hidden="true">{{/if}}
+      <span class="lpcs-item-name">{{name}}</span>
+      <span class="lpcs-item-type lpcs-text-muted">{{type}}</span>
+      {{#if (gt quantity 1)}}
+      <span class="lpcs-item-qty" aria-label="Quantity {{quantity}}">×{{quantity}}</span>
+      {{/if}}
+      <div class="lpcs-item-badges">
+        {{#if equipped}}<span class="lpcs-badge lpcs-badge--equipped" title="Equipped">E</span>{{/if}}
+        {{#if attuned}}<span class="lpcs-badge lpcs-badge--attuned" title="Attuned">A</span>{{/if}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  {{else}}
+  <div class="lpcs-empty-tab">
+    <i class="fas fa-backpack lpcs-empty-icon" aria-hidden="true"></i>
+    <p>Inventory is empty.</p>
+  </div>
+  {{/if}}
+
+</section>
+

@@ -1,0 +1,29 @@
+{{!-- lpcs-drawer.hbs --}}
+{{!-- Reusable expandable drawer partial. --}}
+{{!-- Expected context: drawerId, title, img, uses, description --}}
+<div class="lpcs-drawer" data-drawer-id="{{drawerId}}">
+  <button class="lpcs-drawer-header" data-action="toggleDrawer" type="button"
+          aria-expanded="false" aria-controls="lpcs-drawer-body-{{drawerId}}">
+    {{#if img}}
+    <img src="{{img}}" alt="" class="lpcs-drawer-icon" loading="lazy" aria-hidden="true">
+    {{/if}}
+    <span class="lpcs-drawer-title">{{title}}</span>
+    {{#if uses}}
+    <span class="lpcs-drawer-uses" aria-label="{{uses.value}} of {{uses.max}} uses">
+      {{uses.value}}/{{uses.max}}
+    </span>
+    {{/if}}
+    {{#if recharge}}
+    <span class="lpcs-drawer-recharge" aria-label="Recharge {{recharge}}">⟳{{recharge}}</span>
+    {{/if}}
+    <i class="lpcs-drawer-chevron fas fa-chevron-down" aria-hidden="true"></i>
+  </button>
+  <div class="lpcs-drawer-body" id="lpcs-drawer-body-{{drawerId}}" role="region">
+    {{#if description}}
+    <p class="lpcs-drawer-desc">{{{description}}}</p>
+    {{else}}
+    <p class="lpcs-drawer-desc lpcs-text-muted">No description.</p>
+    {{/if}}
+  </div>
+</div>
+

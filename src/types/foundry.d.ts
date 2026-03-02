@@ -174,3 +174,60 @@ export interface FoundryHooks {
   callAll(event: string, ...args: unknown[]): boolean;
 }
 
+/* ── LPCS / ActorSheetV2 ──────────────────────────────────── */
+
+/**
+ * Minimal HandlebarsTemplatePart shim for Foundry v13 ApplicationV2 PARTS system.
+ * @see https://foundryvtt.com/api/functions/foundry.applications.api.HandlebarsApplicationMixin.html
+ */
+export interface HandlebarsTemplatePart {
+  template: string;
+  templates?: string[];
+  classes?: string[];
+  container?: { classes?: string[]; id?: string };
+  scrollable?: string[];
+}
+
+/**
+ * Minimal ActorSheetV2 instance shim.
+ * @see https://foundryvtt.com/api/classes/foundry.applications.sheets.ActorSheetV2.html
+ */
+export interface ActorSheetV2Instance {
+  actor: FoundryDocument & {
+    system: Record<string, unknown>;
+    items: FoundryCollection<FoundryDocument>;
+    isOwner: boolean;
+    limited: boolean;
+    img: string;
+    prototypeToken?: { texture?: { src?: string } };
+  };
+  element: HTMLElement;
+  tabGroups: Record<string, string>;
+  isEditable: boolean;
+  render(options?: { force?: boolean }): unknown;
+  close(options?: Record<string, unknown>): Promise<void>;
+}
+
+/**
+ * DocumentSheetConfig static shim for sheet registration.
+ * @see https://foundryvtt.com/api/classes/foundry.applications.apps.DocumentSheetConfig.html
+ */
+export interface DocumentSheetConfigStatic {
+  registerSheet(
+    documentClass: unknown,
+    scope: string,
+    sheetClass: unknown,
+    options?: {
+      types?: string[];
+      makeDefault?: boolean;
+      label?: string;
+    }
+  ): void;
+  unregisterSheet(
+    documentClass: unknown,
+    scope: string,
+    sheetClass: unknown,
+    options?: { types?: string[] }
+  ): void;
+}
+

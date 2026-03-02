@@ -1,0 +1,78 @@
+{{!-- lpcs-stats-bar.hbs --}}
+{{!-- HP bar (editable), AC, speed, initiative, proficiency bonus, death saves --}}
+<div class="lpcs-stats-bar">
+
+  {{!-- HP Bar --}}
+  <div class="lpcs-hp-container">
+    <div class="lpcs-hp-bar" role="meter"
+         aria-valuemin="0" aria-valuemax="{{vm.hp.max}}" aria-valuenow="{{vm.hp.value}}"
+         aria-label="Hit Points">
+      <div class="lpcs-hp-fill" style="width: {{vm.hp.pct}}%; background-color: {{vm.hp.color}};"></div>
+      <input class="lpcs-hp-input" type="text" value="{{vm.hp.value}}"
+             aria-label="Current hit points" inputmode="numeric" autocomplete="off"
+             {{#unless editable}}readonly{{/unless}}>
+      <span class="lpcs-hp-max" aria-label="Maximum hit points">/ {{vm.hp.max}}</span>
+    </div>
+    {{#if vm.hp.temp}}
+    <span class="lpcs-hp-temp" aria-label="Temporary hit points">+{{vm.hp.temp}} temp</span>
+    {{/if}}
+    {{#if vm.xp}}
+    <div class="lpcs-xp-bar" aria-label="Experience points {{vm.xp.value}} of {{vm.xp.max}}">
+      <div class="lpcs-xp-fill" style="width: {{vm.xp.pct}}%;"></div>
+      <span class="lpcs-xp-label">{{vm.xp.value}} / {{vm.xp.max}} XP</span>
+    </div>
+    {{/if}}
+  </div>
+
+  {{!-- Quick Stats --}}
+  <div class="lpcs-quick-stats">
+
+    <div class="lpcs-stat-badge" aria-label="Armor Class">
+      <span class="lpcs-stat-value">{{vm.ac}}</span>
+      <span class="lpcs-stat-label">AC</span>
+    </div>
+
+    <button class="lpcs-stat-badge lpcs-stat-badge--btn rollable"
+            data-action="rollInitiative" type="button"
+            aria-label="Roll Initiative ({{vm.initiative}})">
+      <span class="lpcs-stat-value">{{vm.initiative}}</span>
+      <span class="lpcs-stat-label">INIT</span>
+    </button>
+
+    <div class="lpcs-stat-badge" aria-label="Speed: {{vm.speed.primary}} feet">
+      <span class="lpcs-stat-value">{{vm.speed.primary}}</span>
+      <span class="lpcs-stat-label">SPD</span>
+    </div>
+
+    <div class="lpcs-stat-badge" aria-label="Proficiency Bonus {{vm.proficiencyBonus}}">
+      <span class="lpcs-stat-value">{{vm.proficiencyBonus}}</span>
+      <span class="lpcs-stat-label">PROF</span>
+    </div>
+
+  </div>
+
+  {{!-- Death Saves (shown only when HP = 0) --}}
+  {{#if vm.deathSaves.show}}
+  <div class="lpcs-death-saves" role="group" aria-label="Death saving throws">
+    <span class="lpcs-death-label">Death Saves</span>
+    <div class="lpcs-death-row">
+      <span class="lpcs-death-icon lpcs-death-icon--success" aria-label="Successes">✓</span>
+      {{#each vm.deathSaves.successPips}}
+      <button class="lpcs-death-pip {{#if filled}}filled success{{/if}}"
+              data-action="rollDeathSave" type="button"
+              aria-label="Death save success pip {{n}}"></button>
+      {{/each}}
+    </div>
+    <div class="lpcs-death-row">
+      <span class="lpcs-death-icon lpcs-death-icon--failure" aria-label="Failures">✗</span>
+      {{#each vm.deathSaves.failurePips}}
+      <button class="lpcs-death-pip {{#if filled}}filled failure{{/if}}"
+              data-action="rollDeathSave" type="button"
+              aria-label="Death save failure pip {{n}}"></button>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+</div>
+

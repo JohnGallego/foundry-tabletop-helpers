@@ -1,0 +1,84 @@
+{{!-- lpcs-tab-features.hbs --}}
+{{!-- Features tab: feature groups with drawers, damage traits, proficiencies --}}
+<section class="lpcs-tab lpcs-tab--features {{#if isActiveTab}}active{{/if}}"
+         id="lpcs-tab-panel-features"
+         role="tabpanel"
+         aria-labelledby="lpcs-tab-btn-features"
+         data-tab="features"
+         data-group="primary"
+         {{#unless isActiveTab}}hidden{{/unless}}>
+
+  {{!-- Feature Groups --}}
+  {{#if vm.features.length}}
+  {{#each vm.features}}
+  <div class="lpcs-feature-group">
+    <h3 class="lpcs-section-title">{{label}}</h3>
+    <div class="lpcs-feature-list">
+      {{#each features}}
+      {{> lpcs-drawer drawerId=(concat "feat-" id) title=name img=img uses=uses
+                      description=description}}
+      {{/each}}
+    </div>
+  </div>
+  {{/each}}
+  {{else}}
+  <div class="lpcs-empty-tab">
+    <i class="fas fa-scroll lpcs-empty-icon" aria-hidden="true"></i>
+    <p>No features or feats.</p>
+  </div>
+  {{/if}}
+
+  {{!-- Damage Traits --}}
+  {{#if vm.traits.length}}
+  <div class="lpcs-traits-section">
+    <h3 class="lpcs-section-title">Damage & Condition Traits</h3>
+    <ul class="lpcs-traits-list">
+      {{#each vm.traits}}
+      <li class="lpcs-trait-group">
+        <span class="lpcs-trait-label">{{label}}</span>
+        <span class="lpcs-trait-values">{{values}}</span>
+      </li>
+      {{/each}}
+    </ul>
+  </div>
+  {{/if}}
+
+  {{!-- Proficiencies --}}
+  <div class="lpcs-proficiencies-section">
+    <h3 class="lpcs-section-title">Proficiencies &amp; Languages</h3>
+    <dl class="lpcs-prof-list">
+      {{#if vm.proficiencies.armor}}
+      <dt class="lpcs-prof-term">Armor</dt>
+      <dd class="lpcs-prof-detail">{{vm.proficiencies.armor}}</dd>
+      {{/if}}
+      {{#if vm.proficiencies.weapons}}
+      <dt class="lpcs-prof-term">Weapons</dt>
+      <dd class="lpcs-prof-detail">{{vm.proficiencies.weapons}}</dd>
+      {{/if}}
+      {{#if vm.proficiencies.tools}}
+      <dt class="lpcs-prof-term">Tools</dt>
+      <dd class="lpcs-prof-detail">{{vm.proficiencies.tools}}</dd>
+      {{/if}}
+      {{#if vm.proficiencies.languages}}
+      <dt class="lpcs-prof-term">Languages</dt>
+      <dd class="lpcs-prof-detail">{{vm.proficiencies.languages}}</dd>
+      {{/if}}
+    </dl>
+  </div>
+
+  {{!-- Exhaustion --}}
+  {{#if vm.exhaustion.level}}
+  <div class="lpcs-exhaustion" aria-label="Exhaustion level {{vm.exhaustion.level}}">
+    <span class="lpcs-exhaustion-label">Exhaustion</span>
+    <div class="lpcs-exhaustion-pips" role="meter" aria-valuemin="0" aria-valuemax="6"
+         aria-valuenow="{{vm.exhaustion.level}}">
+      {{#each vm.exhaustion.pips}}
+      <span class="lpcs-exhaust-pip {{#if active}}active{{/if}}"
+            aria-hidden="true">●</span>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+</section>
+
