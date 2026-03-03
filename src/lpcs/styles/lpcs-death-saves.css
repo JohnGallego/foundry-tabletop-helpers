@@ -32,10 +32,7 @@
 }
 
 .lpcs-sheet .lpcs-ds-pip {
-  -webkit-appearance: none;
-  appearance: none;
   box-sizing: border-box;
-  font: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -44,14 +41,7 @@
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(200, 167, 93, 0.2);
-  cursor: pointer;
   transition: background 0.2s, border-color 0.2s, transform 0.15s;
-}
-
-.lpcs-sheet .lpcs-ds-pip:hover {
-  background: rgba(200, 167, 93, 0.1);
-  border-color: rgba(200, 167, 93, 0.4);
-  transform: scale(1.1);
 }
 
 .lpcs-sheet .lpcs-ds-pip i {
@@ -60,14 +50,97 @@
 }
 
 /* Success pips (hearts) */
-.lpcs-sheet .lpcs-ds-pip--success i { color: rgba(255, 255, 255, 0.2); }
-.lpcs-sheet .lpcs-ds-pip--success:hover i { color: rgba(45, 138, 78, 0.6); }
-.lpcs-sheet .lpcs-ds-pip--success.filled { background: rgba(45, 138, 78, 0.22); border-color: #2d8a4e; }
-.lpcs-sheet .lpcs-ds-pip--success.filled i { color: #81c784; filter: drop-shadow(0 0 4px rgba(45, 138, 78, 0.7)); }
+.lpcs-sheet .lpcs-ds-pip--success i { color: rgba(255, 255, 255, 0.18); }
+.lpcs-sheet .lpcs-ds-pip--success.filled { background: rgba(45, 138, 78, 0.45); border: 2px solid #3aaa60; }
+.lpcs-sheet .lpcs-ds-pip--success.filled i { color: #a5d6a7; filter: drop-shadow(0 0 6px rgba(45, 138, 78, 0.9)); }
 
 /* Failure pips (skulls) */
-.lpcs-sheet .lpcs-ds-pip--failure i { color: rgba(255, 255, 255, 0.2); }
-.lpcs-sheet .lpcs-ds-pip--failure:hover i { color: rgba(139, 30, 45, 0.6); }
-.lpcs-sheet .lpcs-ds-pip--failure.filled { background: rgba(139, 30, 45, 0.22); border-color: var(--lpcs-accent-crimson); }
-.lpcs-sheet .lpcs-ds-pip--failure.filled i { color: #e57373; filter: drop-shadow(0 0 4px rgba(139, 30, 45, 0.7)); }
+.lpcs-sheet .lpcs-ds-pip--failure i { color: rgba(255, 255, 255, 0.18); }
+.lpcs-sheet .lpcs-ds-pip--failure.filled { background: rgba(180, 30, 45, 0.55); border: 2px solid #cc2233; }
+.lpcs-sheet .lpcs-ds-pip--failure.filled i { color: #ff8a80; filter: drop-shadow(0 0 7px rgba(200, 30, 45, 1.0)); }
+
+/* ── Roll Mode: Physical ──────────────────────────────────────── */
+
+/* Groups become large tap targets */
+.lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group {
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 4px 8px;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group:hover {
+  background: rgba(200, 167, 93, 0.08);
+  transform: scale(1.04);
+}
+
+.lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group:active {
+  transform: scale(0.96);
+}
+
+/* Hover feedback trickles into pips when the group is hovered */
+.lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group--success:hover .lpcs-ds-pip--success i {
+  color: rgba(45, 138, 78, 0.5);
+}
+.lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group--failure:hover .lpcs-ds-pip--failure i {
+  color: rgba(139, 30, 45, 0.5);
+}
+
+/* Pips are display-only — the group handles interaction */
+.lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-pip {
+  pointer-events: none;
+}
+
+/* Roll button is hidden in physical mode */
+.lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-roll-btn {
+  display: none;
+}
+
+/* ── Roll Mode: Digital ───────────────────────────────────────── */
+
+/* Groups are inert display elements */
+.lpcs-sheet [data-roll-mode="digital"] .lpcs-ds-group {
+  pointer-events: none;
+  cursor: default;
+}
+
+/* ── Roll Button (visible in digital mode) ────────────────────── */
+
+.lpcs-sheet .lpcs-ds-roll-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 5px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(200, 167, 93, 0.3);
+  background: rgba(200, 167, 93, 0.08);
+  color: var(--lpcs-text-primary, #f0ead6);
+  font-family: var(--lpcs-font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.lpcs-sheet .lpcs-ds-roll-btn:hover {
+  background: rgba(200, 167, 93, 0.15);
+  border-color: rgba(200, 167, 93, 0.5);
+  transform: scale(1.04);
+}
+
+.lpcs-sheet .lpcs-ds-roll-btn:active {
+  transform: scale(0.96);
+}
+
+.lpcs-sheet .lpcs-ds-roll-btn i {
+  font-size: 0.95rem;
+  color: var(--lpcs-accent-gold, #c8a75d);
+}
 

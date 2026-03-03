@@ -237,6 +237,8 @@ export interface LPCSDeathSaves {
   /** Pre-built pip arrays so templates don't need `times` or `add` helpers. */
   successPips: Array<{ n: number; filled: boolean }>;
   failurePips: Array<{ n: number; filled: boolean }>;
+  /** Current roll mode: "physical" (tap group to record) or "digital" (Foundry roll button). */
+  rollMode: "physical" | "digital";
 }
 
 export interface LPCSHitDice {

@@ -150,7 +150,7 @@
   position: absolute;
   left: 0; top: 0; bottom: 0;
   background: linear-gradient(to right, #3d0e0e, #7a1515, #a82020);
-  transition: width 0.4s ease;
+  /* width animates via element.animate() in _onRender (Web Animations API) */
   z-index: 0;
 }
 
@@ -174,10 +174,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;                               /* clips ::before sweep to zone bounds */
   background: rgba(0, 0, 0, 0.75);
   border-left: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-left-color 0.3s ease;
   z-index: 1;
 }
+
+/* Blue sweep fill via pseudo-element — animates in when .has-temp is added, out when removed */
+.lpcs-sheet .lpcs-hp-temp-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to left, rgba(74, 122, 181, 0.55), rgba(74, 122, 181, 0.25));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.lpcs-sheet .lpcs-hp-temp-zone.has-temp::before {
+  transform: scaleX(1);
+}
+
+/* Border accent when temp HP is active */
+.lpcs-sheet .lpcs-hp-temp-zone.has-temp {
+  border-left-color: rgba(74, 122, 181, 0.5);
+}
+
+/* HP fill flash + width animations are driven by element.animate() in _onRender
+   (Web Animations API) — no CSS keyframes or classes needed. */
 
 .lpcs-sheet .lpcs-hp-value {
   font-family: var(--lpcs-font-display);

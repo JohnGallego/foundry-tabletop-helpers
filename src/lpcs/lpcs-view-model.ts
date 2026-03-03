@@ -18,6 +18,7 @@ import type {
 
 import { ABILITY_KEYS, abilityLabel } from "../print-sheet/extractors/dnd5e-extract-helpers";
 import { Log } from "../logger";
+import { getRollMode } from "./lpcs-settings";
 
 /* ── Utility ──────────────────────────────────────────────── */
 
@@ -531,7 +532,7 @@ function createEmptyViewModel(name: string): LPCSViewModel {
     features: [],
     traits: [],
     proficiencies: { armor: "", weapons: "", tools: "", languages: "" },
-    deathSaves: { successes: 0, failures: 0, show: false, successPips: [], failurePips: [] },
+    deathSaves: { successes: 0, failures: 0, show: false, successPips: [], failurePips: [], rollMode: "digital" as const },
     hitDice: [],
     hitDiceSummary: { die: "d8", current: 0, max: 0 },
     exhaustion: { level: 0, pips: [] },
@@ -627,6 +628,7 @@ export function buildLPCSViewModel(actor: any): LPCSViewModel {
         show,
         successPips: [1, 2, 3].map((n) => ({ n, filled: n <= successes })),
         failurePips: [1, 2, 3].map((n) => ({ n, filled: n <= failures })),
+        rollMode: getRollMode("deathSaves"),
       };
     })(),
 

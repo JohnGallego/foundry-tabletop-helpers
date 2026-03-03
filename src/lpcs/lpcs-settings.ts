@@ -13,6 +13,14 @@ import { getSetting } from "../types";
 const KEY_ENABLED = "lpcsEnabled";
 const KEY_AUTO_OPEN = "lpcsAutoOpen";
 const KEY_DEFAULT_TAB = "lpcsDefaultTab";
+const KEY_DS_ROLL_MODE = "lpcsDeathSavesRollMode";
+
+/* ── Roll Mode Types ──────────────────────────────────────── */
+
+/** Whether a given action uses physical dice (manual entry) or digital (Foundry-rolled). */
+export type RollMode = "physical" | "digital";
+/** Maps action keys to their roll mode. Extensible for future action types. */
+export type RollModes = Record<string, RollMode>;
 
 /* ── Registration ─────────────────────────────────────────── */
 
@@ -61,6 +69,20 @@ export function registerLPCSSettings(settings: {
       default: "combat",
     });
 
+    settings.register(MOD, KEY_DS_ROLL_MODE, {
+      name: "Live Play Sheet: Death Save Mode",
+      hint: "Physical — tap the success/failure group to manually record dice results. Digital — use the Roll button and let Foundry handle the dice.",
+      scope: "world",
+      config: true,
+      type: String,
+      choices: {
+        digital: "Digital (Foundry rolls the dice)",
+        physical: "Physical (tap to record manual results)",
+      },
+      default: "digital",
+      restricted: true,
+    });
+
     Log.debug("LPCS settings registered");
   } catch (err) {
     Log.warn("LPCS: failed to register settings", err);
@@ -82,5 +104,18 @@ export function lpcsAutoOpen(): boolean {
 /** The default tab to show on sheet open. */
 export function lpcsDefaultTab(): string {
   return getSetting<string>(MOD, KEY_DEFAULT_TAB) ?? "combat";
+}
+
+/** Get the roll mode for a specific action key ("digital" if not explicitly set). */
+export function getRollMode(actionKey: string): RollMode {
+  if (actionKey === "deathSaves") {
+    return (getSetting<string>(MOD, KEY_DS_ROLL_MODE) as RollMode | undefined) ?? "digital";
+  }
+  return "digital";
+}
+
+/** Returns true when the given action is configured for physical (manual) dice entry. */
+export function isPhysicalMode(actionKey: string): boolean {
+  return getRollMode(actionKey) === "physical";
 }
 

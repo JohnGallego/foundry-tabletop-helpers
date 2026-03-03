@@ -42,8 +42,8 @@
             <span class="lpcs-hp-max-val">{{hp.max}}</span>
           </div>
 
-          {{!-- Temp HP zone: rightmost 20% of the bar --}}
-          <div class="lpcs-hp-temp-zone" aria-hidden="true">
+          {{!-- Temp HP zone: rightmost 20% of the bar — blue fill when temp HP is active --}}
+          <div class="lpcs-hp-temp-zone {{#if hp.temp}}has-temp{{/if}}" aria-hidden="true">
             <span class="lpcs-hp-tmp-val">{{#if hp.temp}}{{hp.temp}}{{else}}—{{/if}}</span>
           </div>
 
@@ -56,33 +56,49 @@
     <div class="lpcs-vitals-state ds-view {{#if deathSaves.show}}active{{else}}hidden{{/if}}"
          data-vitals="ds">
 
-      <div class="lpcs-ds-widget" role="group" aria-label="Death saving throws">
+      {{!-- data-roll-mode drives all CSS differences between physical and digital.
+           Both the group tap targets and the roll button are always in the DOM;
+           CSS hides the inappropriate element for the current mode. --}}
+      <div class="lpcs-ds-widget" role="group" aria-label="Death saving throws"
+           data-roll-mode="{{deathSaves.rollMode}}">
         <div class="lpcs-ds-label">Death Saves</div>
         <div class="lpcs-ds-groups">
 
-          {{!-- Success pips (hearts) --}}
-          <div class="lpcs-ds-group lpcs-ds-group--success">
+          {{!-- Success group — tap target in physical mode, display-only in digital --}}
+          <div class="lpcs-ds-group lpcs-ds-group--success"
+               data-action="incrementDeathSave" data-save-type="success"
+               role="button" tabindex="0"
+               aria-label="Record death save success ({{deathSaves.successes}} of 3)">
             {{#each deathSaves.successPips}}
-            <button class="lpcs-ds-pip lpcs-ds-pip--success {{#if filled}}filled{{/if}}"
-                    data-action="rollDeathSave" type="button"
-                    aria-label="Death save success {{n}}">
+            <span class="lpcs-ds-pip lpcs-ds-pip--success {{#if filled}}filled{{/if}}"
+                  aria-hidden="true">
               <i class="fas fa-heart" aria-hidden="true"></i>
-            </button>
+            </span>
             {{/each}}
           </div>
 
-          {{!-- Failure pips (skulls) --}}
-          <div class="lpcs-ds-group lpcs-ds-group--failure">
+          {{!-- Failure group — tap target in physical mode, display-only in digital --}}
+          <div class="lpcs-ds-group lpcs-ds-group--failure"
+               data-action="incrementDeathSave" data-save-type="failure"
+               role="button" tabindex="0"
+               aria-label="Record death save failure ({{deathSaves.failures}} of 3)">
             {{#each deathSaves.failurePips}}
-            <button class="lpcs-ds-pip lpcs-ds-pip--failure {{#if filled}}filled{{/if}}"
-                    data-action="rollDeathSave" type="button"
-                    aria-label="Death save failure {{n}}">
+            <span class="lpcs-ds-pip lpcs-ds-pip--failure {{#if filled}}filled{{/if}}"
+                  aria-hidden="true">
               <i class="fas fa-skull" aria-hidden="true"></i>
-            </button>
+            </span>
             {{/each}}
           </div>
 
         </div>
+
+        {{!-- Digital mode: central roll button. Hidden by CSS in physical mode. --}}
+        <button class="lpcs-ds-roll-btn" data-action="rollDeathSave" type="button"
+                aria-label="Roll death save">
+          <i class="fas fa-dice-d20" aria-hidden="true"></i>
+          Roll
+        </button>
+
       </div>
 
     </div>{{!-- end .ds-view --}}

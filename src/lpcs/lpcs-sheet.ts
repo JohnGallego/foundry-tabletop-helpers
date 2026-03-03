@@ -12,7 +12,7 @@
 
 import { MOD, Log } from "../logger";
 import { buildLPCSViewModel } from "./lpcs-view-model";
-import { lpcsEnabled, lpcsDefaultTab } from "./lpcs-settings";
+import { lpcsEnabled, lpcsDefaultTab, isPhysicalMode } from "./lpcs-settings";
 import { isDnd5eWorld } from "../types";
 
 /* ── Runtime access to Foundry globals ────────────────────── */
@@ -105,6 +105,37 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rollDeathSave(this: any, event: Event): void {
           this.actor.rollDeathSave?.({ event, legacy: false });
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async incrementDeathSave(this: any, _event: Event, target: HTMLElement): Promise<void> {
+          // Defense-in-depth: only execute in physical mode (CSS also suppresses in digital mode).
+          if (!isPhysicalMode("deathSaves")) return;
+          if (!this.actor?.isOwner) return;
+
+          const saveType = (target.closest("[data-save-type]") as HTMLElement | null)?.dataset.saveType;
+          if (saveType !== "success" && saveType !== "failure") return;
+
+          const death = this.actor.system?.attributes?.death as Record<string, number> | undefined;
+          if (!death) return;
+
+          const isSuccess = saveType === "success";
+          const path = isSuccess ? "system.attributes.death.success" : "system.attributes.death.failure";
+          const current = isSuccess ? (death.success ?? 0) : (death.failure ?? 0);
+
+          // Cap at 3 per D&D 5e rules
+          if (current >= 3) return;
+
+          const next = current + 1;
+          const update: Record<string, number> = { [path]: next };
+
+          // On 3rd success: auto-heal to 1 HP, which triggers the existing cross-fade animation.
+          if (isSuccess && next === 3) {
+            update["system.attributes.hp.value"] = 1;
+            update["system.attributes.death.success"] = 0;
+            update["system.attributes.death.failure"] = 0;
+          }
+
+          await this.actor.update(update);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         useItem(this: any, event: Event, target: HTMLElement): void {
@@ -240,6 +271,24 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      * Prevents _onRender() from resetting vitals classes during the sequence.
      */
     private _deathSaveAnimating = false;
+
+    /**
+     * HP value from the previous render.
+     * null on the very first render so we don't flash on sheet open.
+     */
+    private _prevHPValue: number | null = null;
+
+    /**
+     * HP fill percentage from the previous render.
+     * null on the very first render so we don't animate on sheet open.
+     */
+    private _prevHPPct: number | null = null;
+
+    /**
+     * Running Web Animations API animation for the HP fill width.
+     * Cancelled and replaced on every HP change so rapid updates don't stack.
+     */
+    private _hpWidthAnimation: Animation | null = null;
 
     /* ── Title ───────────────────────────────────────────────── */
 
@@ -431,6 +480,70 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
         this._wasShowingDeathSaves = deathSavesShow;
       }
+
+      // ── HP fill width animation + flash ───────────────────────
+      // Both effects use the Web Animations API so they run on isolated tracks and
+      // never interfere with each other or with CSS class-driven style recalculations.
+      const hpFill = el.querySelector<HTMLElement>(".lpcs-hp-fill");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newHPValue = (this as any).actor?.system?.attributes?.hp?.value ?? 0;
+      const newHPPct = (context as { vm?: { hp?: { pct?: number } } }).vm?.hp?.pct ?? 0;
+
+      // Width animation — animates the crimson fill from old % to new %.
+      // fill: "none" means after the animation the element snaps back to the
+      // template's inline style="width: X%" cleanly.
+      // _prevHPPct is only updated in onfinish so that if Foundry fires a second
+      // render for the same HP change (dnd5e side-effects), the new DOM element
+      // still gets the animation rather than the now-detached old element.
+      if (hpFill && this._prevHPPct !== null && newHPPct !== this._prevHPPct) {
+        this._hpWidthAnimation?.cancel();
+        const isHealing = newHPValue > (this._prevHPValue ?? newHPValue);
+        this._hpWidthAnimation = hpFill.animate(
+          [{ width: `${this._prevHPPct}%` }, { width: `${newHPPct}%` }],
+          {
+            duration: isHealing ? 600 : 450,
+            easing: isHealing
+              ? "cubic-bezier(0.25, 1, 0.5, 1)"   // spring grow
+              : "cubic-bezier(0.5, 0, 0.75, 0)",   // sharp drain
+            fill: "none",
+          }
+        );
+        const targetPct = newHPPct;
+        this._hpWidthAnimation.onfinish = () => {
+          this._hpWidthAnimation = null;
+          this._prevHPPct = targetPct;
+        };
+      } else {
+        // No animation needed (first render or same pct) — just track.
+        this._prevHPPct = newHPPct;
+      }
+
+      // Flash animation — brightness pulse on HP change (WAAPI, no CSS classes).
+      // Skips on first render (_prevHPValue null) and during the death-save animation.
+      if (hpFill && this._prevHPValue !== null && !this._deathSaveAnimating) {
+        if (newHPValue > this._prevHPValue) {
+          hpFill.animate(
+            [
+              { filter: "brightness(1)", offset: 0 },
+              { filter: "brightness(2.0)", offset: 0.3 },
+              { filter: "brightness(1)", offset: 1 },
+            ],
+            { duration: 550, easing: "ease-out", fill: "none" }
+          );
+        } else if (newHPValue < this._prevHPValue) {
+          hpFill.animate(
+            [
+              { filter: "brightness(1)", offset: 0 },
+              { filter: "brightness(0.35)", offset: 0.15 },
+              { filter: "brightness(1.15)", offset: 0.45 },
+              { filter: "brightness(1)", offset: 1 },
+            ],
+            { duration: 450, easing: "ease-out", fill: "none" }
+          );
+        }
+      }
+
+      this._prevHPValue = newHPValue;
     }
 
     /**
