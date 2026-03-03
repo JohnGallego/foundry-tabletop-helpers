@@ -1,0 +1,39 @@
+{{!-- lpcs-hp.hbs --}}
+{{!-- HP widget: single bar — fill grows from left, values centered inside, temp zone on the right --}}
+{{!-- Context: hp (LPCSHitPoints: value, max, temp, pct, color) --}}
+
+<div class="lpcs-hp-widget-wrap">
+
+  {{!-- Labels above the bar --}}
+  <div class="lpcs-hp-labels">
+    <div class="lpcs-hp-label-main">
+      <i class="fas fa-heart lpcs-hp-heart" aria-hidden="true"></i>
+      <span class="lpcs-hp-label-text">HP</span>
+    </div>
+    <span class="lpcs-hp-label-temp">Temp</span>
+  </div>
+
+  {{!-- The bar IS the widget: fill underneath, values + temp zone on top --}}
+  <div class="lpcs-hp-bar-widget"
+       role="group"
+       aria-label="HP: {{hp.value}} of {{hp.max}}{{#if hp.temp}}, {{hp.temp}} temporary{{/if}}">
+
+    {{!-- Red crimson fill: width = current HP % --}}
+    <div class="lpcs-hp-fill" style="width: {{hp.pct}}%;" aria-hidden="true"></div>
+
+    {{!-- Current / max HP values centered in the main HP zone --}}
+    <div class="lpcs-hp-bar-values" aria-hidden="true">
+      <span class="lpcs-hp-value">{{hp.value}}</span>
+      <span class="lpcs-hp-sep">/</span>
+      <span class="lpcs-hp-max-val">{{hp.max}}</span>
+    </div>
+
+    {{!-- Temp HP zone: rightmost 20% of the bar --}}
+    <div class="lpcs-hp-temp-zone" aria-hidden="true">
+      <span class="lpcs-hp-tmp-val">{{#if hp.temp}}{{hp.temp}}{{else}}—{{/if}}</span>
+    </div>
+
+  </div>
+
+</div>
+

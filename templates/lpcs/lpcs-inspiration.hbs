@@ -1,0 +1,15 @@
+{{!-- lpcs-inspiration.hbs --}}
+{{!-- Inspiration badge — tappable toggle that writes system.attributes.inspiration --}}
+{{!-- Context: inherits full template context; reads vm.inspiration directly --}}
+<button
+  class="lpcs-inspiration-badge{{#if vm.inspiration}} is-active{{/if}}"
+  data-action="toggleInspiration"
+  type="button"
+  title="{{#if vm.inspiration}}Inspired! Click to spend your inspiration.{{else}}No inspiration. Click to gain inspiration.{{/if}}"
+  aria-label="{{#if vm.inspiration}}Inspiration active{{else}}No inspiration{{/if}}"
+  aria-pressed="{{vm.inspiration}}">
+
+  <i class="fas fa-star lpcs-inspiration-icon" aria-hidden="true"></i>
+
+</button>
+

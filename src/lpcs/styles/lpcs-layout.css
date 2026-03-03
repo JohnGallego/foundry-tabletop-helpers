@@ -1,0 +1,205 @@
+/* ── Panel ───────────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-panel {
+  background: var(--lpcs-bg-glass);
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-lg);
+  padding: var(--lpcs-space-md);
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-header {
+  position: relative;   /* stacking context for the absolute portrait and badge */
+  min-height: 180px;
+  overflow: visible;    /* allows the inspiration badge to hang below the header */
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(200,167,93,0.10) 0%, transparent 60%);
+  border-bottom: 1px solid var(--lpcs-border);
+}
+
+/* Identity + HP widget — in flow, sits above the portrait */
+.lpcs-sheet .lpcs-header-content {
+  position: relative;
+  z-index: 1;           /* above the z-index: 0 portrait */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: var(--lpcs-space-md);
+  padding: var(--lpcs-space-lg);
+  /* Desktop / Wide Screen (>1200px) default — container queries override for narrower widths */
+  width: 75%;
+}
+
+/* ── Identity block (name + subtitle + level hex) ────────────── */
+.lpcs-sheet .lpcs-identity {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--lpcs-space-sm);
+}
+
+/* Hex level badge — two pseudo-element border technique */
+.lpcs-sheet .lpcs-level-hex {
+  position: relative;
+  width: 42px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 2px; /* optical alignment with name cap-height */
+}
+
+/* Outer hex — bronze border colour */
+.lpcs-sheet .lpcs-level-hex::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--lpcs-accent-bronze);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* Inner hex — dark fill, inset by ~2.5px to reveal border */
+.lpcs-sheet .lpcs-level-hex::after {
+  content: "";
+  position: absolute;
+  inset: 2.5px;
+  background: #1a0c0c;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.lpcs-sheet .lpcs-level-hex-num {
+  position: relative;
+  z-index: 1;
+  font-family: var(--lpcs-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--lpcs-accent-gold);
+  line-height: 1;
+}
+
+.lpcs-sheet .lpcs-identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Large white name — matching mockup weight */
+.lpcs-sheet .lpcs-name {
+  font-family: var(--lpcs-font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--lpcs-text-primary);
+  margin: 0;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Smaller muted subtitle: "Human Rogue" */
+.lpcs-sheet .lpcs-subtitle {
+  font-size: 0.8rem;
+  color: var(--lpcs-text-secondary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Background line below subtitle — e.g., "Soldier" */
+.lpcs-sheet .lpcs-background {
+  font-size: 0.72rem;
+  color: var(--lpcs-text-muted);
+  margin: 0;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Inspiration Badge ────────────────────────────────────────── */
+.lpcs-sheet .lpcs-inspiration-badge {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  font: inherit;
+  color: inherit;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: var(--lpcs-radius-sm);
+  background: rgba(26, 29, 36, 0.75);
+  border: 2px solid rgba(200, 167, 93, 0.22);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.lpcs-sheet .lpcs-inspiration-badge:hover {
+  background: rgba(200, 167, 93, 0.08);
+  border-color: rgba(200, 167, 93, 0.5);
+}
+
+.lpcs-sheet .lpcs-inspiration-badge.is-active {
+  background: rgba(212, 175, 55, 0.13);
+  border-color: var(--lpcs-accent-gold);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.55), inset 0 0 6px rgba(212, 175, 55, 0.15);
+}
+
+.lpcs-sheet .lpcs-inspiration-badge.is-active:hover {
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.75), inset 0 0 8px rgba(212, 175, 55, 0.2);
+}
+
+.lpcs-sheet .lpcs-inspiration-icon {
+  font-size: 1.3rem;
+  color: rgba(200, 167, 93, 0.3);
+  transition: color 0.2s, filter 0.2s;
+}
+
+.lpcs-sheet .lpcs-inspiration-badge:hover .lpcs-inspiration-icon {
+  color: rgba(200, 167, 93, 0.6);
+}
+
+.lpcs-sheet .lpcs-inspiration-badge.is-active .lpcs-inspiration-icon {
+  color: var(--lpcs-accent-gold);
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.85));
+}
+
+/* ── Portrait panel ──────────────────────────────────────────── */
+/* Portrait panel — fluid width via clamp + cqi (container query inline units).
+   Scales smoothly from ~63% at 320px to ~35% at 1200px with no breakpoint jumps.
+   120px base + 25cqi slope; clamped between 180px and 420px. */
+.lpcs-sheet .lpcs-portrait-panel {
+  position: absolute;                /* out of normal flow — content renders above it */
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: clamp(180px, calc(120px + 25cqi), 420px);
+  z-index: 0;
+  overflow: hidden;
+  /* Diagonal fade: opaque at top-right → transparent at bottom-left */
+  -webkit-mask-image: linear-gradient(to bottom left, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to bottom left, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 100%);
+}
+
+.lpcs-sheet .lpcs-portrait-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top right;        /* anchor top-right corner of the image */
+}
+
+.lpcs-sheet .lpcs-portrait-img--fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lpcs-bg-panel);
+  font-size: 4rem;
+  color: var(--lpcs-text-muted);
+}
+

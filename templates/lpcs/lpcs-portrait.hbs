@@ -1,0 +1,14 @@
+{{!-- lpcs-portrait.hbs --}}
+{{!-- Large character portrait panel. --}}
+{{!-- Context: img (url string), name (string) --}}
+{{!-- Fills container width, anchors to the top of the image, clips vertical overflow. --}}
+<div class="lpcs-portrait-panel" aria-hidden="true">
+  {{#if img}}
+  <img class="lpcs-portrait-img" src="{{img}}" alt="">
+  {{else}}
+  <div class="lpcs-portrait-img lpcs-portrait-img--fallback">
+    <i class="fas fa-user-circle"></i>
+  </div>
+  {{/if}}
+</div>
+

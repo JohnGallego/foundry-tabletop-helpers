@@ -1,0 +1,104 @@
+/* ── Spells Tab ──────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-spellcasting-header {
+  display: flex;
+  gap: var(--lpcs-space-lg);
+  justify-content: center;
+}
+
+.lpcs-sheet .lpcs-spellcasting-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.lpcs-sheet .lpcs-slots-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-sm);
+}
+
+.lpcs-sheet .lpcs-slot-level {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+}
+
+.lpcs-sheet .lpcs-slot-label {
+  font-size: 0.75rem;
+  color: var(--lpcs-text-secondary);
+  min-width: 70px;
+}
+
+.lpcs-sheet .lpcs-slot-pips {
+  display: flex;
+  gap: var(--lpcs-space-xs);
+  flex-wrap: wrap;
+}
+
+.lpcs-sheet .lpcs-slot-pip {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--lpcs-bg-glass);
+  border: 1px solid var(--lpcs-border);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lpcs-sheet .lpcs-slot-pip.filled {
+  background: var(--lpcs-accent-bronze);
+  border-color: var(--lpcs-accent-gold);
+}
+
+.lpcs-sheet .lpcs-spell-level-group { display: flex; flex-direction: column; gap: 2px; }
+
+.lpcs-sheet .lpcs-spell-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+  padding: 0 var(--lpcs-space-sm);
+  background: var(--lpcs-bg-glass);
+  border: 1px solid transparent;
+  border-radius: var(--lpcs-radius-sm);
+  transition: background 0.1s;
+}
+
+.lpcs-sheet .lpcs-spell-row:hover { background: var(--lpcs-bg-glass-hover); border-color: var(--lpcs-border); }
+.lpcs-sheet .lpcs-spell-row.conc { border-left: 2px solid #4a7ab5; }
+.lpcs-sheet .lpcs-spell-row.ritual { border-left: 2px solid var(--lpcs-accent-bronze); }
+
+.lpcs-sheet .lpcs-spell-use {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+  background: none;
+  border: none;
+  color: var(--lpcs-text-primary);
+  cursor: pointer;
+  padding: 0;
+  min-height: var(--lpcs-touch-min);
+  flex: 1;
+  text-align: left;
+  font-family: var(--lpcs-font-body);
+}
+
+.lpcs-sheet .lpcs-spell-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-xs);
+  font-size: 0.75rem;
+  color: var(--lpcs-text-secondary);
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-spell-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.lpcs-sheet .lpcs-tag--conc { background: rgba(74,122,181,0.25); color: #7ab0e0; }
+.lpcs-sheet .lpcs-tag--ritual { background: rgba(200,167,93,0.2); color: var(--lpcs-accent-bronze); }
+

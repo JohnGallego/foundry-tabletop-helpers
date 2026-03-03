@@ -1,0 +1,121 @@
+/* ── Weapons Table ───────────────────────────────────────────── */
+.lpcs-sheet .lpcs-weapons-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.lpcs-sheet .lpcs-weapons-table th {
+  text-align: left;
+  font-size: 0.65rem;
+  color: var(--lpcs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: var(--lpcs-space-xs) var(--lpcs-space-sm);
+  border-bottom: 1px solid var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-weapon-row {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+
+.lpcs-sheet .lpcs-weapon-row:hover { background: var(--lpcs-bg-glass); }
+
+.lpcs-sheet .lpcs-weapon-row td { padding: var(--lpcs-space-xs) var(--lpcs-space-sm); vertical-align: middle; }
+
+.lpcs-sheet .lpcs-weapon-use {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+  background: none;
+  border: none;
+  color: var(--lpcs-text-primary);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  min-height: var(--lpcs-touch-min);
+  font-family: var(--lpcs-font-body);
+}
+
+.lpcs-sheet .lpcs-weapon-name { font-weight: 600; }
+.lpcs-sheet .lpcs-atk-bonus { font-family: var(--lpcs-font-mono); color: var(--lpcs-accent-bronze); font-weight: 700; }
+.lpcs-sheet .lpcs-damage { font-family: var(--lpcs-font-mono); font-size: 0.8rem; }
+.lpcs-sheet .lpcs-mastery-badge {
+  font-size: 0.6rem;
+  padding: 1px 5px;
+  background: rgba(200,167,93,0.15);
+  border: 1px solid var(--lpcs-border-accent);
+  border-radius: 4px;
+  color: var(--lpcs-accent-bronze);
+  text-transform: capitalize;
+}
+
+/* ── Drawers ─────────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-drawer {
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-md);
+  overflow: hidden;
+  background: var(--lpcs-bg-glass);
+}
+
+.lpcs-sheet .lpcs-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+  padding: 0 var(--lpcs-space-md);
+  min-height: var(--lpcs-touch-min);
+  background: none;
+  border: none;
+  color: var(--lpcs-text-primary);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: var(--lpcs-font-body);
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.lpcs-sheet .lpcs-drawer-header:hover { background: var(--lpcs-bg-glass-hover); }
+.lpcs-sheet .lpcs-drawer-title { flex: 1; font-weight: 600; }
+.lpcs-sheet .lpcs-drawer-uses { font-size: 0.75rem; color: var(--lpcs-text-secondary); font-family: var(--lpcs-font-mono); }
+.lpcs-sheet .lpcs-drawer-recharge { font-size: 0.75rem; color: var(--lpcs-accent-bronze); }
+.lpcs-sheet .lpcs-drawer-chevron {
+  color: var(--lpcs-text-muted);
+  font-size: 0.75rem;
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-drawer-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease-out, padding 0.25s ease-out;
+  padding: 0 var(--lpcs-space-md);
+}
+
+.lpcs-sheet .lpcs-drawer-body.expanded {
+  max-height: 500px;
+  padding: var(--lpcs-space-sm) var(--lpcs-space-md) var(--lpcs-space-md);
+}
+
+.lpcs-sheet .lpcs-drawer:has(.lpcs-drawer-body.expanded) .lpcs-drawer-chevron {
+  transform: rotate(180deg);
+}
+
+.lpcs-sheet .lpcs-drawer-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--lpcs-text-secondary);
+  line-height: 1.5;
+}
+
+/* ── Item icons ──────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-item-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--lpcs-radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+

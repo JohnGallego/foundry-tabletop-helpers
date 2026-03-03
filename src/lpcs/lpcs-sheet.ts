@@ -145,8 +145,9 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     };
 
     static PARTS = {
-      header: { template: `modules/${MOD}/templates/lpcs/lpcs-header.hbs` },
-      statsBar: { template: `modules/${MOD}/templates/lpcs/lpcs-stats-bar.hbs` },
+      header:        { template: `modules/${MOD}/templates/lpcs/lpcs-header.hbs` },
+      abilityScores: { template: `modules/${MOD}/templates/lpcs/lpcs-ability-scores.hbs` },
+      statsBar:      { template: `modules/${MOD}/templates/lpcs/lpcs-stats-bar.hbs` },
       tabNav: { template: `modules/${MOD}/templates/lpcs/lpcs-tab-nav.hbs` },
       abilities: {
         container: { classes: ["lpcs-tab-body"], id: "lpcs-tabs" },
@@ -226,7 +227,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
       // Inject active tab state into each tab part
       const tabKey = this.tabGroups.primary;
-      if (partId !== "header" && partId !== "statsBar" && partId !== "tabNav") {
+      if (partId !== "header" && partId !== "abilityScores" && partId !== "statsBar" && partId !== "tabNav") {
         context.isActiveTab = partId === tabKey;
         context.currentTab = tabKey;
       }
@@ -334,14 +335,21 @@ export function registerLPCSSheet(): void {
  * array — they are cached for performance but do not need a registered name.
  */
 export async function preloadLPCSTemplates(): Promise<void> {
-  // Partials — registered under a short name so {{> lpcs-drawer}} resolves.
+  // Partials — registered under a short name so {{> name}} resolves.
   const partials: Record<string, string> = {
-    "lpcs-drawer": `modules/${MOD}/templates/lpcs/lpcs-drawer.hbs`,
+    "lpcs-drawer":       `modules/${MOD}/templates/lpcs/lpcs-drawer.hbs`,
+    "lpcs-portrait":     `modules/${MOD}/templates/lpcs/lpcs-portrait.hbs`,
+    "lpcs-identity":     `modules/${MOD}/templates/lpcs/lpcs-identity.hbs`,
+    "lpcs-inspiration":  `modules/${MOD}/templates/lpcs/lpcs-inspiration.hbs`,
+    "lpcs-quick-stats":  `modules/${MOD}/templates/lpcs/lpcs-quick-stats.hbs`,
+    "lpcs-xp":           `modules/${MOD}/templates/lpcs/lpcs-xp.hbs`,
+    "lpcs-hp":           `modules/${MOD}/templates/lpcs/lpcs-hp.hbs`,
   };
 
   // Non-partial PARTS templates — cached but not referenced by short name.
   const parts: string[] = [
     `modules/${MOD}/templates/lpcs/lpcs-header.hbs`,
+    `modules/${MOD}/templates/lpcs/lpcs-ability-scores.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-stats-bar.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-nav.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-abilities.hbs`,

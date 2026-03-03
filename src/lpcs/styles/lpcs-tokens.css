@@ -1,0 +1,63 @@
+/* ── LPCS Design Tokens ──────────────────────────────────────── */
+.lpcs-sheet {
+  /* Color System */
+  --lpcs-bg-base:           #0f1115;
+  --lpcs-bg-panel:          #1a1d24;
+  --lpcs-bg-panel-hover:    #22262f;
+  --lpcs-bg-glass:          rgba(255, 255, 255, 0.04);
+  --lpcs-bg-glass-hover:    rgba(255, 255, 255, 0.08);
+
+  --lpcs-accent-bronze:     #c8a75d;
+  --lpcs-accent-crimson:    #8b1e2d;
+  --lpcs-accent-gold:       #d4af37;
+
+  --lpcs-text-primary:      #e8e4dc;
+  --lpcs-text-secondary:    #9a9590;
+  --lpcs-text-muted:        #5a5550;
+
+  --lpcs-border:            rgba(200, 167, 93, 0.15);
+  --lpcs-border-accent:     rgba(200, 167, 93, 0.4);
+
+  /* HP Colors */
+  --lpcs-hp-healthy:        #2d8a4e;
+  --lpcs-hp-wounded:        #c49a2a;
+  --lpcs-hp-critical:       #8b1e2d;
+  --lpcs-hp-temp:           #4a7ab5;
+
+  /* Spacing */
+  --lpcs-radius-sm:         8px;
+  --lpcs-radius-md:         12px;
+  --lpcs-radius-lg:         16px;
+  --lpcs-radius-xl:         18px;
+  --lpcs-space-xs:          4px;
+  --lpcs-space-sm:          8px;
+  --lpcs-space-md:          12px;
+  --lpcs-space-lg:          16px;
+  --lpcs-space-xl:          24px;
+
+  /* Typography */
+  --lpcs-font-display:      "Roboto Slab", serif;
+  --lpcs-font-body:         "Roboto", sans-serif;
+  --lpcs-font-mono:         "Roboto Condensed", sans-serif;
+
+  /* Touch targets (Apple HIG minimum) */
+  --lpcs-touch-min:         44px;
+
+  /* ── Base ──────────────────────────────────────────────────── */
+  background: var(--lpcs-bg-base);
+  color: var(--lpcs-text-primary);
+  font-family: var(--lpcs-font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  min-width: 320px;
+  /* Container queries respond to THIS element's own width, not the viewport.
+     Critical for Foundry floating windows — @media would always see desktop
+     width even when the sheet is a small floating panel. */
+  container-type: inline-size;
+  container-name: lpcs-sheet;
+}
+

@@ -1,36 +1,21 @@
 {{!-- lpcs-header.hbs --}}
-{{!-- Character identity: portrait, name, class/level, species, inspiration --}}
+{{!-- Character identity header: identity top-left, large portrait right --}}
 <header class="lpcs-header">
-  {{!-- Portrait --}}
-  <div class="lpcs-portrait-wrap">
-    {{#if vm.img}}
-    <img class="lpcs-portrait" src="{{vm.img}}" alt="Portrait of {{vm.name}}" loading="eager">
-    {{else}}
-    <div class="lpcs-portrait lpcs-portrait--fallback" aria-hidden="true">
-      <i class="fas fa-user-circle"></i>
+
+  {{!-- Left: identity → HP widget → quick stats, stacked top-to-bottom --}}
+  <div class="lpcs-header-content">
+    {{!-- Identity + inspiration badge side by side --}}
+    <div class="lpcs-identity-inspiration-row">
+      {{> lpcs-identity name=vm.name subtitle=vm.subtitle background=vm.background level=vm.level}}
+      {{> lpcs-inspiration}}
     </div>
-    {{/if}}
+    {{> lpcs-hp hp=vm.hp}}
+    {{> lpcs-quick-stats}}
+    {{> lpcs-xp}}
   </div>
 
-  {{!-- Identity block --}}
-  <div class="lpcs-identity">
-    <h1 class="lpcs-name">{{vm.name}}</h1>
-    <p class="lpcs-subtitle">{{vm.subtitle}}</p>
-    <p class="lpcs-class-label">{{vm.classLabel}}</p>
-  </div>
+  {{!-- Right: large portrait panel --}}
+  {{> lpcs-portrait img=vm.img name=vm.name}}
 
-  {{!-- Level badge --}}
-  <div class="lpcs-level-badge" aria-label="Character level {{vm.level}}">
-    <span class="lpcs-level-num">{{vm.level}}</span>
-    <span class="lpcs-level-label">LVL</span>
-  </div>
-
-  {{!-- Inspiration --}}
-  <button class="lpcs-inspiration-btn {{#if vm.inspiration}}active{{/if}}"
-          data-action="toggleInspiration" type="button"
-          aria-label="{{#if vm.inspiration}}Inspiration active{{else}}Inspiration inactive{{/if}}"
-          aria-pressed="{{vm.inspiration}}">
-    <i class="fas fa-star" aria-hidden="true"></i>
-  </button>
 </header>
 

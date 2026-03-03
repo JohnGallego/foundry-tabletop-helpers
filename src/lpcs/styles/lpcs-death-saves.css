@@ -1,0 +1,33 @@
+/* ── Death Saves ─────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-death-saves {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-xs);
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-death-label {
+  font-size: 0.65rem;
+  color: var(--lpcs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lpcs-sheet .lpcs-death-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-death-pip {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--lpcs-bg-glass);
+  border: 1px solid var(--lpcs-border);
+  cursor: pointer;
+}
+
+.lpcs-sheet .lpcs-death-pip.filled.success { background: #2d8a4e; border-color: #2d8a4e; }
+.lpcs-sheet .lpcs-death-pip.filled.failure { background: var(--lpcs-accent-crimson); border-color: var(--lpcs-accent-crimson); }
+

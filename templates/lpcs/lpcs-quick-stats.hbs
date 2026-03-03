@@ -1,0 +1,43 @@
+{{!-- lpcs-quick-stats.hbs --}}
+{{!-- Header quick-stat cards: AC, PROF, INIT, SPD, HD --}}
+{{!-- Context: inherits full template context; accesses vm.* directly --}}
+<div class="lpcs-qstat-row">
+
+  {{!-- Armor Class --}}
+  <div class="lpcs-qstat-card" aria-label="Armor Class {{vm.ac}}">
+    <span class="lpcs-qstat-value">{{vm.ac}}</span>
+    <span class="lpcs-qstat-label">AC</span>
+  </div>
+
+  {{!-- Proficiency Bonus --}}
+  <div class="lpcs-qstat-card" aria-label="Proficiency Bonus {{vm.proficiencyBonus}}">
+    <span class="lpcs-qstat-value">{{vm.proficiencyBonus}}</span>
+    <span class="lpcs-qstat-label">PROF</span>
+  </div>
+
+  {{!-- Initiative (rollable button) --}}
+  <button class="lpcs-qstat-card lpcs-qstat-card--btn rollable"
+          data-action="rollInitiative" type="button"
+          aria-label="Roll Initiative ({{vm.initiative}})">
+    <span class="lpcs-qstat-value">{{vm.initiative}}</span>
+    <span class="lpcs-qstat-label">INIT</span>
+  </button>
+
+  {{!-- Speed --}}
+  <div class="lpcs-qstat-card" aria-label="Speed {{vm.speed.primary}} feet">
+    <span class="lpcs-qstat-value">{{vm.speed.primary}}</span>
+    <span class="lpcs-qstat-label">SPD</span>
+  </div>
+
+  {{!-- Hit Dice: die type on top, "1/1 HD" inline below --}}
+  <div class="lpcs-qstat-card"
+       aria-label="Hit Dice {{vm.hitDiceSummary.die}} ({{vm.hitDiceSummary.current}} of {{vm.hitDiceSummary.max}})">
+    <span class="lpcs-qstat-value">{{vm.hitDiceSummary.die}}</span>
+    <span class="lpcs-qstat-bottom">
+      <span class="lpcs-qstat-sub">{{vm.hitDiceSummary.current}}/{{vm.hitDiceSummary.max}}</span>
+      <span class="lpcs-qstat-label">HD</span>
+    </span>
+  </div>
+
+</div>
+

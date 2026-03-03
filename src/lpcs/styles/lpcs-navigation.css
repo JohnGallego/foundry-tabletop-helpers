@@ -1,0 +1,80 @@
+/* ── Tab Navigation ──────────────────────────────────────────── */
+.lpcs-sheet .lpcs-tab-nav {
+  display: flex;
+  gap: var(--lpcs-space-xs);
+  padding: var(--lpcs-space-sm) var(--lpcs-space-lg);
+  background: var(--lpcs-bg-panel);
+  border-bottom: 1px solid var(--lpcs-border);
+  overflow-x: auto;
+  flex-shrink: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.lpcs-sheet .lpcs-tab-nav::-webkit-scrollbar { display: none; }
+
+.lpcs-sheet .lpcs-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--lpcs-space-xs) var(--lpcs-space-md);
+  min-height: var(--lpcs-touch-min);
+  min-width: 56px;
+  background: var(--lpcs-bg-glass);
+  border: 1px solid transparent;
+  border-radius: var(--lpcs-radius-md);
+  color: var(--lpcs-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  font-family: var(--lpcs-font-body);
+}
+
+.lpcs-sheet .lpcs-tab-btn:hover {
+  background: var(--lpcs-bg-glass-hover);
+  color: var(--lpcs-text-primary);
+}
+
+.lpcs-sheet .lpcs-tab-btn.active {
+  background: rgba(200, 167, 93, 0.12);
+  border-color: var(--lpcs-border-accent);
+  color: var(--lpcs-accent-bronze);
+}
+
+.lpcs-sheet .lpcs-tab-icon { font-size: 1rem; }
+.lpcs-sheet .lpcs-tab-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ── Tab Body ────────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-tab-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.lpcs-sheet .lpcs-tab {
+  display: none;
+  flex-direction: column;
+  gap: var(--lpcs-space-md);
+  padding: var(--lpcs-space-lg);
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lpcs-border) transparent;
+}
+
+.lpcs-sheet .lpcs-tab.active { display: flex; }
+
+/* ── Section Titles ──────────────────────────────────────────── */
+.lpcs-sheet .lpcs-section-title {
+  font-family: var(--lpcs-font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--lpcs-accent-bronze);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 var(--lpcs-space-sm);
+  padding-bottom: var(--lpcs-space-xs);
+  border-bottom: 1px solid var(--lpcs-border);
+}
+

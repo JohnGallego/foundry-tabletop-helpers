@@ -13,6 +13,7 @@ import type {
   LPCSSense, LPCSWeapon, LPCSAction, LPCSSpellcasting, LPCSSpellSlotLevel,
   LPCSSpellLevel, LPCSSpell, LPCSInventoryItem, LPCSEncumbrance,
   LPCSFeatureGroup, LPCSTraitGroup, LPCSProficiencies, LPCSHitDice, LPCSSpeed,
+  LPCSHitDiceSummary,
 } from "./lpcs-types";
 
 import { ABILITY_KEYS, abilityLabel } from "../print-sheet/extractors/dnd5e-extract-helpers";
@@ -442,6 +443,16 @@ function buildHitDice(actor: Record<string, unknown>): LPCSHitDice[] {
     });
 }
 
+function buildHitDiceSummary(actor: Record<string, unknown>): LPCSHitDiceSummary {
+  const dice = buildHitDice(actor);
+  if (dice.length === 0) return { die: "d8", current: 0, max: 0 };
+  // Primary die: from the first (highest-level) class entry
+  const die = dice[0].die;
+  const current = dice.reduce((sum, d) => sum + d.value, 0);
+  const max = dice.reduce((sum, d) => sum + d.max, 0);
+  return { die, current, max } satisfies LPCSHitDiceSummary;
+}
+
 function buildClassLabel(actor: Record<string, unknown>): string {
   const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
   const classes = items.filter((i) => i.type === "class");
@@ -464,8 +475,15 @@ function buildSubtitle(actor: Record<string, unknown>): string {
     race = String(items.find((i) => i.type === "race")?.name ?? "");
   }
 
-  const classLabel = buildClassLabel(actor);
-  return [race, classLabel].filter(Boolean).join(" ");
+  // Class names only — level is already shown in the hex badge
+  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+  const classNames = items
+    .filter((i) => i.type === "class")
+    .map((c) => String(c.name ?? ""))
+    .filter(Boolean)
+    .join(" / ");
+
+  return [race, classNames].filter(Boolean).join(" ");
 }
 
 function buildXP(system: Record<string, unknown>): import("./lpcs-types").LPCSExperience | null {
@@ -515,6 +533,7 @@ function createEmptyViewModel(name: string): LPCSViewModel {
     proficiencies: { armor: "", weapons: "", tools: "", languages: "" },
     deathSaves: { successes: 0, failures: 0, show: false, successPips: [], failurePips: [] },
     hitDice: [],
+    hitDiceSummary: { die: "d8", current: 0, max: 0 },
     exhaustion: { level: 0, pips: [] },
   };
 }
@@ -612,6 +631,7 @@ export function buildLPCSViewModel(actor: any): LPCSViewModel {
     })(),
 
     hitDice: buildHitDice(actor),
+    hitDiceSummary: buildHitDiceSummary(actor),
     exhaustion: (() => {
       const level = (attrs.exhaustion as number) ?? 0;
       return { level, pips: [1, 2, 3, 4, 5, 6].map((n) => ({ n, active: n <= level })) };

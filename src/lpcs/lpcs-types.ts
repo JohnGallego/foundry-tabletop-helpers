@@ -57,6 +57,8 @@ export interface LPCSViewModel {
 
   /** Hit dice */
   hitDice: LPCSHitDice[];
+  /** Pre-computed summary for the header quick-stats widget */
+  hitDiceSummary: LPCSHitDiceSummary;
 
   /** Conditions */
   exhaustion: LPCSExhaustion;
@@ -242,5 +244,15 @@ export interface LPCSHitDice {
   value: number;
   max: number;
   class: string;
+}
+
+/** Pre-computed hit dice summary for the header quick-stats card. */
+export interface LPCSHitDiceSummary {
+  /** Primary die denomination, e.g. "d8". Multi-class uses the highest-level class die. */
+  die: string;
+  /** Total available hit dice across all classes. */
+  current: number;
+  /** Total maximum hit dice across all classes. */
+  max: number;
 }
 

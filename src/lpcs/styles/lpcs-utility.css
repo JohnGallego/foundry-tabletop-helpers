@@ -1,0 +1,30 @@
+/* ── Utility ─────────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-empty-state {
+  color: var(--lpcs-text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: var(--lpcs-space-sm) 0;
+}
+
+.lpcs-sheet .lpcs-empty-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lpcs-space-md);
+  padding: var(--lpcs-space-xl);
+  color: var(--lpcs-text-muted);
+  text-align: center;
+}
+
+.lpcs-sheet .lpcs-empty-icon { font-size: 2.5rem; opacity: 0.3; }
+.lpcs-sheet .lpcs-text-muted { color: var(--lpcs-text-muted); }
+
+/* ── Touch / rollable ────────────────────────────────────────── */
+.lpcs-sheet button.rollable,
+.lpcs-sheet .lpcs-skill-row,
+.lpcs-sheet .lpcs-drawer-header {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+

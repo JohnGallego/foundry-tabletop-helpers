@@ -1,0 +1,85 @@
+/* ── Inventory Tab ───────────────────────────────────────────── */
+.lpcs-sheet .lpcs-currency-bar {
+  display: flex;
+  justify-content: space-around;
+  gap: var(--lpcs-space-sm);
+}
+
+.lpcs-sheet .lpcs-currency-coin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.lpcs-sheet .lpcs-coin-amount {
+  font-family: var(--lpcs-font-mono);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.lpcs-sheet .lpcs-coin-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: var(--lpcs-text-muted);
+  letter-spacing: 0.06em;
+}
+
+.lpcs-sheet .lpcs-coin--pp .lpcs-coin-amount { color: #b0c4de; }
+.lpcs-sheet .lpcs-coin--gp .lpcs-coin-amount { color: var(--lpcs-accent-gold); }
+.lpcs-sheet .lpcs-coin--ep .lpcs-coin-amount { color: #a9b8a0; }
+.lpcs-sheet .lpcs-coin--sp .lpcs-coin-amount { color: #aaa; }
+.lpcs-sheet .lpcs-coin--cp .lpcs-coin-amount { color: #c4875a; }
+
+.lpcs-sheet .lpcs-encumbrance { display: flex; align-items: center; gap: var(--lpcs-space-sm); }
+
+.lpcs-sheet .lpcs-enc-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.lpcs-sheet .lpcs-enc-fill {
+  height: 100%;
+  background: var(--lpcs-accent-bronze);
+  transition: width 0.3s ease;
+}
+
+.lpcs-sheet .lpcs-enc-fill.encumbered { background: var(--lpcs-accent-crimson); }
+.lpcs-sheet .lpcs-enc-label { font-size: 0.75rem; color: var(--lpcs-text-secondary); flex-shrink: 0; }
+.lpcs-sheet .lpcs-enc-warning { font-size: 0.7rem; color: var(--lpcs-accent-crimson); font-weight: 700; }
+
+.lpcs-sheet .lpcs-inventory-list { display: flex; flex-direction: column; gap: 2px; }
+
+.lpcs-sheet .lpcs-item-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+  padding: var(--lpcs-space-xs) var(--lpcs-space-sm);
+  background: var(--lpcs-bg-glass);
+  border: 1px solid transparent;
+  border-radius: var(--lpcs-radius-sm);
+  font-size: 0.875rem;
+  transition: background 0.1s;
+}
+
+.lpcs-sheet .lpcs-item-row:hover { background: var(--lpcs-bg-glass-hover); border-color: var(--lpcs-border); }
+.lpcs-sheet .lpcs-item-row.equipped { border-left: 2px solid var(--lpcs-accent-bronze); }
+.lpcs-sheet .lpcs-item-row.attuned { border-left: 2px solid var(--lpcs-accent-gold); }
+.lpcs-sheet .lpcs-item-name { flex: 1; }
+.lpcs-sheet .lpcs-item-type { font-size: 0.75rem; text-transform: capitalize; }
+.lpcs-sheet .lpcs-item-qty { font-size: 0.8rem; color: var(--lpcs-text-secondary); font-family: var(--lpcs-font-mono); }
+.lpcs-sheet .lpcs-item-badges { display: flex; gap: 2px; }
+
+.lpcs-sheet .lpcs-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.lpcs-sheet .lpcs-badge--equipped { background: rgba(200,167,93,0.2); color: var(--lpcs-accent-bronze); }
+.lpcs-sheet .lpcs-badge--attuned  { background: rgba(212,175,55,0.2); color: var(--lpcs-accent-gold); }
+
