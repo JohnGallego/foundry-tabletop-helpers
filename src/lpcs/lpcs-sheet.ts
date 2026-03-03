@@ -173,6 +173,19 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           this.actor.update({ [prop]: current === n ? n - 1 : n });
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        openExhaustionDialog(this: any, _event: Event): void {
+          if (!this.actor?.isOwner) return;
+          const level = (this.actor.system?.attributes?.exhaustion as number) ?? 0;
+          this._pendingExhaustion = level;
+          this._exhaustionDialogOpen = true;
+          const dialog = (this.element as HTMLElement | null)
+            ?.querySelector<HTMLElement>("[data-exhaustion-dialog]");
+          if (!dialog) return;
+          dialog.classList.add("open");
+          dialog.setAttribute("aria-hidden", "false");
+          this._updateExhaustionDialogUI(dialog, level);
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         openHPDrawer(this: any, _event: Event): void {
           if (!this.actor?.isOwner) return;
           // Death saves are showing at HP 0 — suppress the drawer.
@@ -289,6 +302,15 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      * Cancelled and replaced on every HP change so rapid updates don't stack.
      */
     private _hpWidthAnimation: Animation | null = null;
+
+    /** Whether the exhaustion stepper dialog is currently open. */
+    private _exhaustionDialogOpen = false;
+    /** Pending exhaustion level being adjusted in the dialog (not yet applied). */
+    private _pendingExhaustion = 0;
+    /**
+     * AbortController used to clean up exhaustion dialog DOM listeners on every re-render.
+     */
+    private _exhaustionDialogAbortCtrl: AbortController | null = null;
 
     /* ── Title ───────────────────────────────────────────────── */
 
@@ -544,6 +566,47 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       }
 
       this._prevHPValue = newHPValue;
+
+      // ── Exhaustion dialog ───────────────────────────────────────────
+      // Abort previous listeners so they never accumulate across re-renders.
+      this._exhaustionDialogAbortCtrl?.abort();
+      this._exhaustionDialogAbortCtrl = new AbortController();
+      const exhSignal = this._exhaustionDialogAbortCtrl.signal;
+
+      const exhDialog = el.querySelector<HTMLElement>("[data-exhaustion-dialog]");
+      if (exhDialog) {
+        exhDialog.classList.toggle("open", this._exhaustionDialogOpen);
+        exhDialog.setAttribute("aria-hidden", String(!this._exhaustionDialogOpen));
+        if (this._exhaustionDialogOpen) {
+          this._updateExhaustionDialogUI(exhDialog, this._pendingExhaustion);
+        }
+
+        exhDialog.querySelector<HTMLElement>("[data-exh-dec]")?.addEventListener("click", () => {
+          if (this._pendingExhaustion > 0) this._pendingExhaustion--;
+          this._updateExhaustionDialogUI(exhDialog, this._pendingExhaustion);
+        }, { signal: exhSignal });
+
+        exhDialog.querySelector<HTMLElement>("[data-exh-inc]")?.addEventListener("click", () => {
+          if (this._pendingExhaustion < 6) this._pendingExhaustion++;
+          this._updateExhaustionDialogUI(exhDialog, this._pendingExhaustion);
+        }, { signal: exhSignal });
+
+        exhDialog.querySelector<HTMLElement>("[data-exh-confirm]")?.addEventListener("click", async () => {
+          const level = this._pendingExhaustion;
+          this._closeExhaustionDialog();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (this as any).actor?.update({ "system.attributes.exhaustion": level });
+        }, { signal: exhSignal });
+
+        // Outside-click dismiss — close when tapping anything outside .lpcs-qstat-row
+        document.addEventListener("click", (e: MouseEvent) => {
+          if (!this._exhaustionDialogOpen) return;
+          const qstatRow = el.querySelector<HTMLElement>(".lpcs-qstat-row");
+          if (qstatRow && !qstatRow.contains(e.target as Node)) {
+            this._closeExhaustionDialog();
+          }
+        }, { signal: exhSignal });
+      }
     }
 
     /**
@@ -727,6 +790,31 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       const preview = drawer.querySelector<HTMLElement>("[data-preview]");
       if (preview) preview.textContent = "";
     }
+
+    /* ── Exhaustion Dialog Helpers ───────────────────────────── */
+
+    /** Update display, hint, and button disabled states in the exhaustion dialog without re-render. */
+    private _updateExhaustionDialogUI(dialog: HTMLElement, level: number): void {
+      const display = dialog.querySelector<HTMLElement>("[data-exh-display]");
+      if (display) display.textContent = String(level);
+      const hint = dialog.querySelector<HTMLElement>("[data-exh-hint]");
+      if (hint) hint.textContent = level === 0 ? "No exhaustion" : `Level ${level} — penalties apply`;
+      dialog.dataset.exhLevel = String(level);
+      const dec = dialog.querySelector<HTMLButtonElement>("[data-exh-dec]");
+      const inc = dialog.querySelector<HTMLButtonElement>("[data-exh-inc]");
+      if (dec) dec.disabled = level <= 0;
+      if (inc) inc.disabled = level >= 6;
+    }
+
+    /** Close the exhaustion dialog immediately (DOM + state). */
+    private _closeExhaustionDialog(): void {
+      this._exhaustionDialogOpen = false;
+      const closeEl = (this as any).element as HTMLElement | null; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const dialog = closeEl?.querySelector<HTMLElement>("[data-exhaustion-dialog]");
+      if (!dialog) return;
+      dialog.classList.remove("open");
+      dialog.setAttribute("aria-hidden", "true");
+    }
   }
 
   return LPCSSheet as unknown as new (...args: unknown[]) => unknown;
@@ -803,7 +891,8 @@ export async function preloadLPCSTemplates(): Promise<void> {
     "lpcs-quick-stats": `modules/${MOD}/templates/lpcs/lpcs-quick-stats.hbs`,
     "lpcs-xp":          `modules/${MOD}/templates/lpcs/lpcs-xp.hbs`,
     "lpcs-hp":          `modules/${MOD}/templates/lpcs/lpcs-hp.hbs`,
-    "lpcs-hp-drawer":   `modules/${MOD}/templates/lpcs/lpcs-hp-drawer.hbs`,
+    "lpcs-hp-drawer":          `modules/${MOD}/templates/lpcs/lpcs-hp-drawer.hbs`,
+    "lpcs-exhaustion-dialog":  `modules/${MOD}/templates/lpcs/lpcs-exhaustion-dialog.hbs`,
   };
 
   // Non-partial PARTS templates — cached but not referenced by short name.

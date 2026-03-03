@@ -1,0 +1,28 @@
+{{!-- lpcs-exhaustion-dialog.hbs --}}
+{{!-- Exhaustion level stepper. Slides down from below the quick-stats row. --}}
+{{!-- Context: exhaustion (LPCSExhaustion)                                  --}}
+{{!-- All interaction wired in _onRender via AbortController (HP drawer     --}}
+{{!-- pattern). data-exh-* selectors let JS update display without          --}}
+{{!-- a re-render. The .open class triggers the slide-down animation.       --}}
+<div class="lpcs-exh-dialog" data-exhaustion-dialog aria-hidden="true"
+     role="dialog" aria-label="Set exhaustion level"
+     data-exh-level="{{exhaustion.level}}">
+
+  <div class="lpcs-exh-dialog-title">Exhaustion Level</div>
+
+  <div class="lpcs-exh-stepper">
+    <button class="lpcs-exh-step-btn" data-exh-dec type="button"
+            aria-label="Decrease exhaustion"
+            {{#unless exhaustion.level}}disabled{{/unless}}>−</button>
+    <span class="lpcs-exh-level-display" data-exh-display>{{exhaustion.level}}</span>
+    <button class="lpcs-exh-step-btn" data-exh-inc type="button"
+            aria-label="Increase exhaustion">+</button>
+  </div>
+
+  <div class="lpcs-exh-hint" data-exh-hint>
+    {{#if exhaustion.level}}Level {{exhaustion.level}} — penalties apply{{else}}No exhaustion{{/if}}
+  </div>
+
+  <button class="lpcs-exh-apply-btn" data-exh-confirm type="button">Apply</button>
+
+</div>

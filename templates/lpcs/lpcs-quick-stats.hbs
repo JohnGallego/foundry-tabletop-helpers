@@ -39,5 +39,19 @@
     </span>
   </div>
 
+  {{!-- Exhaustion Tracker --}}
+  <button class="lpcs-qstat-card lpcs-qstat-card--btn lpcs-qstat-exh"
+          data-action="openExhaustionDialog" type="button"
+          data-exhaustion-level="{{vm.exhaustion.level}}"
+          aria-label="Exhaustion level {{vm.exhaustion.level}} — tap to adjust">
+    <span class="lpcs-qstat-value">
+      {{#if vm.exhaustion.level}}{{vm.exhaustion.level}}{{else}}—{{/if}}
+    </span>
+    <span class="lpcs-qstat-label">EXH</span>
+  </button>
+
+  {{!-- Dialog lives inside .lpcs-qstat-row (position: relative) so it slides below it --}}
+  {{> lpcs-exhaustion-dialog exhaustion=vm.exhaustion}}
+
 </div>
 
