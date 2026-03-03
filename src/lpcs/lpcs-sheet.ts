@@ -173,6 +173,16 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           this.actor.update({ [prop]: current === n ? n - 1 : n });
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        openRestModal(this: any, _event: Event): void {
+          if (!this.actor?.isOwner) return;
+          this._restModalOpen = true;
+          const modal = (this.element as HTMLElement | null)
+            ?.querySelector<HTMLElement>("[data-rest-modal]");
+          if (!modal) return;
+          modal.classList.add("open");
+          modal.setAttribute("aria-hidden", "false");
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         openExhaustionDialog(this: any, _event: Event): void {
           if (!this.actor?.isOwner) return;
           const level = (this.actor.system?.attributes?.exhaustion as number) ?? 0;
@@ -302,6 +312,19 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      * Cancelled and replaced on every HP change so rapid updates don't stack.
      */
     private _hpWidthAnimation: Animation | null = null;
+
+    /** Whether the rest modal is currently open. */
+    private _restModalOpen = false;
+    /**
+     * AbortController for rest modal DOM listeners.
+     * Aborted and replaced on every re-render.
+     */
+    private _restModalAbortCtrl: AbortController | null = null;
+    /**
+     * setTimeout handle for the long rest press-and-hold guard.
+     * Cleared on mouseup / touchend / touchcancel so partial holds don't fire.
+     */
+    private _longRestHoldTimer: ReturnType<typeof setTimeout> | null = null;
 
     /** Whether the exhaustion stepper dialog is currently open. */
     private _exhaustionDialogOpen = false;
@@ -607,6 +630,70 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           }
         }, { signal: exhSignal });
       }
+
+      // ── Rest modal ────────────────────────────────────────────────────
+      // Abort previous listeners so they never accumulate across re-renders.
+      this._restModalAbortCtrl?.abort();
+      this._restModalAbortCtrl = new AbortController();
+      const restSignal = this._restModalAbortCtrl.signal;
+
+      const restModal = el.querySelector<HTMLElement>("[data-rest-modal]");
+      if (restModal) {
+        restModal.classList.toggle("open", this._restModalOpen);
+        restModal.setAttribute("aria-hidden", String(!this._restModalOpen));
+
+        // Close triggers — backdrop and × button both carry [data-rest-close]
+        restModal.querySelectorAll<HTMLElement>("[data-rest-close]").forEach((btn) => {
+          btn.addEventListener("click", () => this._closeRestModal(), { signal: restSignal });
+        });
+
+        // Escape key dismiss
+        document.addEventListener("keydown", (e: KeyboardEvent) => {
+          if (e.key === "Escape" && this._restModalOpen) this._closeRestModal();
+        }, { signal: restSignal });
+
+        // HD roll buttons — tap to roll one hit die and recover HP
+        restModal.querySelectorAll<HTMLButtonElement>("[data-hd-roll]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const denom = btn.dataset.denomination;
+            if (!denom) return;
+            btn.disabled = true;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (this as any).actor?.rollHitDie?.({ denomination: denom });
+            // _onRender fires after actor update; btn is replaced — no need to re-enable.
+          }, { signal: restSignal });
+        });
+
+        // Long rest hold button
+        const longBtn = restModal.querySelector<HTMLElement>("[data-long-rest]");
+        if (longBtn) {
+          const startHold = (e: Event) => {
+            e.preventDefault();
+            longBtn.classList.add("is-holding");
+            this._longRestHoldTimer = setTimeout(async () => {
+              this._longRestHoldTimer = null;
+              longBtn.classList.remove("is-holding");
+              longBtn.classList.add("confirmed");
+              await this._doLongRest();
+            }, 2000);
+          };
+
+          const cancelHold = () => {
+            if (this._longRestHoldTimer !== null) {
+              clearTimeout(this._longRestHoldTimer);
+              this._longRestHoldTimer = null;
+            }
+            longBtn.classList.remove("is-holding");
+          };
+
+          longBtn.addEventListener("mousedown", startHold, { signal: restSignal });
+          longBtn.addEventListener("touchstart", startHold, { signal: restSignal });
+          longBtn.addEventListener("mouseup", cancelHold, { signal: restSignal });
+          longBtn.addEventListener("mouseleave", cancelHold, { signal: restSignal });
+          longBtn.addEventListener("touchend", cancelHold, { signal: restSignal });
+          longBtn.addEventListener("touchcancel", cancelHold, { signal: restSignal });
+        }
+      }
     }
 
     /**
@@ -815,6 +902,29 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       dialog.classList.remove("open");
       dialog.setAttribute("aria-hidden", "true");
     }
+
+    /* ── Rest Modal Helpers ──────────────────────────────────── */
+
+    /** Close the rest modal immediately (DOM + state), cancelling any pending hold timer. */
+    private _closeRestModal(): void {
+      this._restModalOpen = false;
+      if (this._longRestHoldTimer !== null) {
+        clearTimeout(this._longRestHoldTimer);
+        this._longRestHoldTimer = null;
+      }
+      const closeEl = (this as any).element as HTMLElement | null; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const modal = closeEl?.querySelector<HTMLElement>("[data-rest-modal]");
+      if (!modal) return;
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    /** Execute a long rest via the dnd5e actor method, bypassing dnd5e's own dialog. */
+    private async _doLongRest(): Promise<void> {
+      this._closeRestModal();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this as any).actor?.longRest?.({ dialog: false });
+    }
   }
 
   return LPCSSheet as unknown as new (...args: unknown[]) => unknown;
@@ -893,6 +1003,7 @@ export async function preloadLPCSTemplates(): Promise<void> {
     "lpcs-hp":          `modules/${MOD}/templates/lpcs/lpcs-hp.hbs`,
     "lpcs-hp-drawer":          `modules/${MOD}/templates/lpcs/lpcs-hp-drawer.hbs`,
     "lpcs-exhaustion-dialog":  `modules/${MOD}/templates/lpcs/lpcs-exhaustion-dialog.hbs`,
+    "lpcs-rest-modal":         `modules/${MOD}/templates/lpcs/lpcs-rest-modal.hbs`,
   };
 
   // Non-partial PARTS templates — cached but not referenced by short name.

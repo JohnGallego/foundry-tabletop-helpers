@@ -1,0 +1,65 @@
+{{!-- lpcs-rest-modal.hbs --}}
+{{!-- Full-sheet rest modal. Opened by data-action="openRestModal".       --}}
+{{!-- Context: rest (LPCSViewModel — uses rest.hitDice, rest.exhaustion)  --}}
+{{!-- All interaction wired in _onRender via AbortController.             --}}
+{{!-- Anchored to .lpcs-header (position: relative; z-index: 2;          --}}
+{{!-- overflow: visible) — height: 100vh covers full sheet.              --}}
+<div class="lpcs-rest-modal" data-rest-modal aria-hidden="true"
+     role="dialog" aria-label="Take a Rest">
+
+  {{!-- Backdrop — semi-transparent dark fill, also acts as outside-click close --}}
+  <div class="lpcs-rest-backdrop" data-rest-close></div>
+
+  <div class="lpcs-rest-card">
+
+    <header class="lpcs-rest-card-header">
+      <h2 class="lpcs-rest-card-title">Take a Rest</h2>
+      <button class="lpcs-rest-close-btn" data-rest-close type="button"
+              aria-label="Close rest menu">×</button>
+    </header>
+
+    {{!-- Short Rest ─────────────────────────────────────────────── --}}
+    <section class="lpcs-rest-section">
+      <h3 class="lpcs-rest-section-title">Short Rest</h3>
+      <p class="lpcs-rest-rule-hint">Tap a Hit Die to spend it and recover HP.</p>
+
+      <div class="lpcs-rest-hd-grid">
+        {{#each rest.hitDice}}
+          <button class="lpcs-rest-hd-btn" data-hd-roll
+                  data-denomination="{{this.die}}" type="button"
+                  aria-label="Roll {{this.die}} ({{this.value}} remaining)"
+                  {{#unless this.value}}disabled{{/unless}}>
+            <span class="lpcs-rest-hd-die">{{this.die}}</span>
+            <span class="lpcs-rest-hd-count">
+              <span class="lpcs-rest-hd-cur">{{this.value}}</span>
+              <span class="lpcs-rest-hd-sep">/</span>
+              <span class="lpcs-rest-hd-max">{{this.max}}</span>
+            </span>
+          </button>
+        {{/each}}
+        {{#unless rest.hitDice.length}}
+          <p class="lpcs-rest-empty">No Hit Dice available.</p>
+        {{/unless}}
+      </div>
+    </section>
+
+    <div class="lpcs-rest-divider"></div>
+
+    {{!-- Long Rest ──────────────────────────────────────────────── --}}
+    <section class="lpcs-rest-section">
+      <h3 class="lpcs-rest-section-title">Long Rest</h3>
+      <p class="lpcs-rest-rule-hint">
+        Resets HP, Spell Slots &amp; Features. Reduces Exhaustion by 1.
+      </p>
+
+      <button class="lpcs-rest-long-btn" data-long-rest type="button"
+              aria-label="Press and hold to take a long rest">
+        <span class="lpcs-rest-long-label" data-long-rest-label>
+          Press &amp; Hold to Long Rest
+        </span>
+        <div class="lpcs-rest-long-bar" data-long-rest-bar></div>
+      </button>
+    </section>
+
+  </div>
+</div>
