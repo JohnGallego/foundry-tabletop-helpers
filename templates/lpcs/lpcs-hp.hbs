@@ -1,39 +1,96 @@
 {{!-- lpcs-hp.hbs --}}
-{{!-- HP widget: single bar — fill grows from left, values centered inside, temp zone on the right --}}
-{{!-- Context: hp (LPCSHitPoints: value, max, temp, pct, color) --}}
+{{!-- HP + Death Saves vitals area. --}}
+{{!-- Context: hp (LPCSHitPoints), deathSaves (LPCSDeathSaves) --}}
+{{!-- Both views are always in the DOM; _onRender() manages active/hidden classes. --}}
 
-<div class="lpcs-hp-widget-wrap">
+{{!-- Outer positioning context — drawer is a sibling to the vitals container so the
+     drop-shadow filter on .lpcs-hp-widget-wrap does not clip or affect the drawer. --}}
+<div class="lpcs-hp-outer">
 
-  {{!-- Labels above the bar --}}
-  <div class="lpcs-hp-labels">
-    <div class="lpcs-hp-label-main">
-      <i class="fas fa-heart lpcs-hp-heart" aria-hidden="true"></i>
-      <span class="lpcs-hp-label-text">HP</span>
-    </div>
-    <span class="lpcs-hp-label-temp">Temp</span>
-  </div>
+  {{!-- Vitals container: relative, holds both overlapping views --}}
+  <div class="lpcs-vitals-container">
 
-  {{!-- The bar IS the widget: fill underneath, values + temp zone on top --}}
-  <div class="lpcs-hp-bar-widget"
-       role="group"
-       aria-label="HP: {{hp.value}} of {{hp.max}}{{#if hp.temp}}, {{hp.temp}} temporary{{/if}}">
+    {{!-- HP View — shown when HP > 0 --}}
+    <div class="lpcs-vitals-state hp-view {{#if deathSaves.show}}hidden{{else}}active{{/if}}"
+         data-vitals="hp">
 
-    {{!-- Red crimson fill: width = current HP % --}}
-    <div class="lpcs-hp-fill" style="width: {{hp.pct}}%;" aria-hidden="true"></div>
+      <div class="lpcs-hp-widget-wrap">
 
-    {{!-- Current / max HP values centered in the main HP zone --}}
-    <div class="lpcs-hp-bar-values" aria-hidden="true">
-      <span class="lpcs-hp-value">{{hp.value}}</span>
-      <span class="lpcs-hp-sep">/</span>
-      <span class="lpcs-hp-max-val">{{hp.max}}</span>
-    </div>
+        {{!-- Labels above the bar --}}
+        <div class="lpcs-hp-labels">
+          <div class="lpcs-hp-label-main">
+            <i class="fas fa-heart lpcs-hp-heart" aria-hidden="true"></i>
+            <span class="lpcs-hp-label-text">HP</span>
+          </div>
+          <span class="lpcs-hp-label-temp">Temp</span>
+        </div>
 
-    {{!-- Temp HP zone: rightmost 20% of the bar --}}
-    <div class="lpcs-hp-temp-zone" aria-hidden="true">
-      <span class="lpcs-hp-tmp-val">{{#if hp.temp}}{{hp.temp}}{{else}}—{{/if}}</span>
-    </div>
+        {{!-- The bar IS the tap target: tapping opens the HP management drawer --}}
+        <div class="lpcs-hp-bar-widget"
+             data-action="openHPDrawer"
+             role="button"
+             tabindex="0"
+             aria-label="HP: {{hp.value}} of {{hp.max}}{{#if hp.temp}}, {{hp.temp}} temporary{{/if}} — tap to manage HP">
 
-  </div>
+          {{!-- Red crimson fill: width = current HP % --}}
+          <div class="lpcs-hp-fill" style="width: {{hp.pct}}%;" aria-hidden="true"></div>
+
+          {{!-- Current / max HP values centered in the main HP zone --}}
+          <div class="lpcs-hp-bar-values" aria-hidden="true">
+            <span class="lpcs-hp-value">{{hp.value}}</span>
+            <span class="lpcs-hp-sep">/</span>
+            <span class="lpcs-hp-max-val">{{hp.max}}</span>
+          </div>
+
+          {{!-- Temp HP zone: rightmost 20% of the bar --}}
+          <div class="lpcs-hp-temp-zone" aria-hidden="true">
+            <span class="lpcs-hp-tmp-val">{{#if hp.temp}}{{hp.temp}}{{else}}—{{/if}}</span>
+          </div>
+
+        </div>
+
+      </div>
+    </div>{{!-- end .hp-view --}}
+
+    {{!-- Death Saves View — shown when HP = 0 --}}
+    <div class="lpcs-vitals-state ds-view {{#if deathSaves.show}}active{{else}}hidden{{/if}}"
+         data-vitals="ds">
+
+      <div class="lpcs-ds-widget" role="group" aria-label="Death saving throws">
+        <div class="lpcs-ds-label">Death Saves</div>
+        <div class="lpcs-ds-groups">
+
+          {{!-- Success pips (hearts) --}}
+          <div class="lpcs-ds-group lpcs-ds-group--success">
+            {{#each deathSaves.successPips}}
+            <button class="lpcs-ds-pip lpcs-ds-pip--success {{#if filled}}filled{{/if}}"
+                    data-action="rollDeathSave" type="button"
+                    aria-label="Death save success {{n}}">
+              <i class="fas fa-heart" aria-hidden="true"></i>
+            </button>
+            {{/each}}
+          </div>
+
+          {{!-- Failure pips (skulls) --}}
+          <div class="lpcs-ds-group lpcs-ds-group--failure">
+            {{#each deathSaves.failurePips}}
+            <button class="lpcs-ds-pip lpcs-ds-pip--failure {{#if filled}}filled{{/if}}"
+                    data-action="rollDeathSave" type="button"
+                    aria-label="Death save failure {{n}}">
+              <i class="fas fa-skull" aria-hidden="true"></i>
+            </button>
+            {{/each}}
+          </div>
+
+        </div>
+      </div>
+
+    </div>{{!-- end .ds-view --}}
+
+  </div>{{!-- end .lpcs-vitals-container --}}
+
+  {{!-- HP management drawer — slides down from below the vitals container on tap --}}
+  {{> lpcs-hp-drawer hp=hp}}
 
 </div>
 

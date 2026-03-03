@@ -9,8 +9,9 @@
 /* ── Header ──────────────────────────────────────────────────── */
 .lpcs-sheet .lpcs-header {
   position: relative;   /* stacking context for the absolute portrait and badge */
+  z-index: 2;           /* paint above tab panels so the HP drawer overlays them */
   min-height: 180px;
-  overflow: visible;    /* allows the inspiration badge to hang below the header */
+  overflow: visible;    /* allows the inspiration badge and HP drawer to extend below the header */
   flex-shrink: 0;
   background: linear-gradient(135deg, rgba(200,167,93,0.10) 0%, transparent 60%);
   border-bottom: 1px solid var(--lpcs-border);

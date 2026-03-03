@@ -141,6 +141,31 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           const current = (globalThis as any).foundry?.utils?.getProperty(this.actor, prop) ?? 0;
           this.actor.update({ [prop]: current === n ? n - 1 : n });
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        openHPDrawer(this: any, _event: Event): void {
+          if (!this.actor?.isOwner) return;
+          // Death saves are showing at HP 0 — suppress the drawer.
+          const hp = this.actor?.system?.attributes?.hp;
+          if ((hp?.value ?? 0) === 0) return;
+          this._hpDrawerOpen = !this._hpDrawerOpen;
+          // Cast through HTMLElement so generic querySelector calls are valid.
+          const sheetEl = this.element as HTMLElement | null;
+          const drawer  = sheetEl?.querySelector<HTMLElement>("[data-hp-drawer]");
+          if (!drawer) return;
+          drawer.classList.toggle("open", this._hpDrawerOpen);
+          drawer.setAttribute("aria-hidden", String(!this._hpDrawerOpen));
+          if (!this._hpDrawerOpen) {
+            const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
+            if (input) input.value = "";
+          } else {
+            // Reset to damage mode on open and refresh UI
+            this._hpDrawerMode = "damage";
+            this._updateHPDrawerModeUI(drawer, "damage");
+            this._updateHPDrawerPreview(drawer);
+            // Focus the amount input for immediate keyboard entry
+            drawer.querySelector<HTMLInputElement>("[data-amount]")?.focus();
+          }
+        },
       },
     };
 
@@ -149,11 +174,6 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       abilityScores: { template: `modules/${MOD}/templates/lpcs/lpcs-ability-scores.hbs` },
       statsBar:      { template: `modules/${MOD}/templates/lpcs/lpcs-stats-bar.hbs` },
       tabNav: { template: `modules/${MOD}/templates/lpcs/lpcs-tab-nav.hbs` },
-      abilities: {
-        container: { classes: ["lpcs-tab-body"], id: "lpcs-tabs" },
-        template: `modules/${MOD}/templates/lpcs/lpcs-tab-abilities.hbs`,
-        scrollable: [""],
-      },
       combat: {
         container: { classes: ["lpcs-tab-body"], id: "lpcs-tabs" },
         template: `modules/${MOD}/templates/lpcs/lpcs-tab-combat.hbs`,
@@ -164,9 +184,9 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         template: `modules/${MOD}/templates/lpcs/lpcs-tab-spells.hbs`,
         scrollable: [""],
       },
-      inventory: {
+      abilities: {
         container: { classes: ["lpcs-tab-body"], id: "lpcs-tabs" },
-        template: `modules/${MOD}/templates/lpcs/lpcs-tab-inventory.hbs`,
+        template: `modules/${MOD}/templates/lpcs/lpcs-tab-abilities.hbs`,
         scrollable: [""],
       },
       features: {
@@ -174,20 +194,52 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         template: `modules/${MOD}/templates/lpcs/lpcs-tab-features.hbs`,
         scrollable: [""],
       },
+      inventory: {
+        container: { classes: ["lpcs-tab-body"], id: "lpcs-tabs" },
+        template: `modules/${MOD}/templates/lpcs/lpcs-tab-inventory.hbs`,
+        scrollable: [""],
+      },
+      journal: {
+        container: { classes: ["lpcs-tab-body"], id: "lpcs-tabs" },
+        template: `modules/${MOD}/templates/lpcs/lpcs-tab-journal.hbs`,
+        scrollable: [""],
+      },
     };
 
     static TABS = [
-      { tab: "abilities", label: "Abilities",  icon: "fas fa-fist-raised" },
       { tab: "combat",    label: "Actions",    icon: "fas fa-swords" },
       { tab: "spells",    label: "Spells",     icon: "fas fa-hat-wizard" },
-      { tab: "inventory", label: "Inventory",  icon: "fas fa-backpack" },
+      { tab: "abilities", label: "Abilities",  icon: "fas fa-fist-raised" },
       { tab: "features",  label: "Features",   icon: "fas fa-scroll" },
+      { tab: "inventory", label: "Inventory",  icon: "fas fa-backpack" },
+      { tab: "journal",   label: "Journal",    icon: "fas fa-book-open" },
     ];
 
     /* ── Instance State ──────────────────────────────────────── */
 
     tabGroups: Record<string, string> = { primary: lpcsDefaultTab() };
     private _expandedDrawers: Set<string> = new Set();
+
+    /** Whether the HP management bottom drawer is currently open. */
+    private _hpDrawerOpen = false;
+    /** Current mode of the HP drawer: damage / heal / temp HP. */
+    private _hpDrawerMode: "damage" | "heal" | "temp" = "damage";
+    /**
+     * AbortController used to clean up HP drawer DOM listeners on every re-render.
+     * Prevents listener accumulation across repeated open/close cycles.
+     */
+    private _hpDrawerAbortCtrl: AbortController | null = null;
+
+    /**
+     * Tracks whether death saves were showing on the previous render.
+     * Used to detect the HP-0 → HP-healed transition and trigger the animation.
+     */
+    private _wasShowingDeathSaves = false;
+    /**
+     * True while the "third success" dramatic-pause + healing-surge animation is running.
+     * Prevents _onRender() from resetting vitals classes during the sequence.
+     */
+    private _deathSaveAnimating = false;
 
     /* ── Title ───────────────────────────────────────────────── */
 
@@ -248,6 +300,153 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         input.addEventListener("change", (e) => this._onHPInputChange(e));
         input.addEventListener("focus", () => input.select());
       });
+
+      // Tab navigation — pure DOM switching for instant feedback (no re-render needed).
+      // Toggles .active / [hidden] on panels and updates nav-button ARIA state.
+      el.querySelectorAll<HTMLElement>(".lpcs-tab-btn[data-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.dataset.tab;
+          if (tab) this._switchTab(el, tab);
+        });
+      });
+
+      // HP bar keyboard activation (data-action handles click; we add keyboard here).
+      const hpBar = el.querySelector<HTMLElement>(".lpcs-hp-bar-widget[data-action]");
+      hpBar?.addEventListener("keydown", (e: KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); hpBar.click(); }
+      });
+
+      // ── HP Drawer listeners ───────────────────────────────────
+      // Abort previous listeners so they never accumulate across re-renders.
+      this._hpDrawerAbortCtrl?.abort();
+      this._hpDrawerAbortCtrl = new AbortController();
+      const { signal } = this._hpDrawerAbortCtrl;
+
+      const drawer = el.querySelector<HTMLElement>("[data-hp-drawer]");
+      if (drawer) {
+        // Restore open/mode state after a re-render caused by actor.update().
+        drawer.classList.toggle("open", this._hpDrawerOpen);
+        drawer.setAttribute("aria-hidden", String(!this._hpDrawerOpen));
+        this._updateHPDrawerModeUI(drawer, this._hpDrawerMode);
+        this._updateHPDrawerPreview(drawer);
+
+        // Mode toggle pills
+        drawer.querySelectorAll<HTMLElement>("[data-mode]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const mode = btn.dataset.mode as "damage" | "heal" | "temp";
+            if (!mode) return;
+            this._hpDrawerMode = mode;
+            this._updateHPDrawerModeUI(drawer, mode);
+            this._updateHPDrawerPreview(drawer);
+          }, { signal });
+        });
+
+        // Preset quick-tap buttons — accumulate into the amount input
+        drawer.querySelectorAll<HTMLElement>("[data-preset]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const preset = Number(btn.dataset.preset);
+            const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
+            if (input && Number.isFinite(preset)) {
+              input.value = String((Number(input.value) || 0) + preset);
+              this._updateHPDrawerPreview(drawer);
+            }
+          }, { signal });
+        });
+
+        // Clear button — resets the accumulator
+        drawer.querySelector<HTMLElement>("[data-clear]")?.addEventListener("click", () => {
+          const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
+          if (input) { input.value = ""; }
+          this._updateHPDrawerPreview(drawer);
+        }, { signal });
+
+        // Amount input — updates live preview on every keystroke
+        drawer.querySelector<HTMLInputElement>("[data-amount]")
+          ?.addEventListener("input", () => this._updateHPDrawerPreview(drawer), { signal });
+
+        // Apply button
+        drawer.querySelector<HTMLElement>("[data-apply]")?.addEventListener("click", async () => {
+          const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
+          const amount = Number(input?.value) || 0;
+          if (amount <= 0) return;
+          await this._applyHPChange(this._hpDrawerMode, amount);
+        }, { signal });
+
+        // Outside-click dismiss — closes the drawer if user taps elsewhere
+        document.addEventListener("click", (e: MouseEvent) => {
+          if (!this._hpDrawerOpen) return;
+          const outer = el.querySelector<HTMLElement>(".lpcs-hp-outer");
+          if (outer && !outer.contains(e.target as Node)) {
+            this._closeHPDrawer();
+          }
+        }, { signal });
+      }
+
+      // ── Vitals cross-fade (HP ↔ Death Saves) ──────────────────────
+      const vm = (context as { vm?: { deathSaves?: { show?: boolean } } }).vm;
+      const deathSavesShow = vm?.deathSaves?.show ?? false;
+
+      const hpView = el.querySelector<HTMLElement>("[data-vitals='hp']");
+      const dsView = el.querySelector<HTMLElement>("[data-vitals='ds']");
+
+      if (hpView && dsView) {
+        const transitionToHP =
+          this._wasShowingDeathSaves && !deathSavesShow && !this._deathSaveAnimating;
+
+        if (transitionToHP) {
+          // Healing detected: dramatic 800ms pause before cross-fading back.
+          this._deathSaveAnimating = true;
+          // Keep death saves visible and non-interactive during the pause.
+          this._setVitalsView(hpView, dsView, "ds");
+          dsView.style.pointerEvents = "none";
+
+          window.setTimeout(() => {
+            if (!this._deathSaveAnimating) return; // aborted by a re-render
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const sheetEl = (this as any).element as HTMLElement | null;
+            const hv = sheetEl?.querySelector<HTMLElement>("[data-vitals='hp']");
+            const dv = sheetEl?.querySelector<HTMLElement>("[data-vitals='ds']");
+            if (!hv || !dv) { this._deathSaveAnimating = false; return; }
+
+            // Cross-fade to HP view and play healing-surge glow.
+            this._setVitalsView(hv, dv, "hp");
+            dv.style.pointerEvents = "";
+            hv.classList.add("healed-animation");
+
+            window.setTimeout(() => {
+              hv.classList.remove("healed-animation");
+              this._deathSaveAnimating = false;
+            }, 800);
+          }, 800);
+
+        } else if (this._deathSaveAnimating) {
+          // A re-render fired while the animation was running — abort gracefully.
+          this._deathSaveAnimating = false;
+          this._setVitalsView(hpView, dsView, deathSavesShow ? "ds" : "hp");
+
+        } else {
+          // Normal sync — apply the correct active/hidden state immediately.
+          this._setVitalsView(hpView, dsView, deathSavesShow ? "ds" : "hp");
+        }
+
+        this._wasShowingDeathSaves = deathSavesShow;
+      }
+    }
+
+    /**
+     * Toggle the active/hidden CSS classes on both vitals view elements.
+     * The active element is in-flow (position: static); the hidden element is
+     * absolutely positioned over the container so it does not affect layout.
+     */
+    private _setVitalsView(
+      hpView: HTMLElement,
+      dsView: HTMLElement,
+      active: "hp" | "ds"
+    ): void {
+      hpView.classList.toggle("active", active === "hp");
+      hpView.classList.toggle("hidden", active === "ds");
+      dsView.classList.toggle("active", active === "ds");
+      dsView.classList.toggle("hidden", active === "hp");
     }
 
     private _onHPInputChange(event: Event): void {
@@ -267,6 +466,153 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (this as any).actor.update({ "system.attributes.hp.value": clamped });
       }
+    }
+
+    /**
+     * Switch the visible tab without triggering a full re-render.
+     * Updates internal state, nav-button active/ARIA markers, and shows/hides
+     * the matching panel — all synchronously so the response feels instant on
+     * touch devices during live play.
+     */
+    private _switchTab(el: HTMLElement, tab: string): void {
+      // Persist selection so future partial re-renders use the correct tab.
+      this.tabGroups.primary = tab;
+
+      // Nav buttons — toggle .active + aria-selected
+      el.querySelectorAll<HTMLElement>(".lpcs-tab-btn[data-tab]").forEach((btn) => {
+        const active = btn.dataset.tab === tab;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-selected", String(active));
+      });
+
+      // Tab panels — toggle .active and the HTML [hidden] attribute
+      el.querySelectorAll<HTMLElement>(".lpcs-tab[data-tab]").forEach((panel) => {
+        const active = panel.dataset.tab === tab;
+        panel.classList.toggle("active", active);
+        if (active) {
+          panel.removeAttribute("hidden");
+        } else {
+          panel.setAttribute("hidden", "");
+        }
+      });
+    }
+
+    /* ── HP Drawer Helpers ───────────────────────────────────── */
+
+    /**
+     * Update mode toggle pill active states, the drawer's data-mode attribute
+     * (used by CSS for contextual colours on presets/apply), and the apply
+     * button label — all without a re-render.
+     */
+    private _updateHPDrawerModeUI(drawer: HTMLElement, mode: "damage" | "heal" | "temp"): void {
+      drawer.dataset.mode = mode;
+      drawer.querySelectorAll<HTMLElement>("[data-mode]").forEach((btn) => {
+        const isActive = btn.dataset.mode === mode;
+        btn.classList.toggle("active", isActive);
+        btn.setAttribute("aria-pressed", String(isActive));
+      });
+      const applyBtn = drawer.querySelector<HTMLElement>("[data-apply]");
+      if (applyBtn) {
+        const labels: Record<string, string> = {
+          damage: "Apply Damage",
+          heal:   "Apply Heal",
+          temp:   "Set Temp HP",
+        };
+        applyBtn.textContent = labels[mode] ?? "Apply";
+      }
+    }
+
+    /**
+     * Recompute and display the live preview line showing current HP → result
+     * based on the active mode and the current accumulator value.
+     */
+    private _updateHPDrawerPreview(drawer: HTMLElement): void {
+      const input   = drawer.querySelector<HTMLInputElement>("[data-amount]");
+      const preview = drawer.querySelector<HTMLElement>("[data-preview]");
+      if (!input || !preview) return;
+
+      const amount = Number(input.value) || 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hp = (this as any).actor?.system?.attributes?.hp;
+      if (!hp || amount <= 0) { preview.textContent = ""; return; }
+
+      const temp = hp.temp ?? 0;
+      let text: string;
+      if (this._hpDrawerMode === "damage") {
+        const tempDmg  = Math.min(amount, temp);
+        const realDmg  = amount - tempDmg;
+        const newHp    = Math.max(0, hp.value - realDmg);
+        const newTemp  = temp - tempDmg;
+        if (tempDmg > 0 && realDmg > 0) {
+          text = `HP ${hp.value}→${newHp}  ·  Temp ${temp}→${newTemp}`;
+        } else if (tempDmg > 0) {
+          text = `Temp ${temp} → ${newTemp}`;
+        } else {
+          text = `${hp.value} → ${newHp}`;
+        }
+      } else if (this._hpDrawerMode === "heal") {
+        text = `${hp.value} → ${Math.min(hp.max, hp.value + amount)}`;
+      } else {
+        text = `Temp ${temp} → ${Math.max(temp, amount)}`;
+      }
+      preview.textContent = text;
+    }
+
+    /**
+     * Apply the accumulated HP change via actor.update(), then close the drawer.
+     * Damage absorbs existing temp HP before reducing real HP.
+     * All dnd5e lifecycle hooks (_onUpdate: scrolling combat text, concentration)
+     * fire automatically because we use the standard actor.update() path.
+     */
+    private async _applyHPChange(mode: "damage" | "heal" | "temp", amount: number): Promise<void> {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hp = (this as any).actor?.system?.attributes?.hp;
+      if (!hp || !Number.isFinite(amount) || amount <= 0) return;
+
+      const update: Record<string, number> = {};
+      if (mode === "damage") {
+        const temp     = hp.temp ?? 0;
+        const tempDmg  = Math.min(amount, temp);
+        const realDmg  = amount - tempDmg;
+        update["system.attributes.hp.value"] = Math.max(0, hp.value - realDmg);
+        if (tempDmg > 0) update["system.attributes.hp.temp"] = temp - tempDmg;
+      } else if (mode === "heal") {
+        update["system.attributes.hp.value"] = Math.min(hp.max, hp.value + amount);
+      } else {
+        // Temp HP: only raises, never lowers (per dnd5e rules)
+        update["system.attributes.hp.temp"] = Math.max(hp.temp ?? 0, amount);
+      }
+
+      const applyEl  = (this as any).element as HTMLElement | null; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const applyBtn = applyEl?.querySelector<HTMLButtonElement>("[data-apply]");
+      if (applyBtn) applyBtn.disabled = true;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (this as any).actor.update(update);
+        // Close immediately; _onRender will restore _hpDrawerOpen = false on re-render.
+        this._closeHPDrawer();
+      } catch (err) {
+        Log.warn("LPCS: HP update failed", err);
+      } finally {
+        if (applyBtn) applyBtn.disabled = false;
+      }
+    }
+
+    /**
+     * Close the HP drawer immediately (DOM + state).
+     * Called after a successful apply and on outside-click dismiss.
+     */
+    private _closeHPDrawer(): void {
+      this._hpDrawerOpen = false;
+      const closeEl = (this as any).element as HTMLElement | null; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const drawer  = closeEl?.querySelector<HTMLElement>("[data-hp-drawer]");
+      if (!drawer) return;
+      drawer.classList.remove("open");
+      drawer.setAttribute("aria-hidden", "true");
+      const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
+      if (input) input.value = "";
+      const preview = drawer.querySelector<HTMLElement>("[data-preview]");
+      if (preview) preview.textContent = "";
     }
   }
 
@@ -337,13 +683,14 @@ export function registerLPCSSheet(): void {
 export async function preloadLPCSTemplates(): Promise<void> {
   // Partials — registered under a short name so {{> name}} resolves.
   const partials: Record<string, string> = {
-    "lpcs-drawer":       `modules/${MOD}/templates/lpcs/lpcs-drawer.hbs`,
-    "lpcs-portrait":     `modules/${MOD}/templates/lpcs/lpcs-portrait.hbs`,
-    "lpcs-identity":     `modules/${MOD}/templates/lpcs/lpcs-identity.hbs`,
-    "lpcs-inspiration":  `modules/${MOD}/templates/lpcs/lpcs-inspiration.hbs`,
-    "lpcs-quick-stats":  `modules/${MOD}/templates/lpcs/lpcs-quick-stats.hbs`,
-    "lpcs-xp":           `modules/${MOD}/templates/lpcs/lpcs-xp.hbs`,
-    "lpcs-hp":           `modules/${MOD}/templates/lpcs/lpcs-hp.hbs`,
+    "lpcs-drawer":      `modules/${MOD}/templates/lpcs/lpcs-drawer.hbs`,
+    "lpcs-portrait":    `modules/${MOD}/templates/lpcs/lpcs-portrait.hbs`,
+    "lpcs-identity":    `modules/${MOD}/templates/lpcs/lpcs-identity.hbs`,
+    "lpcs-inspiration": `modules/${MOD}/templates/lpcs/lpcs-inspiration.hbs`,
+    "lpcs-quick-stats": `modules/${MOD}/templates/lpcs/lpcs-quick-stats.hbs`,
+    "lpcs-xp":          `modules/${MOD}/templates/lpcs/lpcs-xp.hbs`,
+    "lpcs-hp":          `modules/${MOD}/templates/lpcs/lpcs-hp.hbs`,
+    "lpcs-hp-drawer":   `modules/${MOD}/templates/lpcs/lpcs-hp-drawer.hbs`,
   };
 
   // Non-partial PARTS templates — cached but not referenced by short name.
@@ -352,11 +699,12 @@ export async function preloadLPCSTemplates(): Promise<void> {
     `modules/${MOD}/templates/lpcs/lpcs-ability-scores.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-stats-bar.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-nav.hbs`,
-    `modules/${MOD}/templates/lpcs/lpcs-tab-abilities.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-combat.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-spells.hbs`,
-    `modules/${MOD}/templates/lpcs/lpcs-tab-inventory.hbs`,
+    `modules/${MOD}/templates/lpcs/lpcs-tab-abilities.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-features.hbs`,
+    `modules/${MOD}/templates/lpcs/lpcs-tab-inventory.hbs`,
+    `modules/${MOD}/templates/lpcs/lpcs-tab-journal.hbs`,
   ];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

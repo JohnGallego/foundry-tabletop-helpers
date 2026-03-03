@@ -1,29 +1,4 @@
 {{!-- lpcs-stats-bar.hbs --}}
-{{!-- Death saves (only rendered when HP = 0). Quick stats have moved to the header. --}}
-<div class="lpcs-stats-bar">
-
-  {{!-- Death Saves (shown only when HP = 0) --}}
-  {{#if vm.deathSaves.show}}
-  <div class="lpcs-death-saves" role="group" aria-label="Death saving throws">
-    <span class="lpcs-death-label">Death Saves</span>
-    <div class="lpcs-death-row">
-      <span class="lpcs-death-icon lpcs-death-icon--success" aria-label="Successes">✓</span>
-      {{#each vm.deathSaves.successPips}}
-      <button class="lpcs-death-pip {{#if filled}}filled success{{/if}}"
-              data-action="rollDeathSave" type="button"
-              aria-label="Death save success pip {{n}}"></button>
-      {{/each}}
-    </div>
-    <div class="lpcs-death-row">
-      <span class="lpcs-death-icon lpcs-death-icon--failure" aria-label="Failures">✗</span>
-      {{#each vm.deathSaves.failurePips}}
-      <button class="lpcs-death-pip {{#if filled}}filled failure{{/if}}"
-              data-action="rollDeathSave" type="button"
-              aria-label="Death save failure pip {{n}}"></button>
-      {{/each}}
-    </div>
-  </div>
-  {{/if}}
-
-</div>
+{{!-- Reserved for future widgets. Death saves have moved into the HP vitals area. --}}
+<div class="lpcs-stats-bar"></div>
 

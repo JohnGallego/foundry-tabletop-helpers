@@ -1,33 +1,73 @@
-/* ── Death Saves ─────────────────────────────────────────────── */
-.lpcs-sheet .lpcs-death-saves {
+/* ── Death Saves (inline vitals widget) ──────────────────────── */
+.lpcs-sheet .lpcs-ds-widget {
   display: flex;
   flex-direction: column;
-  gap: var(--lpcs-space-xs);
-  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0;
+  width: 100%;
 }
 
-.lpcs-sheet .lpcs-death-label {
-  font-size: 0.65rem;
-  color: var(--lpcs-text-muted);
+.lpcs-sheet .lpcs-ds-label {
+  font-family: var(--lpcs-font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: var(--lpcs-text-secondary);
 }
 
-.lpcs-sheet .lpcs-death-row {
+.lpcs-sheet .lpcs-ds-groups {
   display: flex;
   align-items: center;
-  gap: var(--lpcs-space-xs);
+  justify-content: center;
+  gap: 16px;
 }
 
-.lpcs-sheet .lpcs-death-pip {
-  width: 14px;
-  height: 14px;
+.lpcs-sheet .lpcs-ds-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lpcs-sheet .lpcs-ds-pip {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: var(--lpcs-bg-glass);
-  border: 1px solid var(--lpcs-border);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(200, 167, 93, 0.2);
   cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
 }
 
-.lpcs-sheet .lpcs-death-pip.filled.success { background: #2d8a4e; border-color: #2d8a4e; }
-.lpcs-sheet .lpcs-death-pip.filled.failure { background: var(--lpcs-accent-crimson); border-color: var(--lpcs-accent-crimson); }
+.lpcs-sheet .lpcs-ds-pip:hover {
+  background: rgba(200, 167, 93, 0.1);
+  border-color: rgba(200, 167, 93, 0.4);
+  transform: scale(1.1);
+}
+
+.lpcs-sheet .lpcs-ds-pip i {
+  font-size: 1.1rem;
+  transition: color 0.2s;
+}
+
+/* Success pips (hearts) */
+.lpcs-sheet .lpcs-ds-pip--success i { color: rgba(255, 255, 255, 0.2); }
+.lpcs-sheet .lpcs-ds-pip--success:hover i { color: rgba(45, 138, 78, 0.6); }
+.lpcs-sheet .lpcs-ds-pip--success.filled { background: rgba(45, 138, 78, 0.22); border-color: #2d8a4e; }
+.lpcs-sheet .lpcs-ds-pip--success.filled i { color: #81c784; filter: drop-shadow(0 0 4px rgba(45, 138, 78, 0.7)); }
+
+/* Failure pips (skulls) */
+.lpcs-sheet .lpcs-ds-pip--failure i { color: rgba(255, 255, 255, 0.2); }
+.lpcs-sheet .lpcs-ds-pip--failure:hover i { color: rgba(139, 30, 45, 0.6); }
+.lpcs-sheet .lpcs-ds-pip--failure.filled { background: rgba(139, 30, 45, 0.22); border-color: var(--lpcs-accent-crimson); }
+.lpcs-sheet .lpcs-ds-pip--failure.filled i { color: #e57373; filter: drop-shadow(0 0 4px rgba(139, 30, 45, 0.7)); }
 

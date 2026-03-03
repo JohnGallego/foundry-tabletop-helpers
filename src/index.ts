@@ -1,5 +1,6 @@
 import "./styles.css";
 import "./lpcs/lpcs-styles.css";
+import "./initiative/initiative-dialog.css";
 import { Log, MOD, type Level } from "./logger";
 import { registerSettings } from "./settings";
 import { registerPrintSheetHooks } from "./print-sheet/print-sheet";
@@ -8,6 +9,7 @@ import { getGame, getHooks, getSetting } from "./types";
 import { registerLPCSSettings } from "./lpcs/lpcs-settings";
 import { registerLPCSSheet, preloadLPCSTemplates } from "./lpcs/lpcs-sheet";
 import { autoOpenLPCS } from "./lpcs/lpcs-auto-open";
+import { registerInitiativeSettings, registerInitiativeHooks } from "./initiative/initiative-dialog";
 
 /* ── Hook Registration ─────────────────────────────────────── */
 
@@ -21,6 +23,10 @@ getHooks()?.on?.("init", () => {
   if (settings) registerLPCSSettings(settings);
   registerLPCSSheet();
   void preloadLPCSTemplates();
+
+  // Initiative — Quick Initiative Roll Dialog
+  if (settings) registerInitiativeSettings(settings);
+  registerInitiativeHooks();
 
   const logLevel = getSetting<string>(MOD, "logLevel");
   if (logLevel) Log.setLevel(logLevel as Level);

@@ -1,0 +1,71 @@
+{{!-- lpcs-hp-drawer.hbs --}}
+{{!-- HP Management Bottom Drawer partial --}}
+{{!-- Context: hp (LPCSHitPoints: value, max, temp, pct, color) --}}
+{{!-- Opened/closed by openHPDrawer action in lpcs-sheet.ts via .open class toggle. --}}
+
+<div class="lpcs-hp-drawer"
+     aria-hidden="true"
+     role="dialog"
+     aria-label="HP Management"
+     data-hp-drawer
+     data-mode="damage">
+
+  <div class="lpcs-hpd-inner">
+
+    {{!-- Mode Toggle Pills: Damage / Heal / Temp HP --}}
+    <div class="lpcs-hpd-mode-toggle" role="group" aria-label="HP adjustment mode">
+      <button class="lpcs-hpd-mode-btn lpcs-hpd-mode-btn--damage active"
+              data-mode="damage" type="button" aria-pressed="true">
+        <i class="fas fa-skull-crossbones" aria-hidden="true"></i>
+        <span>Damage</span>
+      </button>
+      <button class="lpcs-hpd-mode-btn lpcs-hpd-mode-btn--heal"
+              data-mode="heal" type="button" aria-pressed="false">
+        <i class="fas fa-heart-pulse" aria-hidden="true"></i>
+        <span>Heal</span>
+      </button>
+      <button class="lpcs-hpd-mode-btn lpcs-hpd-mode-btn--temp"
+              data-mode="temp" type="button" aria-pressed="false">
+        <i class="fas fa-shield-halved" aria-hidden="true"></i>
+        <span>Temp</span>
+      </button>
+    </div>
+
+    {{!-- Preset Quick-Tap Buttons (common dice/damage values) --}}
+    <div class="lpcs-hpd-presets" data-presets>
+      <button class="lpcs-hpd-preset" data-preset="1"  type="button">1</button>
+      <button class="lpcs-hpd-preset" data-preset="2"  type="button">2</button>
+      <button class="lpcs-hpd-preset" data-preset="3"  type="button">3</button>
+      <button class="lpcs-hpd-preset" data-preset="4"  type="button">4</button>
+      <button class="lpcs-hpd-preset" data-preset="5"  type="button">5</button>
+      <button class="lpcs-hpd-preset" data-preset="6"  type="button">6</button>
+      <button class="lpcs-hpd-preset" data-preset="8"  type="button">8</button>
+      <button class="lpcs-hpd-preset" data-preset="10" type="button">10</button>
+      <button class="lpcs-hpd-preset" data-preset="12" type="button">12</button>
+      <button class="lpcs-hpd-preset" data-preset="20" type="button">20</button>
+    </div>
+
+    {{!-- Accumulator Row: clear button + numeric input + live preview --}}
+    <div class="lpcs-hpd-accum-row">
+      <button class="lpcs-hpd-clear" type="button" aria-label="Clear amount" data-clear>
+        <i class="fas fa-xmark" aria-hidden="true"></i>
+      </button>
+      <input class="lpcs-hpd-amount"
+             type="number"
+             min="0"
+             max="999"
+             placeholder="0"
+             aria-label="Amount"
+             data-amount
+             inputmode="numeric" />
+      <div class="lpcs-hpd-preview" data-preview aria-live="polite" aria-atomic="true"></div>
+    </div>
+
+    {{!-- Apply Button — label and colour update dynamically via JS --}}
+    <button class="lpcs-hpd-apply" type="button" data-apply>
+      Apply Damage
+    </button>
+
+  </div>
+</div>
+

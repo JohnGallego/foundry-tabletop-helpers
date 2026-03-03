@@ -1,6 +1,7 @@
 /* ── Tab Navigation ──────────────────────────────────────────── */
 .lpcs-sheet .lpcs-tab-nav {
   display: flex;
+  justify-content: center;
   gap: var(--lpcs-space-xs);
   padding: var(--lpcs-space-sm) var(--lpcs-space-lg);
   background: var(--lpcs-bg-panel);

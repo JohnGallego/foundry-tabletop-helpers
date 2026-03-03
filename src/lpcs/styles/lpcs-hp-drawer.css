@@ -1,0 +1,196 @@
+/* ── HP Management Drawer ─────────────────────────────────────── */
+
+/* Outer positioning context — wraps .lpcs-hp-widget-wrap (the filter element)
+   and .lpcs-hp-drawer as siblings. The drawer is outside the drop-shadow filter
+   so it does not inherit or distort the bar's visual treatment. */
+.lpcs-sheet .lpcs-hp-outer {
+  position: relative;
+  z-index: 10; /* within .lpcs-header-content stacking context; above other header widgets */
+}
+
+/* Make the HP bar a visible tap target */
+.lpcs-sheet .lpcs-hp-bar-widget[data-action] {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Bottom sheet — absolutely positioned directly below .lpcs-hp-outer */
+.lpcs-sheet .lpcs-hp-drawer {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--lpcs-bg-panel);
+  border: 1px solid var(--lpcs-border-accent);
+  border-top: none;
+  border-radius: 0 0 var(--lpcs-radius-md) var(--lpcs-radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  /* Closed state */
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.28s ease;
+}
+
+.lpcs-sheet .lpcs-hp-drawer.open {
+  max-height: 300px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Inner layout */
+.lpcs-sheet .lpcs-hpd-inner {
+  padding: var(--lpcs-space-sm) var(--lpcs-space-md) var(--lpcs-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-sm);
+}
+
+/* ── Mode Toggle Pills ─────────────────────────────────────────── */
+.lpcs-sheet .lpcs-hpd-mode-toggle {
+  display: flex;
+  gap: var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-hpd-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: var(--lpcs-touch-min);
+  padding: var(--lpcs-space-xs) var(--lpcs-space-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-sm);
+  color: var(--lpcs-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+}
+
+.lpcs-sheet .lpcs-hpd-mode-btn--damage.active { background: rgba(139, 30, 45, 0.28); border-color: var(--lpcs-accent-crimson); color: #e57373; }
+.lpcs-sheet .lpcs-hpd-mode-btn--heal.active   { background: rgba(45, 138, 78, 0.28); border-color: var(--lpcs-hp-healthy);    color: #81c784; }
+.lpcs-sheet .lpcs-hpd-mode-btn--temp.active   { background: rgba(74, 122, 181, 0.28); border-color: var(--lpcs-hp-temp);      color: #64b5f6; }
+
+/* ── Preset Grid ──────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-hpd-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-hpd-preset {
+  flex: 1 0 10%;
+  min-width: 36px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-sm);
+  color: var(--lpcs-text-primary);
+  font-family: var(--lpcs-font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.lpcs-sheet [data-hp-drawer][data-mode="damage"] .lpcs-hpd-preset:hover { background: rgba(139, 30, 45, 0.22);  border-color: var(--lpcs-accent-crimson); }
+.lpcs-sheet [data-hp-drawer][data-mode="heal"]   .lpcs-hpd-preset:hover { background: rgba(45, 138, 78, 0.22);  border-color: var(--lpcs-hp-healthy);    }
+.lpcs-sheet [data-hp-drawer][data-mode="temp"]   .lpcs-hpd-preset:hover { background: rgba(74, 122, 181, 0.22); border-color: var(--lpcs-hp-temp);       }
+
+/* ── Accumulator Row ──────────────────────────────────────────── */
+.lpcs-sheet .lpcs-hpd-accum-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-hpd-clear {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-sm);
+  color: var(--lpcs-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+}
+.lpcs-sheet .lpcs-hpd-clear:hover { background: rgba(255, 255, 255, 0.1); color: var(--lpcs-text-primary); }
+
+.lpcs-sheet .lpcs-hpd-amount {
+  width: 72px;
+  min-height: 38px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--lpcs-border-accent);
+  border-radius: var(--lpcs-radius-sm);
+  color: var(--lpcs-text-primary);
+  font-family: var(--lpcs-font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0 4px;
+}
+.lpcs-sheet .lpcs-hpd-amount:focus { outline: 2px solid var(--lpcs-border-accent); outline-offset: 1px; }
+.lpcs-sheet .lpcs-hpd-amount::-webkit-inner-spin-button,
+.lpcs-sheet .lpcs-hpd-amount::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.lpcs-sheet .lpcs-hpd-preview {
+  flex: 1;
+  font-size: 0.72rem;
+  color: var(--lpcs-text-secondary);
+  font-style: italic;
+  line-height: 1.3;
+  text-align: right;
+}
+
+/* ── Apply Button ─────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-hpd-apply {
+  width: 100%;
+  min-height: var(--lpcs-touch-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 30, 45, 0.35);
+  border: 1px solid var(--lpcs-accent-crimson);
+  border-radius: var(--lpcs-radius-sm);
+  color: #ffffff;
+  font-family: var(--lpcs-font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.lpcs-sheet .lpcs-hpd-apply:hover    { background: rgba(139, 30, 45, 0.58); }
+.lpcs-sheet .lpcs-hpd-apply:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.lpcs-sheet [data-hp-drawer][data-mode="heal"] .lpcs-hpd-apply             { background: rgba(45, 138, 78, 0.35);  border-color: var(--lpcs-hp-healthy); }
+.lpcs-sheet [data-hp-drawer][data-mode="heal"] .lpcs-hpd-apply:hover       { background: rgba(45, 138, 78, 0.58); }
+.lpcs-sheet [data-hp-drawer][data-mode="temp"] .lpcs-hpd-apply             { background: rgba(74, 122, 181, 0.35); border-color: var(--lpcs-hp-temp);    }
+.lpcs-sheet [data-hp-drawer][data-mode="temp"] .lpcs-hpd-apply:hover       { background: rgba(74, 122, 181, 0.58); }
+
