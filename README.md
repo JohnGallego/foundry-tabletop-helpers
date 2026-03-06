@@ -4,6 +4,15 @@ A set of quality-of-life helpers for Foundry VTT, optimized for touchscreen tabl
 
 ## Features
 
+### 📱 Live Play Character Sheets
+Touch-optimized character sheets designed for tablets and phones, making Foundry VTT practical for in-person play. Players can view and interact with their characters directly on mobile devices without needing a full desktop setup.
+
+- **Touch-first design** — large tap targets (44×44px minimum) and a dark theme built for tablet and phone screens
+- **Compact layout** — everything fits in a 520×780px window optimized for portrait-mode tablets
+- **Live updates** — changes sync in real time across all connected devices
+- **Full character interaction** — ability checks, saving throws, skill rolls, hit point tracking, rests, and more — all from a streamlined mobile interface
+- **Complements print sheets** — use live sheets for players going digital and print sheets for players who prefer paper
+
 ### 🖨️ Print & Preview Sheets
 Generate print-ready sheets for your characters, NPCs, encounters, and party — optimized for physical use at the table or as a digital PDF reference.
 
@@ -29,6 +38,7 @@ Generate print-ready sheets for your characters, NPCs, encounters, and party —
 - Includes prebuilt macros to rotate all open windows (90° clockwise/counterclockwise, and 180°). A world compendium "FTH Macros" is auto-created for drag-and-drop.
 
 ## Settings
+- **Live Play Character Sheet** *(GM only)* — Enable the touch-optimized character sheet for in-person play on tablets and phones.
 - **Print Access** *(GM only)* — Control who can use the print and preview features: everyone (default) or GM only.
 - **Print Defaults** — Set default paper size and which sections are pre-selected for each sheet type.
 - **Rotation** — Choose how much each press rotates: 90° steps (default) or 180° flip.
