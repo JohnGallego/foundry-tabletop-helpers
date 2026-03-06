@@ -37,6 +37,7 @@
 }
 
 .lpcs-sheet .lpcs-slot-pip {
+  position: relative;
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -44,6 +45,13 @@
   border: 1px solid var(--lpcs-border);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
+}
+
+/* Expand touch target to 44px while keeping 20px visual size */
+.lpcs-sheet .lpcs-slot-pip::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
 }
 
 .lpcs-sheet .lpcs-slot-pip.filled {

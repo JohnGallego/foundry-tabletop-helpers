@@ -123,8 +123,8 @@
 /* ── Sort Toggle Button (in header row) ────────────────────── */
 
 .lpcs-sheet .lpcs-skills-sort-btn {
-  width: 28px;
-  height: 28px;
+  width: var(--lpcs-touch-min);
+  height: var(--lpcs-touch-min);
   border-radius: var(--lpcs-radius-sm);
   background: transparent;
   border: 1px solid var(--lpcs-border);
@@ -220,7 +220,7 @@
   -webkit-appearance: none;
   appearance: none;
   box-sizing: border-box;
-  width: 32px; height: 32px;
+  width: var(--lpcs-touch-min); height: var(--lpcs-touch-min);
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--lpcs-radius-sm);
   border: 1px solid var(--lpcs-border);
