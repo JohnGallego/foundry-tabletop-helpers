@@ -14,7 +14,7 @@ import { MOD, Log } from "../logger";
 import { buildLPCSViewModel } from "./lpcs-view-model";
 import { lpcsEnabled, lpcsDefaultTab, isPhysicalMode } from "./lpcs-settings";
 import { isDnd5eWorld } from "../types";
-import type { LPCSSkill, LPCSSkillGroup } from "./lpcs-types";
+import type { LPCSSkill, LPCSSkillGroup, LPCSInventoryItem } from "./lpcs-types";
 
 /* ── Runtime access to Foundry globals ────────────────────── */
 // These are resolved at runtime inside the init hook after Foundry has loaded.
@@ -253,6 +253,21 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           this._updateExhaustionDialogUI(dialog, level);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        editCurrency(this: any, _event: Event, target: HTMLElement): void {
+          if (!this.actor?.isOwner) return;
+          const key = (target.closest("[data-currency-key]") as HTMLElement | null)?.dataset.currencyKey;
+          if (!key) return;
+          this._openCurrencyEditor(key);
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        showItemDetail(this: any, _event: Event, target: HTMLElement): void {
+          const itemId = (target.closest("[data-item-id]") as HTMLElement | null)?.dataset.itemId;
+          if (!itemId) return;
+          const vm = this._lastInventoryVM;
+          const item = vm?.find((i: { id: string }) => i.id === itemId);
+          if (item) this._openItemDetailModal(item);
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         openHPDrawer(this: any, _event: Event): void {
           if (!this.actor?.isOwner) return;
           // Death saves are showing at HP 0 — suppress the drawer.
@@ -409,6 +424,23 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      * AbortController used to clean up exhaustion dialog DOM listeners on every re-render.
      */
     private _exhaustionDialogAbortCtrl: AbortController | null = null;
+
+    /** Cached inventory VM for item detail lookups. */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private _lastInventoryVM: LPCSInventoryItem[] = [];
+    /** Whether the item detail modal is currently open. */
+    private _itemDetailModalOpen = false;
+    /** ID of the item currently shown in the detail modal (for re-population on re-render). */
+    private _itemDetailModalItemId: string | null = null;
+    /** AbortController for item detail modal DOM listeners. */
+    private _itemDetailModalAbortCtrl: AbortController | null = null;
+
+    /** Whether the currency editor is currently open. */
+    private _currencyEditorOpen = false;
+    /** Which currency denomination is being edited. */
+    private _currencyEditorKey = "";
+    /** AbortController for currency editor DOM listeners. */
+    private _currencyEditorAbortCtrl: AbortController | null = null;
 
     /* ── Title ───────────────────────────────────────────────── */
 
@@ -826,11 +858,98 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         }, { signal: skillInfoSignal });
       }
 
+      // ── Item detail modal ──────────────────────────────────────────
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const vmData = (context as { vm?: any }).vm;
+      const containers = vmData?.containers ?? [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const containerContents = containers.flatMap((c: any) => c.contents ?? []);
+      this._lastInventoryVM = [...(vmData?.inventory ?? []), ...containers, ...containerContents];
+      this._itemDetailModalAbortCtrl?.abort();
+      this._itemDetailModalAbortCtrl = new AbortController();
+      const itemDetailSignal = this._itemDetailModalAbortCtrl.signal;
+
+      const itemDetailModal = el.querySelector<HTMLElement>("[data-item-detail-modal]");
+      if (itemDetailModal) {
+        // Re-populate the modal if it was open (e.g. after equip toggle triggers re-render)
+        if (this._itemDetailModalOpen && this._itemDetailModalItemId) {
+          const openItem = this._lastInventoryVM.find(
+            (i: { id: string }) => i.id === this._itemDetailModalItemId
+          );
+          if (openItem) {
+            this._openItemDetailModal(openItem);
+          } else {
+            this._closeItemDetailModal();
+          }
+        }
+
+        itemDetailModal.classList.toggle("open", this._itemDetailModalOpen);
+        itemDetailModal.setAttribute("aria-hidden", String(!this._itemDetailModalOpen));
+
+        itemDetailModal.querySelectorAll<HTMLElement>("[data-item-detail-close]").forEach((btn) => {
+          btn.addEventListener("click", () => this._closeItemDetailModal(), { signal: itemDetailSignal });
+        });
+
+        document.addEventListener("keydown", (e: KeyboardEvent) => {
+          if (e.key === "Escape" && this._itemDetailModalOpen) this._closeItemDetailModal();
+        }, { signal: itemDetailSignal });
+      }
+
+      // ── Currency editor modal ────────────────────────────────────
+      this._currencyEditorAbortCtrl?.abort();
+      this._currencyEditorAbortCtrl = new AbortController();
+      const currencySignal = this._currencyEditorAbortCtrl.signal;
+
+      const currencyEditor = el.querySelector<HTMLElement>("[data-currency-editor]");
+      if (currencyEditor) {
+        currencyEditor.classList.toggle("open", this._currencyEditorOpen);
+        currencyEditor.setAttribute("aria-hidden", String(!this._currencyEditorOpen));
+
+        // Close triggers
+        currencyEditor.querySelectorAll<HTMLElement>("[data-currency-editor-close]").forEach((btn) => {
+          btn.addEventListener("click", () => this._closeCurrencyEditor(), { signal: currencySignal });
+        });
+
+        // Delta buttons
+        currencyEditor.querySelectorAll<HTMLElement>("[data-currency-delta]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const delta = Number(btn.dataset.currencyDelta);
+            if (!Number.isFinite(delta)) return;
+            this._adjustCurrency(delta);
+          }, { signal: currencySignal });
+        });
+
+        // Direct input
+        const input = currencyEditor.querySelector<HTMLInputElement>("[data-currency-editor-input]");
+        if (input) {
+          input.addEventListener("change", () => {
+            const val = Number(input.value);
+            if (Number.isFinite(val) && val >= 0) {
+              this._setCurrency(Math.floor(val));
+            }
+            input.value = "";
+          }, { signal: currencySignal });
+        }
+
+        // Escape key dismiss
+        document.addEventListener("keydown", (e: KeyboardEvent) => {
+          if (e.key === "Escape" && this._currencyEditorOpen) this._closeCurrencyEditor();
+        }, { signal: currencySignal });
+
+        // Restore display if re-rendering while open
+        if (this._currencyEditorOpen && this._currencyEditorKey) {
+          this._updateCurrencyEditorDisplay();
+        }
+      }
+
       // Ensure TS sees these as used (called via `any`-typed action handlers).
       void this._openCombatInfoModal;
       void this._lastCombatVM;
       void this._openSkillInfoModal;
       void this._lastSkillsVM;
+      void this._openItemDetailModal;
+      void this._lastInventoryVM;
+      void this._openCurrencyEditor;
     }
 
     /**
@@ -1098,7 +1217,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       if (titleEl) titleEl.textContent = skill.label;
       if (descEl) descEl.textContent = skill.description;
       if (exList) {
-        exList.innerHTML = "";
+        exList.replaceChildren();
         for (const ex of skill.examples) {
           const li = document.createElement("li");
           li.textContent = ex;
@@ -1117,6 +1236,279 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       if (!modal) return;
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
+    }
+
+    /* ── Item Detail Modal ────────────────────────────────────── */
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private _openItemDetailModal(item: LPCSInventoryItem): void {
+      this._itemDetailModalOpen = true;
+      this._itemDetailModalItemId = item.id ?? null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const modal = el?.querySelector<HTMLElement>("[data-item-detail-modal]");
+      if (!modal) return;
+
+      const denomClasses: Record<string, string> = {
+        pp: "lpcs-coin-icon--pp", gp: "lpcs-coin-icon--gp",
+        ep: "lpcs-coin-icon--ep", sp: "lpcs-coin-icon--sp", cp: "lpcs-coin-icon--cp",
+      };
+
+      // Populate content
+      const img = modal.querySelector<HTMLImageElement>("[data-item-detail-img]");
+      const nameEl = modal.querySelector<HTMLElement>("[data-item-detail-name]");
+      const typeEl = modal.querySelector<HTMLElement>("[data-item-detail-type]");
+      const descEl = modal.querySelector<HTMLElement>("[data-item-detail-desc]");
+      const qtyEl = modal.querySelector<HTMLElement>("[data-item-detail-qty]");
+      const rarityEl = modal.querySelector<HTMLElement>("[data-item-detail-rarity]");
+      const weightEl = modal.querySelector<HTMLElement>("[data-item-detail-weight]");
+      const priceEl = modal.querySelector<HTMLElement>("[data-item-detail-price]");
+      const statsEl = modal.querySelector<HTMLElement>("[data-item-detail-stats]");
+      const containerInfoEl = modal.querySelector<HTMLElement>("[data-item-detail-container-info]");
+      const capacityEl = modal.querySelector<HTMLElement>("[data-item-detail-capacity]");
+      const containerCurrencyEl = modal.querySelector<HTMLElement>("[data-item-detail-container-currency]");
+      const contentsEl = modal.querySelector<HTMLElement>("[data-item-detail-contents]");
+      const contentsGridEl = modal.querySelector<HTMLElement>("[data-item-detail-contents-grid]");
+
+      if (img) img.src = item.img || "";
+      if (nameEl) nameEl.textContent = item.name || "";
+      if (typeEl) typeEl.textContent = item.typeLabel || item.type || "";
+      if (descEl) descEl.textContent = item.description || "No description available.";
+
+      // Stats block (weapons/armor)
+      if (statsEl) {
+        if (item.statsBlock) {
+          statsEl.textContent = item.statsBlock;
+          statsEl.hidden = false;
+        } else {
+          statsEl.hidden = true;
+        }
+      }
+
+      // Quantity badge
+      if (qtyEl) {
+        if (item.quantity > 1) {
+          qtyEl.textContent = `×${item.quantity}`;
+          qtyEl.hidden = false;
+        } else {
+          qtyEl.hidden = true;
+        }
+      }
+
+      // Rarity
+      if (rarityEl) {
+        if (item.rarityLabel) {
+          rarityEl.textContent = item.rarityLabel;
+          rarityEl.className = `lpcs-item-detail-rarity rarity--${item.rarity}`;
+          rarityEl.hidden = false;
+        } else {
+          rarityEl.hidden = true;
+        }
+      }
+
+      // Container info (capacity + currency)
+      if (containerInfoEl) {
+        if (item.isContainer) {
+          containerInfoEl.hidden = false;
+          if (capacityEl) capacityEl.textContent = item.capacityLabel || "";
+
+          if (containerCurrencyEl) {
+            containerCurrencyEl.replaceChildren();
+            for (const coin of (item.containerCurrency || [])) {
+              const span = document.createElement("span");
+              span.className = "lpcs-container-coin";
+              const icon = document.createElement("i");
+              icon.className = `fas fa-coins ${denomClasses[coin.key] ?? denomClasses.gp}`;
+              span.appendChild(icon);
+              const val = document.createElement("span");
+              val.textContent = ` ${coin.amount}`;
+              span.appendChild(val);
+              containerCurrencyEl.appendChild(span);
+            }
+          }
+        } else {
+          containerInfoEl.hidden = true;
+        }
+      }
+
+      // Container contents grid
+      if (contentsEl && contentsGridEl) {
+        if (item.isContainer && item.contents?.length > 0) {
+          contentsEl.hidden = false;
+          contentsGridEl.replaceChildren();
+          for (const child of item.contents) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "lpcs-container-content-item";
+            btn.title = child.name;
+
+            const childImg = document.createElement("img");
+            childImg.src = child.img || "";
+            childImg.alt = "";
+            childImg.className = "lpcs-container-content-img";
+            childImg.loading = "lazy";
+            btn.appendChild(childImg);
+
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "lpcs-container-content-name";
+            nameSpan.textContent = child.name;
+            btn.appendChild(nameSpan);
+
+            if (child.quantity > 1) {
+              const qtySpan = document.createElement("span");
+              qtySpan.className = "lpcs-container-content-qty";
+              qtySpan.textContent = `×${child.quantity}`;
+              btn.appendChild(qtySpan);
+            }
+
+            // Tap to navigate into the child item's detail
+            btn.addEventListener("click", () => this._openItemDetailModal(child));
+            contentsGridEl.appendChild(btn);
+          }
+        } else {
+          contentsEl.hidden = true;
+        }
+      }
+
+      // Weight
+      if (weightEl) {
+        weightEl.textContent = item.weight ? `${item.weight} lb` : "";
+      }
+
+      // Price with coin icon
+      if (priceEl) {
+        priceEl.replaceChildren();
+        if (item.price) {
+          const icon = document.createElement("i");
+          icon.className = `fas fa-coins ${denomClasses[item.price.denomination] ?? denomClasses.gp}`;
+          priceEl.appendChild(icon);
+          const val = document.createElement("span");
+          val.textContent = ` ${item.price.value}`;
+          priceEl.appendChild(val);
+        }
+      }
+
+      // Equip / Unequip button
+      const equipBtn = modal.querySelector<HTMLElement>("[data-item-detail-equip]");
+      if (equipBtn) {
+        const labelEl = equipBtn.querySelector<HTMLElement>("[data-item-detail-equip-label]");
+        const iconEl = equipBtn.querySelector<HTMLElement>("[data-item-detail-equip-icon]");
+        if (item.isEquippable) {
+          equipBtn.hidden = false;
+          const equipped = item.equipped;
+          if (labelEl) labelEl.textContent = equipped ? "Unequip" : "Equip";
+          if (iconEl) iconEl.className = equipped
+            ? "fas fa-shield-xmark"
+            : "fas fa-shield-halved";
+          equipBtn.classList.toggle("is-equipped", equipped);
+          // Wire click — use the abort controller so it's cleaned up on re-render
+          equipBtn.addEventListener("click", async () => {
+            await this._toggleEquipItem(item.id, !equipped);
+          }, { signal: this._itemDetailModalAbortCtrl?.signal });
+        } else {
+          equipBtn.hidden = true;
+        }
+      }
+
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    /**
+     * Toggle the equipped state of an item on the actor.
+     * Persists via Foundry's item update (synced to all clients).
+     */
+    private async _toggleEquipItem(itemId: string, equip: boolean): Promise<void> {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const actor = (this as any).actor as Record<string, unknown> | undefined;
+      if (!actor) return;
+      const items = actor.items as { get(id: string): Record<string, unknown> | undefined } | undefined;
+      const item = items?.get(itemId);
+      if (!item) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const update = (item as any).update as ((data: Record<string, unknown>) => Promise<void>) | undefined;
+      if (update) {
+        await update.call(item, { "system.equipped": equip });
+      }
+    }
+
+    private _closeItemDetailModal(): void {
+      this._itemDetailModalOpen = false;
+      this._itemDetailModalItemId = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const modal = el?.querySelector<HTMLElement>("[data-item-detail-modal]");
+      if (!modal) return;
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    /* ── Currency Editor ─────────────────────────────────────── */
+
+    private _openCurrencyEditor(key: string): void {
+      const LABELS: Record<string, string> = {
+        pp: "Platinum", gp: "Gold", ep: "Electrum", sp: "Silver", cp: "Copper",
+      };
+      this._currencyEditorOpen = true;
+      this._currencyEditorKey = key;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const modal = el?.querySelector<HTMLElement>("[data-currency-editor]");
+      if (!modal) return;
+
+      const titleEl = modal.querySelector<HTMLElement>("[data-currency-editor-title]");
+      if (titleEl) titleEl.textContent = LABELS[key] ?? key.toUpperCase();
+
+      this._updateCurrencyEditorDisplay();
+
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+
+      // Focus the input for immediate keyboard entry
+      const input = modal.querySelector<HTMLInputElement>("[data-currency-editor-input]");
+      if (input) { input.value = ""; input.focus(); }
+    }
+
+    private _closeCurrencyEditor(): void {
+      this._currencyEditorOpen = false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const modal = el?.querySelector<HTMLElement>("[data-currency-editor]");
+      if (!modal) return;
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    private _getCurrencyValue(): number {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const currency = (this as any).actor?.system?.currency as Record<string, number> | undefined;
+      return (currency?.[this._currencyEditorKey] as number) ?? 0;
+    }
+
+    private _updateCurrencyEditorDisplay(): void {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const display = el?.querySelector<HTMLElement>("[data-currency-editor-display]");
+      if (display) display.textContent = String(this._getCurrencyValue());
+    }
+
+    private _adjustCurrency(delta: number): void {
+      const current = this._getCurrencyValue();
+      const newVal = Math.max(0, current + delta);
+      this._setCurrency(newVal);
+    }
+
+    private _setCurrency(value: number): void {
+      const key = this._currencyEditorKey;
+      if (!key) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this as any).actor?.update({ [`system.currency.${key}`]: value });
+      // Optimistic UI update
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const display = el?.querySelector<HTMLElement>("[data-currency-editor-display]");
+      if (display) display.textContent = String(value);
     }
 
     /* ── Skill Grouping ───────────────────────────────────────── */
@@ -1245,6 +1637,8 @@ export async function preloadLPCSTemplates(): Promise<void> {
     "lpcs-combat-info-modal":    `modules/${MOD}/templates/lpcs/lpcs-combat-info-modal.hbs`,
     "lpcs-combat-weapons-block": `modules/${MOD}/templates/lpcs/lpcs-combat-weapons-block.hbs`,
     "lpcs-combat-spells-block":  `modules/${MOD}/templates/lpcs/lpcs-combat-spells-block.hbs`,
+    "lpcs-item-detail-modal":    `modules/${MOD}/templates/lpcs/lpcs-item-detail-modal.hbs`,
+    "lpcs-currency-editor":      `modules/${MOD}/templates/lpcs/lpcs-currency-editor.hbs`,
   };
 
   // Non-partial PARTS templates — cached but not referenced by short name.

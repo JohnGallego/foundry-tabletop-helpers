@@ -58,6 +58,9 @@
   flex-direction: column;
   gap: var(--lpcs-space-md);
   padding: var(--lpcs-space-lg);
+  /* Extra bottom padding so content isn't hidden behind mobile browser chrome
+     (URL bar, tab bar) which eats into 100vh but not the visible viewport. */
+  padding-bottom: calc(var(--lpcs-space-lg) + env(safe-area-inset-bottom, 0px) + 80px);
   height: 100%;
   overflow-y: auto;
   scrollbar-width: thin;

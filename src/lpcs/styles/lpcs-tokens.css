@@ -62,3 +62,13 @@
   container-name: lpcs-sheet;
 }
 
+/* ── Button Reset ──────────────────────────────────────────── */
+/* Override Foundry's default button styles (height, min-width, padding, etc.)
+   scoped to the LPCS sheet so we don't leak into other modules. */
+.lpcs-sheet button {
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  line-height: normal;
+}
+

@@ -1,0 +1,38 @@
+{{!-- lpcs-currency-editor.hbs --}}
+{{!-- Touch-friendly currency editor popup. Populated dynamically by JS. --}}
+<div class="lpcs-currency-editor" data-currency-editor aria-hidden="true"
+     role="dialog" aria-label="Edit Currency">
+
+  {{!-- Backdrop --}}
+  <div class="lpcs-currency-editor-backdrop" data-currency-editor-close></div>
+
+  <div class="lpcs-currency-editor-card">
+
+    <header class="lpcs-currency-editor-header">
+      <span class="lpcs-currency-editor-title" data-currency-editor-title></span>
+      <button class="lpcs-currency-editor-close" data-currency-editor-close
+              type="button" aria-label="Close">&times;</button>
+    </header>
+
+    <div class="lpcs-currency-editor-body">
+      {{!-- Large current amount display --}}
+      <div class="lpcs-currency-editor-display" data-currency-editor-display>0</div>
+
+      {{!-- Direct input --}}
+      <input class="lpcs-currency-editor-input" data-currency-editor-input
+             type="number" inputmode="numeric" min="0" step="1"
+             placeholder="Set amount…" aria-label="Currency amount">
+
+      {{!-- Quick adjust buttons --}}
+      <div class="lpcs-currency-editor-adjusts">
+        <button type="button" class="lpcs-currency-editor-btn lpcs-currency-adj--sub" data-currency-delta="-100">−100</button>
+        <button type="button" class="lpcs-currency-editor-btn lpcs-currency-adj--sub" data-currency-delta="-10">−10</button>
+        <button type="button" class="lpcs-currency-editor-btn lpcs-currency-adj--sub" data-currency-delta="-1">−1</button>
+        <button type="button" class="lpcs-currency-editor-btn lpcs-currency-adj--add" data-currency-delta="1">+1</button>
+        <button type="button" class="lpcs-currency-editor-btn lpcs-currency-adj--add" data-currency-delta="10">+10</button>
+        <button type="button" class="lpcs-currency-editor-btn lpcs-currency-adj--add" data-currency-delta="100">+100</button>
+      </div>
+    </div>
+
+  </div>
+</div>

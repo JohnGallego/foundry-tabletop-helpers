@@ -45,6 +45,7 @@ export interface LPCSViewModel {
 
   /** Inventory tab */
   inventory: LPCSInventoryItem[];
+  containers: LPCSInventoryItem[];
   currency: LPCSCurrencyEntry[];
   encumbrance: LPCSEncumbrance;
 
@@ -217,6 +218,16 @@ export interface LPCSSpell {
   description: string;
 }
 
+export interface LPCSItemPrice {
+  value: number;
+  denomination: string; // "gp", "sp", "cp", "ep", "pp"
+}
+
+export interface LPCSContainerCurrency {
+  key: string;
+  amount: number;
+}
+
 export interface LPCSInventoryItem {
   id: string;
   name: string;
@@ -226,6 +237,36 @@ export interface LPCSInventoryItem {
   equipped: boolean;
   attuned: boolean;
   type: string;
+  typeLabel: string;
+  description: string;
+  /** Pre-built stats block for weapons/armor shown above description in the detail modal. */
+  statsBlock: string;
+  rarity: string;
+  rarityLabel: string;
+  price: LPCSItemPrice | null;
+  priceDisplay: { icon: string; label: string; cssClass: string }[];
+  /** True when this item is a container (backpack, chest, bag of holding, etc.). */
+  isContainer: boolean;
+  /** Number of items inside this container, or 0 for non-containers. */
+  contentsCount: number;
+  /** Items stored inside this container. Only populated for containers. */
+  contents: LPCSInventoryItem[];
+  /** Currency stored inside this container (e.g., Bag of Holding with coins). */
+  containerCurrency: LPCSContainerCurrency[];
+  /** Capacity info string for containers (e.g., "12 / 30 lb"). */
+  capacityLabel: string;
+  /** Weight of contents inside this container. */
+  contentsWeight: number;
+  /** Max weight capacity (0 if no weight-based capacity). */
+  capacityMax: number;
+  /** Fill percentage 0–100 for the capacity bar. */
+  capacityPct: number;
+  /** CSS color for the capacity bar (green→gold→red). */
+  capacityColor: string;
+  /** ID of the parent container, or null if top-level. */
+  containerId: string | null;
+  /** True when this item type supports equip/unequip (weapons, armor, equipment, tools). */
+  isEquippable: boolean;
 }
 
 /** One row in the currency bar — pre-built so templates can iterate with plain `{{#each}}`. */
