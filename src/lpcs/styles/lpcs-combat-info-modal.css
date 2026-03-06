@@ -1,0 +1,96 @@
+/* ── Combat Info Modal Overlay ───────────────────────────────── */
+
+.lpcs-sheet .lpcs-combat-info-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.lpcs-sheet .lpcs-combat-info-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Backdrop ────────────────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-combat-info-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+/* ── Modal Card ──────────────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-combat-info-card {
+  position: relative;
+  z-index: 1;
+  width: clamp(280px, 88%, 420px);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--lpcs-bg-panel);
+  border: 1px solid var(--lpcs-border-accent);
+  border-radius: var(--lpcs-radius-lg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-md);
+  padding: var(--lpcs-space-lg);
+}
+
+/* ── Card Header ─────────────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-combat-info-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lpcs-space-md);
+}
+
+.lpcs-sheet .lpcs-combat-info-card-title {
+  font-family: var(--lpcs-font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--lpcs-text-primary);
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.lpcs-sheet .lpcs-combat-info-close-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--lpcs-radius-sm);
+  border: 1px solid var(--lpcs-border);
+  background: transparent;
+  color: var(--lpcs-text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.lpcs-sheet .lpcs-combat-info-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--lpcs-text-primary);
+}
+
+/* ── Description ─────────────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-combat-info-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--lpcs-text-secondary);
+  line-height: 1.6;
+}
