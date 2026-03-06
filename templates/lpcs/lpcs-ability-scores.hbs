@@ -1,0 +1,21 @@
+{{!-- lpcs-ability-scores.hbs --}}
+{{!-- Six ability score cards rendered in a row below the header. --}}
+{{!-- Data comes from vm.abilities (LPCSAbility[]): abbr, mod, score, label. --}}
+<div class="lpcs-ability-bar" role="group" aria-label="Ability scores">
+  {{#each vm.abilities}}
+  <div class="lpcs-abar-card"
+       data-ability="{{key}}"
+       aria-label="{{label}}: score {{score}}, modifier {{mod}}">
+    <span class="lpcs-abar-save {{#if saveProficient}}lpcs-abar-save--prof{{/if}}"
+          title="{{label}} Save: {{saveMod}}">
+      <i class="fas fa-shield" aria-hidden="true"></i>
+      <span class="lpcs-abar-save-label">SAVE</span>
+      <span class="lpcs-abar-save-mod">{{saveMod}}</span>
+    </span>
+    <span class="lpcs-abar-abbr">{{abbr}}</span>
+    <span class="lpcs-abar-mod">{{mod}}</span>
+    <span class="lpcs-abar-score">{{score}}</span>
+  </div>
+  {{/each}}
+</div>
+

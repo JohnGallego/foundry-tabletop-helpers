@@ -1,0 +1,69 @@
+{{!-- lpcs-item-detail-modal.hbs --}}
+{{!-- Full-screen item detail card. Populated dynamically by JS. --}}
+<div class="lpcs-item-detail-modal" data-item-detail-modal aria-hidden="true"
+     role="dialog" aria-label="Item Details">
+
+  {{!-- Backdrop --}}
+  <div class="lpcs-item-detail-backdrop" data-item-detail-close></div>
+
+  <div class="lpcs-item-detail-card">
+
+    {{!-- Close button — absolute top-right corner of card --}}
+    <button class="lpcs-item-detail-close-btn" data-item-detail-close type="button"
+            aria-label="Close">&times;</button>
+
+    {{!-- Large artwork panel --}}
+    <div class="lpcs-item-detail-art">
+      <img src="" alt="" class="lpcs-item-detail-img" data-item-detail-img>
+    </div>
+
+    {{!-- Info panel --}}
+    <div class="lpcs-item-detail-body">
+
+      <header class="lpcs-item-detail-header">
+        <div class="lpcs-item-detail-titles">
+          <h2 class="lpcs-item-detail-name" data-item-detail-name></h2>
+          <span class="lpcs-item-detail-type" data-item-detail-type></span>
+        </div>
+      </header>
+
+      {{!-- Rarity --}}
+      <span class="lpcs-item-detail-rarity" data-item-detail-rarity hidden></span>
+
+      {{!-- Stats block (weapons/armor) --}}
+      <pre class="lpcs-item-detail-stats" data-item-detail-stats hidden></pre>
+
+      {{!-- Container: capacity + currency --}}
+      <div class="lpcs-item-detail-container-info" data-item-detail-container-info hidden>
+        <span class="lpcs-item-detail-capacity" data-item-detail-capacity></span>
+        <div class="lpcs-item-detail-container-currency" data-item-detail-container-currency></div>
+      </div>
+
+      {{!-- Equip / Unequip button --}}
+      <button class="lpcs-item-detail-equip-btn" data-item-detail-equip type="button" hidden>
+        <i class="fas fa-shield-halved" data-item-detail-equip-icon></i>
+        <span data-item-detail-equip-label>Equip</span>
+      </button>
+
+      {{!-- Description --}}
+      <p class="lpcs-item-detail-desc" data-item-detail-desc></p>
+
+      {{!-- Container contents grid --}}
+      <div class="lpcs-item-detail-contents" data-item-detail-contents hidden>
+        <h3 class="lpcs-item-detail-contents-title">Contents</h3>
+        <div class="lpcs-item-detail-contents-grid" data-item-detail-contents-grid></div>
+      </div>
+
+      {{!-- Footer: weight | price | quantity --}}
+      <div class="lpcs-item-detail-footer">
+        <span class="lpcs-item-detail-weight" data-item-detail-weight></span>
+        <span class="lpcs-item-detail-footer-right">
+          <span class="lpcs-item-detail-price" data-item-detail-price></span>
+          <span class="lpcs-item-detail-qty-badge" data-item-detail-qty hidden></span>
+        </span>
+      </div>
+
+    </div>
+
+  </div>
+</div>

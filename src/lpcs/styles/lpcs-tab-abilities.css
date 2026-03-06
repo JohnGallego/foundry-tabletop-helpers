@@ -1,0 +1,168 @@
+/* ── Ability Grid (Tab) ───────────────────────────────────────── */
+/* NOTE: These classes (.lpcs-ability-card/.abbr/.mod/.score) are DISTINCT
+   from the header bar classes (.lpcs-abar-*). Do NOT rename these. */
+.lpcs-sheet .lpcs-ability-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--lpcs-space-sm);
+}
+
+.lpcs-sheet .lpcs-ability-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--lpcs-space-sm) var(--lpcs-space-xs);
+  background: var(--lpcs-bg-panel);
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-md);
+  text-align: center;
+}
+
+.lpcs-sheet .lpcs-ability-abbr {
+  font-size: 0.6rem;
+  color: var(--lpcs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.lpcs-sheet .lpcs-ability-score {
+  font-family: var(--lpcs-font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--lpcs-text-primary);
+  line-height: 1;
+}
+
+.lpcs-sheet .lpcs-ability-mod {
+  min-height: var(--lpcs-touch-min);
+  min-width: var(--lpcs-touch-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lpcs-bg-glass);
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-sm);
+  color: var(--lpcs-accent-bronze);
+  font-weight: 700;
+  font-size: 1.6rem;
+  cursor: pointer;
+  font-family: var(--lpcs-font-mono);
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
+}
+
+.lpcs-sheet .lpcs-ability-mod:hover {
+  background: var(--lpcs-bg-glass-hover);
+  border-color: var(--lpcs-border-accent);
+}
+
+/* ── Saving Throws ───────────────────────────────────────────── */
+.lpcs-sheet .lpcs-saves-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lpcs-space-sm);
+}
+
+.lpcs-sheet .lpcs-save-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-xs);
+  padding: var(--lpcs-space-xs) var(--lpcs-space-sm);
+  min-height: var(--lpcs-touch-min);
+  background: var(--lpcs-bg-glass);
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: var(--lpcs-font-mono);
+}
+
+.lpcs-sheet .lpcs-save-chip:hover {
+  background: var(--lpcs-bg-glass-hover);
+}
+
+.lpcs-sheet .lpcs-save-chip.proficient {
+  border-color: var(--lpcs-accent-bronze);
+  color: var(--lpcs-accent-bronze);
+}
+
+/* Children of .lpcs-save-chip — scoped here to make ownership explicit */
+.lpcs-sheet .lpcs-save-chip .lpcs-save-abbr    { font-size: 0.7rem; color: var(--lpcs-text-secondary); }
+.lpcs-sheet .lpcs-save-chip .lpcs-save-mod     { font-weight: 700; }
+.lpcs-sheet .lpcs-save-chip .lpcs-save-prof-dot { color: var(--lpcs-accent-gold); font-size: 0.5rem; }
+
+/* ── Skills ──────────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-skills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lpcs-sheet .lpcs-skill-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+  padding: 0 var(--lpcs-space-sm);
+  min-height: var(--lpcs-touch-min);
+  background: var(--lpcs-bg-glass);
+  border: 1px solid transparent;
+  border-radius: var(--lpcs-radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
+  font-family: var(--lpcs-font-body);
+  color: var(--lpcs-text-primary);
+}
+
+.lpcs-sheet .lpcs-skill-row:hover {
+  background: var(--lpcs-bg-glass-hover);
+  border-color: var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-skill-prof {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--lpcs-text-muted);
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-skill-prof.lpcs-prof--1 { background: var(--lpcs-accent-bronze); border-color: var(--lpcs-accent-bronze); }
+.lpcs-sheet .lpcs-skill-prof.lpcs-prof--2 { background: var(--lpcs-accent-gold);   border-color: var(--lpcs-accent-gold); }
+.lpcs-sheet .lpcs-skill-prof.lpcs-prof--0\.5 { background: var(--lpcs-text-muted); border-color: var(--lpcs-text-muted); }
+
+.lpcs-sheet .lpcs-skill-name { flex: 1; }
+.lpcs-sheet .lpcs-skill-ability { font-size: 0.7rem; color: var(--lpcs-text-muted); }
+.lpcs-sheet .lpcs-skill-mod { font-family: var(--lpcs-font-mono); font-weight: 700; min-width: 28px; text-align: right; }
+.lpcs-sheet .lpcs-skill-passive { font-size: 0.7rem; color: var(--lpcs-text-muted); min-width: 20px; text-align: right; }
+
+/* ── Senses & Hit Dice ───────────────────────────────────────── */
+.lpcs-sheet .lpcs-senses-list,
+.lpcs-sheet .lpcs-hitdice-list {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-sense-row,
+.lpcs-sheet .lpcs-hitdice-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--lpcs-space-xs) var(--lpcs-space-sm);
+  background: var(--lpcs-bg-glass);
+  border-radius: var(--lpcs-radius-sm);
+  font-size: 0.85rem;
+}
+
+.lpcs-sheet .lpcs-sense-label,
+.lpcs-sheet .lpcs-hitdice-die,
+.lpcs-sheet .lpcs-hitdice-class {
+  color: var(--lpcs-text-secondary);
+  text-transform: capitalize;
+}
+

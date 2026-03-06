@@ -1,0 +1,22 @@
+{{!-- lpcs-combat-info-modal.hbs --}}
+{{!-- Info modal for standard combat actions. Populated dynamically by JS.  --}}
+{{!-- Anchored to .lpcs-header (same stacking context as rest modal).       --}}
+{{!-- All interaction wired in _onRender via AbortController.               --}}
+<div class="lpcs-combat-info-modal" data-combat-info-modal aria-hidden="true"
+     role="dialog" aria-label="Combat Action Info">
+
+  {{!-- Backdrop --}}
+  <div class="lpcs-combat-info-backdrop" data-combat-info-close></div>
+
+  <div class="lpcs-combat-info-card">
+
+    <header class="lpcs-combat-info-card-header">
+      <h2 class="lpcs-combat-info-card-title" data-combat-info-title></h2>
+      <button class="lpcs-combat-info-close-btn" data-combat-info-close type="button"
+              aria-label="Close">×</button>
+    </header>
+
+    <p class="lpcs-combat-info-desc" data-combat-info-desc></p>
+
+  </div>
+</div>

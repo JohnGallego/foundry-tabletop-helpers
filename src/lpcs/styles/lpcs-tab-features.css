@@ -1,0 +1,59 @@
+/* ── Features Tab ────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-feature-group { display: flex; flex-direction: column; gap: var(--lpcs-space-xs); }
+.lpcs-sheet .lpcs-feature-list { display: flex; flex-direction: column; gap: 2px; }
+
+.lpcs-sheet .lpcs-traits-list {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-trait-group {
+  display: flex;
+  gap: var(--lpcs-space-sm);
+  font-size: 0.85rem;
+}
+
+.lpcs-sheet .lpcs-trait-label {
+  color: var(--lpcs-text-secondary);
+  font-weight: 600;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-prof-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--lpcs-space-xs) var(--lpcs-space-md);
+  font-size: 0.85rem;
+}
+
+.lpcs-sheet .lpcs-prof-term { color: var(--lpcs-text-secondary); font-weight: 600; }
+.lpcs-sheet .lpcs-prof-detail { color: var(--lpcs-text-primary); margin: 0; }
+
+.lpcs-sheet .lpcs-exhaustion { display: flex; align-items: center; gap: var(--lpcs-space-sm); }
+.lpcs-sheet .lpcs-exhaustion-label { font-size: 0.8rem; color: var(--lpcs-text-secondary); }
+.lpcs-sheet .lpcs-exhaustion-pips { display: flex; gap: var(--lpcs-space-xs); }
+
+.lpcs-sheet .lpcs-exhaust-pip {
+  font-size: 0.8rem;
+  color: var(--lpcs-text-muted);
+}
+
+.lpcs-sheet .lpcs-exhaust-pip.active { color: var(--lpcs-accent-crimson); }
+
+/* ── Feature Effect Annotations ──────────────────────────────── */
+.lpcs-sheet .lpcs-feature-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.lpcs-sheet .lpcs-feature-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lpcs-space-xs);
+  padding: 2px var(--lpcs-space-md) var(--lpcs-space-xs);
+}
+

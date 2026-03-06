@@ -1,0 +1,19 @@
+/* ── LPCS Styles — module index ─────────────────────────────── */
+/* All rules live in ./styles/. Vite resolves @import at build time,
+   so there is zero runtime cost to splitting into module files. */
+@import "./styles/lpcs-tokens.css";
+@import "./styles/lpcs-layout.css";
+@import "./styles/lpcs-header-widgets.css";
+@import "./styles/lpcs-death-saves.css";
+@import "./styles/lpcs-navigation.css";
+@import "./styles/lpcs-tab-skills.css";
+@import "./styles/lpcs-tab-combat.css";
+@import "./styles/lpcs-tab-spells.css";
+@import "./styles/lpcs-tab-inventory.css";
+@import "./styles/lpcs-tab-features.css";
+@import "./styles/lpcs-utility.css";
+@import "./styles/lpcs-hp-drawer.css";
+@import "./styles/lpcs-exhaustion.css";
+@import "./styles/lpcs-rest-modal.css";
+@import "./styles/lpcs-combat-info-modal.css";
+@import "./styles/lpcs-responsive.css";

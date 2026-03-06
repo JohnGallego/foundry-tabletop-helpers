@@ -1,0 +1,19 @@
+{{!-- lpcs-identity.hbs --}}
+{{!-- Character name, subtitle (species · class), background, and hex level badge --}}
+{{!-- Context: name (string), subtitle (string), background (string), level (number) --}}
+<div class="lpcs-identity">
+
+  {{!-- Hex level badge --}}
+  <div class="lpcs-level-hex" aria-label="Level {{level}}">
+    <span class="lpcs-level-hex-num">{{level}}</span>
+  </div>
+
+  {{!-- Name, subtitle, and background --}}
+  <div class="lpcs-identity-text">
+    <h1 class="lpcs-name">{{name}}</h1>
+    <p class="lpcs-subtitle">{{subtitle}}</p>
+    {{#if background}}<p class="lpcs-background">{{background}}</p>{{/if}}
+  </div>
+
+</div>
+

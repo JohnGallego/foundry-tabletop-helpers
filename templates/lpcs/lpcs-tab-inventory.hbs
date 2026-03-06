@@ -1,0 +1,138 @@
+{{!-- lpcs-tab-inventory.hbs --}}
+{{!-- Inventory tab: artwork grid, currency bar, encumbrance, container sections --}}
+<section class="lpcs-tab lpcs-tab--inventory {{#if isActiveTab}}active{{/if}}"
+         id="lpcs-tab-panel-inventory"
+         role="tabpanel"
+         aria-labelledby="lpcs-tab-btn-inventory"
+         data-tab="inventory"
+         data-group="primary"
+         {{#unless isActiveTab}}hidden{{/unless}}>
+
+  {{!-- Currency --}}
+  <div class="lpcs-currency-bar lpcs-panel" aria-label="Currency">
+    {{#each vm.currency}}
+    <button class="lpcs-currency-coin lpcs-coin--{{key}}"
+            type="button"
+            data-action="editCurrency"
+            data-currency-key="{{key}}"
+            aria-label="{{amount}} {{key}}">
+      <span class="lpcs-coin-header"><i class="fas fa-coins lpcs-coin-icon lpcs-coin-icon--{{key}}" aria-hidden="true"></i> {{key}}</span>
+      <span class="lpcs-coin-amount">{{amount}}</span>
+    </button>
+    {{/each}}
+  </div>
+
+  {{!-- Currency Editor Modal --}}
+  {{> lpcs-currency-editor}}
+
+  {{!-- Encumbrance --}}
+  {{#if vm.encumbrance.max}}
+  <div class="lpcs-encumbrance" aria-label="Encumbrance {{vm.encumbrance.value}} of {{vm.encumbrance.max}} lbs">
+    <div class="lpcs-enc-bar">
+      <div class="lpcs-enc-fill {{#if vm.encumbrance.encumbered}}encumbered{{/if}}"
+           style="width: {{vm.encumbrance.pct}}%;"></div>
+    </div>
+    <span class="lpcs-enc-label">{{vm.encumbrance.value}} / {{vm.encumbrance.max}} lb</span>
+    {{#if vm.encumbrance.encumbered}}
+    <span class="lpcs-enc-warning" aria-live="polite">Encumbered!</span>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{!-- Loose Items Grid --}}
+  {{#if vm.inventory.length}}
+  <div class="lpcs-inventory-grid" role="list" aria-label="Loose items">
+    {{#each vm.inventory}}
+    <button class="lpcs-item-card {{#if rarityLabel}}lpcs-rarity--{{rarity}}{{/if}}"
+            role="listitem"
+            type="button"
+            data-action="showItemDetail"
+            data-item-id="{{id}}"
+            aria-label="{{name}}">
+      {{#if equipped}}
+      <i class="fas fa-shield-halved lpcs-item-card-equipped" title="Equipped" aria-label="Equipped"></i>
+      {{/if}}
+      <div class="lpcs-item-card-art">
+        <img src="{{img}}" alt="" class="lpcs-item-card-img" loading="lazy">
+        {{#if (gt quantity 1)}}
+        <span class="lpcs-item-card-qty" aria-label="Quantity {{quantity}}">×{{quantity}}</span>
+        {{/if}}
+        {{#if attuned}}
+        <span class="lpcs-item-card-badge lpcs-badge--attuned" title="Attuned">A</span>
+        {{/if}}
+      </div>
+      <div class="lpcs-item-card-info">
+        <span class="lpcs-item-card-name">{{name}}</span>
+        <span class="lpcs-item-card-meta">
+          {{typeLabel}}{{#if weight}} · {{weight}} lb{{/if}}{{#if priceDisplay.length}}{{#each priceDisplay}} · <i class="{{icon}} {{cssClass}}" aria-hidden="true"></i> {{label}}{{/each}}{{/if}}
+        </span>
+      </div>
+    </button>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{!-- Container Sections --}}
+  {{#each vm.containers}}
+  <div class="lpcs-container-section" data-container-id="{{id}}">
+    <div class="lpcs-container-header">
+      <img src="{{img}}" alt="" class="lpcs-container-header-icon" loading="lazy">
+      <span class="lpcs-container-header-name">{{name}}</span>
+      <span class="lpcs-container-header-weight">{{capacityLabel}}</span>
+    </div>
+    {{#if capacityMax}}
+    <div class="lpcs-container-capacity-bar">
+      <div class="lpcs-container-capacity-fill" style="width: {{capacityPct}}%; background: {{capacityColor}};"></div>
+    </div>
+    {{/if}}
+
+    {{#if contents.length}}
+    <div class="lpcs-inventory-grid" role="list" aria-label="{{name}} contents">
+      {{#each contents}}
+      <button class="lpcs-item-card {{#if rarityLabel}}lpcs-rarity--{{rarity}}{{/if}}"
+              role="listitem"
+              type="button"
+              data-action="showItemDetail"
+              data-item-id="{{id}}"
+              aria-label="{{name}}">
+        {{#if equipped}}
+        <i class="fas fa-shield-halved lpcs-item-card-equipped" title="Equipped" aria-label="Equipped"></i>
+        {{/if}}
+        <div class="lpcs-item-card-art">
+          <img src="{{img}}" alt="" class="lpcs-item-card-img" loading="lazy">
+          {{#if (gt quantity 1)}}
+          <span class="lpcs-item-card-qty" aria-label="Quantity {{quantity}}">×{{quantity}}</span>
+          {{/if}}
+          {{#if attuned}}
+          <span class="lpcs-item-card-badge lpcs-badge--attuned" title="Attuned">A</span>
+          {{/if}}
+        </div>
+        <div class="lpcs-item-card-info">
+          <span class="lpcs-item-card-name">{{name}}</span>
+          <span class="lpcs-item-card-meta">
+            {{typeLabel}}{{#if weight}} · {{weight}} lb{{/if}}{{#if priceDisplay.length}}{{#each priceDisplay}} · <i class="{{icon}} {{cssClass}}" aria-hidden="true"></i> {{label}}{{/each}}{{/if}}
+          </span>
+        </div>
+      </button>
+      {{/each}}
+    </div>
+    {{else}}
+    <div class="lpcs-container-empty">Empty</div>
+    {{/if}}
+  </div>
+  {{/each}}
+
+  {{!-- Empty state (no loose items AND no containers) --}}
+  {{#unless vm.inventory.length}}
+  {{#unless vm.containers.length}}
+  <div class="lpcs-empty-tab">
+    <i class="fas fa-backpack lpcs-empty-icon" aria-hidden="true"></i>
+    <p>Inventory is empty.</p>
+  </div>
+  {{/unless}}
+  {{/unless}}
+
+  {{!-- Item Detail Modal --}}
+  {{> lpcs-item-detail-modal}}
+
+</section>

@@ -1,0 +1,91 @@
+{{!-- lpcs-tab-spells.hbs --}}
+{{!-- Spells tab: spellcasting header, slot pips, spell list by level --}}
+<section class="lpcs-tab lpcs-tab--spells {{#if isActiveTab}}active{{/if}}"
+         id="lpcs-tab-panel-spells"
+         role="tabpanel"
+         aria-labelledby="lpcs-tab-btn-spells"
+         data-tab="spells"
+         data-group="primary"
+         {{#unless isActiveTab}}hidden{{/unless}}>
+
+  {{#if vm.spellcasting}}
+  {{!-- Spellcasting Header --}}
+  <div class="lpcs-spellcasting-header lpcs-panel">
+    <div class="lpcs-spellcasting-stat">
+      <span class="lpcs-stat-value">{{vm.spellcasting.saveDC}}</span>
+      <span class="lpcs-stat-label">Save DC</span>
+    </div>
+    <div class="lpcs-spellcasting-stat">
+      <span class="lpcs-stat-value">{{vm.spellcasting.attackBonus}}</span>
+      <span class="lpcs-stat-label">Spell Attack</span>
+    </div>
+    <div class="lpcs-spellcasting-stat">
+      <span class="lpcs-stat-value">{{vm.spellcasting.ability}}</span>
+      <span class="lpcs-stat-label">Ability</span>
+    </div>
+  </div>
+
+  {{!-- Spell Slots --}}
+  {{#if vm.spellSlots.length}}
+  <div class="lpcs-slots-grid" aria-label="Spell slots">
+    {{#each vm.spellSlots}}
+    <div class="lpcs-slot-level" aria-label="{{label}}: {{slots.value}} of {{slots.max}} remaining">
+      <span class="lpcs-slot-label">{{label}}</span>
+      <div class="lpcs-slot-pips">
+        {{#each pips}}
+        <button class="lpcs-slot-pip {{#if filled}}filled{{/if}}"
+                data-action="toggleSpellSlot"
+                data-prop="system.spells.spell{{../level}}.value"
+                data-n="{{n}}"
+                type="button"
+                aria-label="Slot {{n}} — {{#if filled}}used{{else}}available{{/if}}"
+                aria-pressed="{{filled}}">
+        </button>
+        {{/each}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{!-- Spell List by Level --}}
+  {{#if vm.spells.length}}
+  <div class="lpcs-spells-list">
+    {{#each vm.spells}}
+    <div class="lpcs-spell-level-group">
+      <h3 class="lpcs-section-title">{{label}}</h3>
+      {{#each spells}}
+      <div class="lpcs-spell-row {{#if concentration}}conc{{/if}} {{#if ritual}}ritual{{/if}}"
+           data-item-id="{{id}}"
+           aria-label="{{name}}{{#if concentration}} (concentration){{/if}}{{#if ritual}} (ritual){{/if}}">
+        <button class="lpcs-spell-use rollable" data-action="useItem" data-item-id="{{id}}"
+                type="button" aria-label="Cast {{name}}">
+          {{#if img}}<img src="{{img}}" alt="" class="lpcs-item-icon" aria-hidden="true">{{/if}}
+          <span class="lpcs-spell-name">{{name}}</span>
+        </button>
+        <div class="lpcs-spell-meta">
+          {{#if concentration}}<span class="lpcs-spell-tag lpcs-tag--conc" title="Concentration">C</span>{{/if}}
+          {{#if ritual}}<span class="lpcs-spell-tag lpcs-tag--ritual" title="Ritual">R</span>{{/if}}
+          <span class="lpcs-spell-components" aria-label="Components {{components}}">{{components}}</span>
+          <span class="lpcs-spell-time" aria-label="Casting time {{castingTime}}">{{castingTime}}</span>
+          <span class="lpcs-spell-range" aria-label="Range {{range}}">{{range}}</span>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+    {{/each}}
+  </div>
+  {{else}}
+  <p class="lpcs-empty-state">No spells.</p>
+  {{/if}}
+
+  {{else}}
+  {{!-- No spellcasting --}}
+  <div class="lpcs-empty-tab">
+    <i class="fas fa-hat-wizard lpcs-empty-icon" aria-hidden="true"></i>
+    <p>This character does not have a spellcasting ability.</p>
+  </div>
+  {{/if}}
+
+</section>
+

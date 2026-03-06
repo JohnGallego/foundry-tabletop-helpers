@@ -1,0 +1,486 @@
+/* ── Ability Scores Bar ──────────────────────────────────────── */
+/* Six cards (STR DEX CON INT WIS CHA) in a horizontal row.
+   Uses lpcs-abar-* classes to avoid collision with the abilities tab. */
+.lpcs-sheet .lpcs-ability-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex-shrink: 0;
+  background: linear-gradient(
+    to right,
+    rgba(200, 167, 93, 0.07) 0%,
+    rgba(15, 17, 21, 0.5)   50%,
+    rgba(139, 30, 45, 0.06) 100%
+  );
+  border-bottom: 1px solid var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-abar-card {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.lpcs-sheet .lpcs-abar-card + .lpcs-abar-card {
+  border-left: 1px solid var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-abar-card:hover {
+  background: var(--lpcs-bg-glass-hover);
+}
+
+.lpcs-sheet .lpcs-abar-abbr {
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-family: var(--lpcs-font-display);
+  color: var(--lpcs-accent-bronze);
+  line-height: 1.1;
+}
+
+.lpcs-sheet .lpcs-abar-mod {
+  font-size: 1.3rem;
+  color: var(--lpcs-text-primary);
+  line-height: 1;
+}
+
+.lpcs-sheet .lpcs-abar-score {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lpcs-text-secondary);
+  line-height: 1;
+}
+
+/* ── Save Shield Badge ──────────────────────────────────────── */
+/* Floats top-left of each ability card: shield icon with "SAVE" label
+   and modifier stacked on top. Responsive sizing via container queries. */
+.lpcs-sheet .lpcs-abar-save {
+  position: absolute;
+  top: -8px;
+  left: -2px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 40px;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+
+.lpcs-sheet .lpcs-abar-save .fas.fa-shield {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0.6;
+}
+
+.lpcs-sheet .lpcs-abar-save-label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.45rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 1px;
+}
+
+.lpcs-sheet .lpcs-abar-save-mod {
+  position: relative;
+  z-index: 1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--lpcs-font-mono, monospace);
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Proficient: radiant gold */
+.lpcs-sheet .lpcs-abar-save--prof {
+  color: var(--lpcs-accent-gold, #c8a75d);
+}
+
+.lpcs-sheet .lpcs-abar-save--prof .fas.fa-shield {
+  opacity: 0.85;
+}
+
+.lpcs-sheet .lpcs-abar-save--prof .lpcs-abar-save-label {
+  color: var(--lpcs-bg-surface, #0f1115);
+}
+
+.lpcs-sheet .lpcs-abar-save--prof .lpcs-abar-save-mod {
+  color: var(--lpcs-bg-surface, #0f1115);
+}
+
+/* ── Stats Bar ───────────────────────────────────────────────── */
+/* Only contains death saves now; collapses when they are not visible. */
+.lpcs-sheet .lpcs-stats-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--lpcs-space-md);
+  padding: var(--lpcs-space-sm) var(--lpcs-space-lg);
+  background: var(--lpcs-bg-panel);
+  border-bottom: 1px solid var(--lpcs-border);
+  flex-shrink: 0;
+}
+
+/* Collapse the stats bar strip when nothing is rendered inside it */
+.lpcs-sheet .lpcs-stats-bar:not(:has(.lpcs-death-saves)) {
+  display: none;
+}
+
+/* ── HP Widget ───────────────────────────────────────────────── */
+
+/* Outer wrapper: carries the drop-shadow around the clip-path inner shape */
+.lpcs-sheet .lpcs-hp-widget-wrap {
+  filter: drop-shadow(0 0 2.5px rgba(200, 167, 93, 0.55));
+  margin-top: var(--lpcs-space-xl);
+}
+
+/* Labels row above the bar — children sized to match their bar zone widths */
+.lpcs-sheet .lpcs-hp-labels {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+/* Left group: "HP" text + heart icon — centered over the 80% HP zone */
+.lpcs-sheet .lpcs-hp-label-main {
+  flex: 0 0 80%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.lpcs-sheet .lpcs-hp-label-text {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lpcs-text-primary);
+}
+
+/* Heart icon with gradient red — sits next to "HP" text */
+.lpcs-sheet .lpcs-hp-heart {
+  font-size: 0.65rem;
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* "Temp" label above the temp zone — centered over the 20% temp zone */
+.lpcs-sheet .lpcs-hp-label-temp {
+  flex: 0 0 20%;
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lpcs-text-primary);
+}
+
+/* Bar widget — the entire bar is the HP widget */
+.lpcs-sheet .lpcs-hp-bar-widget {
+  position: relative;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.65);
+  clip-path: polygon(
+    16px 0%,
+    calc(100% - 16px) 0%,
+    100% 50%,
+    calc(100% - 16px) 100%,
+    16px 100%,
+    0% 50%
+  );
+}
+
+
+
+/* Crimson fill — grows from the left based on current HP % */
+.lpcs-sheet .lpcs-hp-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(to right, #3d0e0e, #7a1515, #a82020);
+  /* width animates via element.animate() in _onRender (Web Animations API) */
+  z-index: 0;
+}
+
+/* Current / max HP values — centered inside the main HP zone (left 80%) */
+.lpcs-sheet .lpcs-hp-bar-values {
+  position: absolute;
+  left: 0; right: 20%;
+  top: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  z-index: 1;
+}
+
+/* Temp HP zone — rightmost 20% of the bar, visually darker */
+.lpcs-sheet .lpcs-hp-temp-zone {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 20%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;                               /* clips ::before sweep to zone bounds */
+  background: rgba(0, 0, 0, 0.75);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-left-color 0.3s ease;
+  z-index: 1;
+}
+
+/* Blue sweep fill via pseudo-element — animates in when .has-temp is added, out when removed */
+.lpcs-sheet .lpcs-hp-temp-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to left, rgba(74, 122, 181, 0.55), rgba(74, 122, 181, 0.25));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.lpcs-sheet .lpcs-hp-temp-zone.has-temp::before {
+  transform: scaleX(1);
+}
+
+/* Border accent when temp HP is active */
+.lpcs-sheet .lpcs-hp-temp-zone.has-temp {
+  border-left-color: rgba(74, 122, 181, 0.5);
+}
+
+/* HP fill flash + width animations are driven by element.animate() in _onRender
+   (Web Animations API) — no CSS keyframes or classes needed. */
+
+.lpcs-sheet .lpcs-hp-value {
+  font-family: var(--lpcs-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.lpcs-sheet .lpcs-hp-sep {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.lpcs-sheet .lpcs-hp-max-val {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.lpcs-sheet .lpcs-hp-tmp-val {
+  font-family: var(--lpcs-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* ── Vitals Container (HP ↔ Death Saves cross-fade) ─────────── */
+.lpcs-sheet .lpcs-vitals-container {
+  position: relative;
+}
+
+.lpcs-sheet .lpcs-vitals-state {
+  transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+}
+
+.lpcs-sheet .lpcs-vitals-state.active {
+  opacity: 1;
+  transform: scale(1);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.lpcs-sheet .lpcs-vitals-state.hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(0.95);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@keyframes lpcs-healing-surge {
+  0%   { box-shadow: 0 0 0 rgba(46, 204, 113, 0); background-color: transparent; }
+  50%  { box-shadow: 0 0 20px rgba(46, 204, 113, 0.8); background-color: rgba(46, 204, 113, 0.12); }
+  100% { box-shadow: 0 0 0 rgba(46, 204, 113, 0); background-color: transparent; }
+}
+
+.lpcs-sheet .lpcs-vitals-state.healed-animation {
+  animation: lpcs-healing-surge 0.8s ease-out;
+  border-radius: 8px;
+}
+
+/* ── Progress Bars ───────────────────────────────────────────── */
+.lpcs-sheet .lpcs-bar {
+  position: relative;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.lpcs-sheet .lpcs-bar-fill {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.lpcs-sheet .lpcs-bar-fill--xp { background: linear-gradient(to right, var(--lpcs-accent-bronze), var(--lpcs-accent-gold)); }
+
+/* ── XP Widget ───────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-xp-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lpcs-sheet .lpcs-xp-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.lpcs-sheet .lpcs-xp-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lpcs-text-secondary);
+}
+
+.lpcs-sheet .lpcs-xp-value {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--lpcs-accent-gold);
+  letter-spacing: 0.04em;
+}
+
+.lpcs-sheet .lpcs-bar--xp { height: 7px; }
+
+/* ── Quick Stat Cards ────────────────────────────────────────── */
+.lpcs-sheet .lpcs-qstat-row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: var(--lpcs-space-xs);
+  margin-top: 5px;
+}
+
+.lpcs-sheet .lpcs-qstat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 3px;
+  background: rgba(26, 29, 36, 0.7);
+  border: 1px solid var(--lpcs-border);
+  border-top: 2px solid var(--lpcs-border-accent);
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.lpcs-sheet .lpcs-qstat-card--btn {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  font: inherit;
+  color: inherit;
+  align-self: stretch;
+  height: auto;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lpcs-sheet .lpcs-qstat-card--btn:hover {
+  background: rgba(200, 167, 93, 0.12);
+  border-top-color: var(--lpcs-accent-bronze);
+}
+
+.lpcs-sheet .lpcs-qstat-value {
+  font-family: var(--lpcs-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--lpcs-text-primary);
+  line-height: 1;
+}
+
+.lpcs-sheet .lpcs-qstat-sub {
+  font-size: 0.65rem;
+  color: var(--lpcs-text-secondary);
+  line-height: 1;
+}
+
+.lpcs-sheet .lpcs-qstat-bottom {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.lpcs-sheet .lpcs-qstat-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--lpcs-text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* ── AC Shield Card ─────────────────────────────────────────── */
+/* Replaces the plain AC card with a shield silhouette for emphasis. */
+.lpcs-sheet .lpcs-qstat-card--ac {
+  position: relative;
+  background: none;
+  border: none;
+  border-top: none;
+  overflow: visible;
+}
+
+.lpcs-sheet .lpcs-qstat-card--ac .lpcs-ac-shield-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2rem;
+  color: var(--lpcs-accent-bronze);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.lpcs-sheet .lpcs-qstat-card--ac .lpcs-qstat-value {
+  position: relative;
+  z-index: 1;
+  font-size: 1.15rem;
+  color: var(--lpcs-text-primary);
+}
+
+.lpcs-sheet .lpcs-qstat-card--ac .lpcs-qstat-label {
+  position: relative;
+  z-index: 1;
+}

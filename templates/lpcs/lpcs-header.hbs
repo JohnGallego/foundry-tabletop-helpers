@@ -1,0 +1,16 @@
+{{!-- lpcs-header.hbs --}}
+{{!-- Character identity header: identity top-left, large portrait right --}}
+<header class="lpcs-header">
+
+  {{!-- Left: identity → HP widget → quick stats → XP, stacked top-to-bottom --}}
+  <div class="lpcs-header-content">
+    {{> lpcs-identity name=vm.name subtitle=vm.subtitle background=vm.background level=vm.level}}
+    {{> lpcs-hp hp=vm.hp deathSaves=vm.deathSaves}}
+    {{> lpcs-quick-stats}}
+    {{> lpcs-xp}}
+  </div>
+
+  {{> lpcs-portrait img=vm.img name=vm.name}}
+  {{> lpcs-rest-modal rest=vm}}
+
+</header>

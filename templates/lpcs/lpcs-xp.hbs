@@ -1,0 +1,23 @@
+{{!-- lpcs-xp.hbs --}}
+{{!-- Experience widget: label row + golden progress bar --}}
+{{!-- Context: inherits full template context; reads vm.xp (LPCSExperience | null) --}}
+{{!-- Hidden entirely when vm.xp is null (milestone / no-XP leveling mode) --}}
+{{#if vm.xp}}
+<div class="lpcs-xp-widget" role="meter"
+     aria-valuemin="0"
+     aria-valuemax="{{vm.xp.max}}"
+     aria-valuenow="{{vm.xp.value}}"
+     aria-label="Experience: {{vm.xp.value}} of {{vm.xp.max}}">
+
+  <div class="lpcs-bar lpcs-bar--xp">
+    <div class="lpcs-bar-fill lpcs-bar-fill--xp" style="width: {{vm.xp.pct}}%;"></div>
+  </div>
+
+  <div class="lpcs-xp-header-row">
+    <span class="lpcs-xp-label">Experience</span>
+    <span class="lpcs-xp-value">{{vm.xp.value}} / {{vm.xp.max}}</span>
+  </div>
+
+</div>
+{{/if}}
+

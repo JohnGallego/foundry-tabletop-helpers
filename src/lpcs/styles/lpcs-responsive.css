@@ -1,0 +1,61 @@
+/* ── Responsive (container-based) ────────────────────────────── */
+/* Queries measure the sheet's OWN width, so a small floating Foundry
+   window correctly triggers the narrow layouts even on a large monitor.
+   IMPORTANT: selectors inside @container must match the specificity of the
+   base rules they override. All base rules use `.lpcs-sheet .xxx` (0,2,0),
+   so overrides here must also use `.lpcs-sheet .xxx` to win the cascade. */
+
+/* Compact nav: hide labels, shrink icons (≤540px) */
+@container lpcs-sheet (max-width: 540px) {
+  .lpcs-sheet .lpcs-tab-label { display: none; }
+  .lpcs-sheet .lpcs-tab-icon  { font-size: 0.85rem; }
+  .lpcs-sheet .lpcs-tab-btn   { padding: var(--lpcs-space-xs) var(--lpcs-space-sm); }
+}
+
+/* Expanded nav gap: labels visible, give tabs more breathing room (≥541px) */
+@container lpcs-sheet (min-width: 541px) {
+  .lpcs-sheet .lpcs-tab-nav { gap: var(--lpcs-space-md); }
+}
+
+/* Mobile Portrait (320px–480px) */
+@container lpcs-sheet (max-width: 480px) {
+  .lpcs-sheet .lpcs-header-content { max-width: 450px; }
+
+  /* Shrink save badge on smallest screens */
+  .lpcs-sheet .lpcs-abar-save         { width: 30px; height: 34px; }
+  .lpcs-sheet .lpcs-abar-save .fas.fa-shield { font-size: 1.7rem; }
+  .lpcs-sheet .lpcs-abar-save-label   { font-size: 0.4rem; }
+  .lpcs-sheet .lpcs-abar-save-mod     { font-size: 0.65rem; }
+
+  /* Ability bar: wrap into two rows of 3 */
+  .lpcs-sheet .lpcs-ability-bar { flex-wrap: wrap; }
+  .lpcs-sheet .lpcs-abar-card   { flex: 0 0 33.333%; box-sizing: border-box; }
+
+  /* Reset the adjacent-sibling left border (it incorrectly fires on col-1 of row 2) */
+  .lpcs-sheet .lpcs-abar-card + .lpcs-abar-card { border-left: none; }
+  /* Restore left border only for cards that are NOT the first in a row */
+  .lpcs-sheet .lpcs-abar-card:not(:nth-child(3n+1)) { border-left: 1px solid var(--lpcs-border); }
+  /* Top border for the second row */
+  .lpcs-sheet .lpcs-abar-card:nth-child(n+4)        { border-top: 1px solid var(--lpcs-border); }
+
+  .lpcs-sheet .lpcs-stats-bar    { flex-wrap: wrap; }
+}
+
+/* Mobile Landscape / Small Tablet (481px–767px) */
+@container lpcs-sheet (min-width: 481px) and (max-width: 767px) {
+  .lpcs-sheet .lpcs-header-content   { max-width: 500px; }
+  .lpcs-sheet .lpcs-standard-actions { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Tablet Portrait+ (≥768px) — max breakpoint; layout capped at 1024px via max-width */
+@container lpcs-sheet (min-width: 768px) {
+  .lpcs-sheet .lpcs-header-content   { max-width: 500px; }
+  .lpcs-sheet .lpcs-standard-actions { grid-template-columns: repeat(5, 1fr); }
+
+  /* Larger save badge on wider screens */
+  .lpcs-sheet .lpcs-abar-save         { width: 42px; height: 46px; }
+  .lpcs-sheet .lpcs-abar-save .fas.fa-shield { font-size: 2.4rem; }
+  .lpcs-sheet .lpcs-abar-save-label   { font-size: 0.5rem; }
+  .lpcs-sheet .lpcs-abar-save-mod     { font-size: 0.9rem; }
+}
+

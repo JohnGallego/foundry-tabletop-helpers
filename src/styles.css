@@ -63,3 +63,66 @@
   justify-content: center;
   cursor: pointer;
 }
+
+/* ── Kiosk Mode: Re-fullscreen Button ────────────────────────────────────── */
+/* Floating pill at top-center, visible only when NOT in fullscreen.
+   Tapping it re-enters fullscreen to hide browser chrome. */
+.fth-kiosk-fullscreen-btn {
+  position: fixed;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 32px;
+  border: 1px solid rgba(200, 167, 93, 0.4);
+  border-radius: 16px;
+  background: rgba(15, 17, 21, 0.85);
+  color: #c8a75d;
+  font-size: 1rem;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.15s, border-color 0.15s, opacity 0.2s;
+  opacity: 0.7;
+}
+
+.fth-kiosk-fullscreen-btn:hover {
+  opacity: 1;
+  background: rgba(200, 167, 93, 0.15);
+  border-color: #c8a75d;
+}
+
+.fth-kiosk-fullscreen-btn:active {
+  transform: translateX(-50%) scale(0.92);
+}
+
+/* ── Kiosk Mode: Full-Viewport Container ──────────────────────────────────── */
+/* The kiosk sheet renders into this container (outside #ui-windows).
+   positioned: false means no inline styles from Foundry — CSS wins naturally. */
+#fth-kiosk-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  overflow: hidden;
+}
+
+#fth-kiosk-container .lpcs-sheet {
+  max-width: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* Force-hide Foundry chrome that may resist JS-based hiding */
+.fth-kiosk #sidebar,
+.fth-kiosk #navigation,
+.fth-kiosk #controls,
+.fth-kiosk #players,
+.fth-kiosk #hotbar {
+  display: none !important;
+}

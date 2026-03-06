@@ -1,0 +1,17 @@
+{{!-- lpcs-tab-journal.hbs --}}
+{{!-- Journal tab: session notes, character journal --}}
+<section class="lpcs-tab lpcs-tab--journal {{#if isActiveTab}}active{{/if}}"
+         id="lpcs-tab-panel-journal"
+         role="tabpanel"
+         aria-labelledby="lpcs-tab-btn-journal"
+         data-tab="journal"
+         data-group="primary"
+         {{#unless isActiveTab}}hidden{{/unless}}>
+
+  <div class="lpcs-empty-tab">
+    <span class="lpcs-empty-icon" aria-hidden="true">📖</span>
+    <span>Journal coming soon</span>
+  </div>
+
+</section>
+

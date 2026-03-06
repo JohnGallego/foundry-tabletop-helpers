@@ -1,0 +1,466 @@
+/* ── Weapons Table ───────────────────────────────────────────── */
+.lpcs-sheet .lpcs-weapons-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.lpcs-sheet .lpcs-weapons-table th {
+  text-align: left;
+  font-size: 0.65rem;
+  color: var(--lpcs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px var(--lpcs-space-sm);
+  border-bottom: 1px solid var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-weapon-row {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+
+.lpcs-sheet .lpcs-weapon-row:hover { background: var(--lpcs-bg-glass); }
+
+.lpcs-sheet .lpcs-weapon-row td { padding: var(--lpcs-space-xs) var(--lpcs-space-sm); vertical-align: middle; }
+
+.lpcs-sheet .lpcs-weapon-use {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+  background: none;
+  border: none;
+  color: var(--lpcs-text-primary);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  min-height: var(--lpcs-touch-min);
+  font-family: var(--lpcs-font-body);
+}
+
+.lpcs-sheet .lpcs-weapon-name { font-weight: 600; }
+.lpcs-sheet .lpcs-atk-bonus { font-family: var(--lpcs-font-mono); color: var(--lpcs-accent-bronze); font-weight: 700; }
+.lpcs-sheet .lpcs-damage { font-family: var(--lpcs-font-mono); font-size: 0.8rem; }
+.lpcs-sheet .lpcs-col-notes { font-size: 0.7rem; color: var(--lpcs-text-secondary); max-width: 15%; }
+.lpcs-sheet .lpcs-mastery-badge {
+  font-size: 0.6rem;
+  padding: 1px 5px;
+  background: rgba(200,167,93,0.15);
+  border: 1px solid var(--lpcs-border-accent);
+  border-radius: 4px;
+  color: var(--lpcs-accent-bronze);
+  text-transform: capitalize;
+}
+
+/* ── Drawers ─────────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-drawer {
+  border: 1px solid var(--lpcs-border);
+  border-radius: var(--lpcs-radius-md);
+  overflow: hidden;
+  background: var(--lpcs-bg-glass);
+}
+
+.lpcs-sheet .lpcs-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-sm);
+  padding: 0 var(--lpcs-space-md);
+  min-height: var(--lpcs-touch-min);
+  background: none;
+  border: none;
+  color: var(--lpcs-text-primary);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: var(--lpcs-font-body);
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.lpcs-sheet .lpcs-drawer-header:hover { background: var(--lpcs-bg-glass-hover); }
+
+.lpcs-sheet .lpcs-drawer-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--lpcs-radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-drawer-title { flex: 1; font-weight: 600; }
+.lpcs-sheet .lpcs-drawer-uses { font-size: 0.75rem; color: var(--lpcs-text-secondary); font-family: var(--lpcs-font-mono); }
+.lpcs-sheet .lpcs-drawer-recharge { font-size: 0.75rem; color: var(--lpcs-accent-bronze); }
+.lpcs-sheet .lpcs-drawer-chevron {
+  color: var(--lpcs-text-muted);
+  font-size: 0.75rem;
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-drawer-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease-out, padding 0.25s ease-out;
+  padding: 0 var(--lpcs-space-md);
+}
+
+.lpcs-sheet .lpcs-drawer-body.expanded {
+  max-height: 500px;
+  padding: var(--lpcs-space-sm) var(--lpcs-space-md) var(--lpcs-space-md);
+}
+
+.lpcs-sheet .lpcs-drawer:has(.lpcs-drawer-body.expanded) .lpcs-drawer-chevron {
+  transform: rotate(180deg);
+}
+
+.lpcs-sheet .lpcs-drawer-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--lpcs-text-secondary);
+  line-height: 1.5;
+}
+
+/* ── Combat Groups ──────────────────────────────────────────── */
+.lpcs-sheet .lpcs-combat-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-combat-group + .lpcs-combat-group {
+  margin-top: var(--lpcs-space-sm);
+  padding-top: var(--lpcs-space-sm);
+  border-top: 1px solid var(--lpcs-border);
+}
+
+/* ── Standard Action Links ──────────────────────────────────── */
+.lpcs-sheet .lpcs-standard-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--lpcs-space-sm);
+  padding: 0;
+}
+
+.lpcs-sheet .lpcs-standard-action-link {
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
+  border: none;
+  padding: var(--lpcs-space-xs) var(--lpcs-space-sm);
+  min-height: var(--lpcs-touch-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--lpcs-font-body);
+  font-size: 0.8rem;
+  color: var(--lpcs-accent-bronze);
+  text-decoration: underline;
+  text-decoration-color: rgba(200, 167, 93, 0.4);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  border-radius: var(--lpcs-radius-sm);
+  transition: background 0.15s, color 0.15s;
+}
+
+.lpcs-sheet .lpcs-standard-action-link:hover {
+  background: rgba(200, 167, 93, 0.1);
+  color: var(--lpcs-accent-gold);
+  text-decoration-color: var(--lpcs-accent-gold);
+}
+
+/* ── Spell Drawer Badges ────────────────────────────────────── */
+.lpcs-sheet .lpcs-drawer-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
+  background: rgba(60, 120, 200, 0.2);
+  border: 1px solid rgba(60, 120, 200, 0.4);
+  border-radius: 10px;
+  color: #6ea8e8;
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-drawer-conc {
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  background: rgba(220, 160, 50, 0.2);
+  border: 1px solid rgba(220, 160, 50, 0.4);
+  border-radius: 10px;
+  color: #dca032;
+  flex-shrink: 0;
+}
+
+/* ── Spell Table ────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-spell-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lpcs-sheet .lpcs-spells-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  display: table;
+}
+
+/* Restore table display in case Foundry CSS overrides it */
+.lpcs-sheet .lpcs-spells-table thead { display: table-header-group; }
+.lpcs-sheet .lpcs-spells-table tbody { display: table-row-group; }
+.lpcs-sheet .lpcs-spells-table tr    { display: table-row; }
+.lpcs-sheet .lpcs-spells-table th,
+.lpcs-sheet .lpcs-spells-table td    { display: table-cell; }
+
+.lpcs-sheet .lpcs-spells-table th {
+  text-align: left;
+  font-size: 0.65rem;
+  color: var(--lpcs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px var(--lpcs-space-sm);
+  border-bottom: 1px solid var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-spell-row {
+  position: relative;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+
+.lpcs-sheet .lpcs-spell-row:hover { background: var(--lpcs-bg-glass); }
+
+.lpcs-sheet .lpcs-spell-row td { padding: var(--lpcs-space-sm) var(--lpcs-space-sm); vertical-align: middle; }
+
+/* Prevent compact columns from collapsing */
+.lpcs-sheet .lpcs-spells-table .lpcs-col-atk,
+.lpcs-sheet .lpcs-spells-table .lpcs-col-time,
+.lpcs-sheet .lpcs-spells-table .lpcs-col-range { white-space: nowrap; }
+
+/* Spell name block: name + source/level sub-text stacked vertically */
+.lpcs-sheet .lpcs-spell-name-block {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.lpcs-sheet .lpcs-spell-sub {
+  font-size: 0.65rem;
+  color: var(--lpcs-text-muted);
+  font-weight: 400;
+}
+
+/* Effect label for non-damage spells */
+.lpcs-sheet .lpcs-effect-label {
+  font-family: var(--lpcs-font-body);
+  font-style: italic;
+  color: var(--lpcs-text-secondary);
+}
+
+/* Left-edge highlight on concentration rows (matches spells tab) */
+.lpcs-sheet .lpcs-spell-row--conc {
+  box-shadow: inset 3px 0 0 #4a7ab5;
+}
+
+/* Concentration "C" tag in notes (matches spells tab styling) */
+.lpcs-sheet .lpcs-spells-table .lpcs-spell-tag {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.lpcs-sheet .lpcs-spells-table .lpcs-tag--conc {
+  background: rgba(74,122,181,0.25);
+  color: #7ab0e0;
+}
+
+/* Healing color */
+.lpcs-sheet .lpcs-dmg--healing { color: #e74c6f; }
+
+/* AoE icon in notes column */
+.lpcs-sheet .lpcs-aoe-icon {
+  font-size: 0.65rem;
+  color: var(--lpcs-text-muted);
+  margin-left: 1px;
+}
+
+/* ── Spell Detail Panel ────────────────────────────────────── */
+.lpcs-sheet .lpcs-spell-detail-row { display: table-row; }
+.lpcs-sheet .lpcs-spell-detail-row[hidden] { display: none; }
+.lpcs-sheet .lpcs-spell-detail-row td {
+  display: table-cell;
+  padding: 0 var(--lpcs-space-sm) var(--lpcs-space-md);
+  background: var(--lpcs-bg-glass);
+  border-bottom: 1px solid var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-spell-detail-card {
+  padding: var(--lpcs-space-sm) var(--lpcs-space-md);
+}
+
+.lpcs-sheet .lpcs-spell-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lpcs-space-sm) var(--lpcs-space-lg);
+  font-size: 0.75rem;
+  color: var(--lpcs-text-secondary);
+  margin-bottom: var(--lpcs-space-sm);
+  padding-bottom: var(--lpcs-space-xs);
+  border-bottom: 1px solid var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-spell-detail-meta strong {
+  color: var(--lpcs-text-primary);
+  font-weight: 600;
+}
+
+.lpcs-sheet .lpcs-spell-detail-body {
+  font-size: 0.8rem;
+  color: var(--lpcs-text-secondary);
+  line-height: 1.5;
+}
+
+.lpcs-sheet .lpcs-spell-detail-body p {
+  margin: 0 0 var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-spell-detail-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Clickable spell rows */
+.lpcs-sheet .lpcs-spell-row { cursor: pointer; }
+
+/* ── Item icons ──────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-item-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--lpcs-radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-weapons-table .lpcs-item-icon {
+  width: 32px;
+  height: 32px;
+}
+
+/* FA icon fallback for items without an image (unarmed, improvised) */
+.lpcs-sheet .lpcs-item-icon-fa {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: var(--lpcs-text-muted);
+  flex-shrink: 0;
+}
+
+/* Left padding on spell table name cells to match weapon icon spacing */
+.lpcs-sheet .lpcs-spells-table .lpcs-col-name { padding-left: var(--lpcs-space-sm); }
+
+/* ── Weapon Sub-groups ─────────────────────────────────────────── */
+.lpcs-sheet .lpcs-weapon-subgroup {
+  position: relative;
+}
+
+.lpcs-sheet .lpcs-weapon-subgroup-badge {
+  position: absolute;
+  top: -1px;
+  right: 8px;
+  z-index: 1;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 10px;
+  background: rgba(200, 167, 93, 0.12);
+  border: 1px solid rgba(200, 167, 93, 0.3);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  color: var(--lpcs-accent-bronze);
+}
+
+/* Items subgroup: badge flows naturally above the first drawer */
+.lpcs-sheet .lpcs-action-list.lpcs-weapon-subgroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.lpcs-sheet .lpcs-action-list.lpcs-weapon-subgroup > .lpcs-weapon-subgroup-badge {
+  position: static;
+  align-self: flex-end;
+  margin-right: 8px;
+  margin-bottom: -1px;
+}
+
+/* ── Damage Type Icons ─────────────────────────────────────────── */
+.lpcs-sheet .lpcs-dmg-type-icon {
+  font-size: 0.7rem;
+  cursor: pointer;
+  margin-left: 2px;
+}
+
+.lpcs-sheet .lpcs-dmg--bludgeoning { color: #a0a0a0; }
+.lpcs-sheet .lpcs-dmg--piercing    { color: #b0b0b0; }
+.lpcs-sheet .lpcs-dmg--slashing    { color: #c0c0c0; }
+.lpcs-sheet .lpcs-dmg--fire        { color: #e74c3c; }
+.lpcs-sheet .lpcs-dmg--cold        { color: #3498db; }
+.lpcs-sheet .lpcs-dmg--lightning   { color: #f1c40f; }
+.lpcs-sheet .lpcs-dmg--thunder     { color: #9b59b6; }
+.lpcs-sheet .lpcs-dmg--acid        { color: #2ecc71; }
+.lpcs-sheet .lpcs-dmg--poison      { color: #27ae60; }
+.lpcs-sheet .lpcs-dmg--necrotic    { color: #7f8c8d; }
+.lpcs-sheet .lpcs-dmg--radiant     { color: #f39c12; }
+.lpcs-sheet .lpcs-dmg--psychic     { color: #e91e9c; }
+.lpcs-sheet .lpcs-dmg--force       { color: #8e44ad; }
+.lpcs-sheet .lpcs-dmg--generic     { color: var(--lpcs-text-muted); }
+
+/* ── Effect Annotation Badges ─────────────────────────────────── */
+.lpcs-sheet .lpcs-effect-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  background: rgba(120, 180, 240, 0.12);
+  border: 1px solid rgba(120, 180, 240, 0.3);
+  border-radius: 10px;
+  color: #7ab0e0;
+  white-space: nowrap;
+  vertical-align: middle;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lpcs-sheet .lpcs-effect-badge:hover {
+  background: rgba(120, 180, 240, 0.22);
+  border-color: rgba(120, 180, 240, 0.5);
+}
+
+.lpcs-sheet .lpcs-effect-badge-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-effect-badge-label {
+  line-height: 1;
+}
+
+/* ── Standard Action Icons ─────────────────────────────────────── */
+.lpcs-sheet .lpcs-std-action-icon {
+  font-size: 0.7rem;
+  margin-right: 4px;
+  opacity: 0.7;
+}
+

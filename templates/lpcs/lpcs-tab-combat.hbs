@@ -1,0 +1,53 @@
+{{!-- lpcs-tab-combat.hbs --}}
+{{!-- Combat tab: action-economy groups with weapons, spells, features, standard actions --}}
+<section class="lpcs-tab lpcs-tab--combat {{#if isActiveTab}}active{{/if}}"
+         id="lpcs-tab-panel-combat"
+         role="tabpanel"
+         aria-labelledby="lpcs-tab-btn-combat"
+         data-tab="combat"
+         data-group="primary"
+         {{#unless isActiveTab}}hidden{{/unless}}>
+
+  {{#each vm.combatGroups}}
+  {{#unless isEmpty}}
+  <div class="lpcs-combat-group" data-combat-group="{{key}}">
+    <h3 class="lpcs-section-title">{{label}}</h3>
+
+    {{!-- Spells first for spellcasting classes --}}
+    {{#if spellsFirst}}
+      {{> lpcs-combat-spells-block spells=spells}}
+      {{> lpcs-combat-weapons-block weaponGroups=weaponGroups}}
+    {{else}}
+      {{> lpcs-combat-weapons-block weaponGroups=weaponGroups}}
+      {{> lpcs-combat-spells-block spells=spells}}
+    {{/if}}
+
+    {{!-- Items/Features --}}
+    {{#if items.length}}
+    <div class="lpcs-action-list lpcs-weapon-subgroup">
+      <span class="lpcs-weapon-subgroup-badge">Items</span>
+      {{#each items}}
+      {{> lpcs-drawer drawerId=(concat "citem-" id) title=name img=img uses=uses
+                      recharge=recharge description=description}}
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- Standard Actions --}}
+    {{#if standardActions.length}}
+    <div class="lpcs-standard-actions">
+      {{#each standardActions}}
+      <button class="lpcs-standard-action-link" type="button"
+              data-action="showCombatActionInfo" data-action-key="{{key}}"
+              aria-label="{{name}} info"><i class="{{icon}} lpcs-std-action-icon"></i>{{name}}</button>
+      {{/each}}
+    </div>
+    {{/if}}
+
+  </div>
+  {{/unless}}
+  {{/each}}
+
+  {{> lpcs-combat-info-modal}}
+
+</section>

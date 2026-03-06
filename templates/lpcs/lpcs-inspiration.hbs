@@ -1,0 +1,12 @@
+{{!-- lpcs-inspiration.hbs --}}
+{{!-- Inspiration toggle — circular system-bar icon button --}}
+{{!-- Context: inherits full template context; reads vm.inspiration directly --}}
+<button
+  class="lpcs-sysbar-btn lpcs-sysbar-btn--inspiration{{#if vm.inspiration}} is-active{{/if}}"
+  data-action="toggleInspiration"
+  type="button"
+  title="{{#if vm.inspiration}}Inspired! Tap to spend.{{else}}No inspiration. Tap to gain.{{/if}}"
+  aria-label="{{#if vm.inspiration}}Inspiration active{{else}}No inspiration{{/if}}"
+  aria-pressed="{{vm.inspiration}}">
+  <i class="fas fa-star" aria-hidden="true"></i>
+</button>

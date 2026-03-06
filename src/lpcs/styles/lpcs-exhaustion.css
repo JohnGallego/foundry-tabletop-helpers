@@ -1,0 +1,157 @@
+/* ── Exhaustion quick-stat card ────────────────────────────────── */
+
+.lpcs-sheet .lpcs-qstat-exh {
+  transition: background 0.3s ease, border-top-color 0.3s ease,
+              box-shadow 0.3s ease, opacity 0.3s ease;
+}
+
+/* Level 0: muted / inactive */
+.lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="0"] {
+  opacity: 0.45;
+}
+
+/* Level 1–6: orange → deep crimson */
+.lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="1"] {
+  opacity: 1;
+  background: rgba(255, 140, 0, 0.15);
+  border-top-color: #ff8c00;
+  box-shadow: inset 0 0 6px rgba(255, 140, 0, 0.3);
+}
+.lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="2"] {
+  opacity: 1;
+  background: rgba(255, 100, 0, 0.2);
+  border-top-color: #ff6400;
+  box-shadow: inset 0 0 8px rgba(255, 100, 0, 0.4);
+}
+.lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="3"] {
+  opacity: 1;
+  background: rgba(220, 40, 40, 0.28);
+  border-top-color: #dc2828;
+  box-shadow: inset 0 0 10px rgba(220, 40, 40, 0.5);
+}
+.lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="4"] {
+  opacity: 1;
+  background: rgba(180, 20, 20, 0.38);
+  border-top-color: #b41414;
+  box-shadow: inset 0 0 14px rgba(180, 20, 20, 0.65);
+}
+.lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="5"] {
+  opacity: 1;
+  background: rgba(140, 10, 10, 0.52);
+  border-top-color: #8c0a0a;
+  box-shadow: inset 0 0 18px rgba(140, 10, 10, 0.8);
+}
+.lpcs-sheet .lpcs-qstat-exh[data-exhaustion-level="6"] {
+  opacity: 1;
+  background: rgba(100, 0, 0, 0.75);
+  border-top-color: #640000;
+  box-shadow: inset 0 0 22px rgba(100, 0, 0, 1);
+  color: #fff;
+}
+
+/* ── Exhaustion slide-down dialog ─────────────────────────────── */
+
+/* Anchored below the .lpcs-qstat-row (which has position: relative).
+   Slides down via max-height + opacity + transform when .open is added. */
+.lpcs-sheet .lpcs-exh-dialog {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0; right: 0;
+  z-index: 100;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: max-height 0.26s ease, opacity 0.2s ease, transform 0.26s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: rgba(12, 14, 18, 0.97);
+  border: 1px solid var(--lpcs-border-accent);
+  border-radius: 0 0 8px 8px;
+}
+
+.lpcs-sheet .lpcs-exh-dialog.open {
+  max-height: 200px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  padding: 12px;
+}
+
+.lpcs-sheet .lpcs-exh-dialog-title {
+  font-family: var(--lpcs-font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lpcs-text-secondary);
+}
+
+.lpcs-sheet .lpcs-exh-stepper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lpcs-sheet .lpcs-exh-step-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--lpcs-border-accent);
+  background: rgba(200, 167, 93, 0.08);
+  color: var(--lpcs-text-primary);
+  font-size: 1.3rem; line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.lpcs-sheet .lpcs-exh-step-btn:hover:not(:disabled) {
+  background: rgba(200, 167, 93, 0.18);
+  border-color: var(--lpcs-accent-gold);
+}
+.lpcs-sheet .lpcs-exh-step-btn:active:not(:disabled) { transform: scale(0.92); }
+.lpcs-sheet .lpcs-exh-step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.lpcs-sheet .lpcs-exh-level-display {
+  font-family: var(--lpcs-font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--lpcs-text-primary);
+  min-width: 2ch;
+  text-align: center;
+  line-height: 1;
+}
+
+.lpcs-sheet .lpcs-exh-hint {
+  font-size: 0.6rem;
+  color: var(--lpcs-text-secondary);
+  letter-spacing: 0.06em;
+}
+
+.lpcs-sheet .lpcs-exh-apply-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  padding: 6px 20px;
+  border-radius: 6px;
+  border: 1px solid rgba(200, 167, 93, 0.3);
+  background: rgba(200, 167, 93, 0.1);
+  color: var(--lpcs-text-primary);
+  font-family: var(--lpcs-font-display);
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.lpcs-sheet .lpcs-exh-apply-btn:hover {
+  background: rgba(200, 167, 93, 0.2);
+  border-color: rgba(200, 167, 93, 0.55);
+}
+.lpcs-sheet .lpcs-exh-apply-btn:active { transform: scale(0.96); }

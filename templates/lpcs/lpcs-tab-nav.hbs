@@ -1,0 +1,20 @@
+{{!-- lpcs-tab-nav.hbs --}}
+{{!-- Horizontal tab navigation strip. --}}
+{{!-- Context: tabs[] = [{ tab, label, icon, active }] --}}
+<nav class="lpcs-tab-nav" role="tablist" aria-label="Sheet sections">
+  {{#each tabs}}
+  <button class="lpcs-tab-btn {{#if active}}active{{/if}}"
+          role="tab"
+          aria-selected="{{active}}"
+          aria-controls="lpcs-tab-panel-{{tab}}"
+          data-tab="{{tab}}"
+          data-group="primary"
+          type="button">
+    {{#if icon}}
+    <i class="{{icon}} lpcs-tab-icon" aria-hidden="true"></i>
+    {{/if}}
+    <span class="lpcs-tab-label">{{label}}</span>
+  </button>
+  {{/each}}
+</nav>
+

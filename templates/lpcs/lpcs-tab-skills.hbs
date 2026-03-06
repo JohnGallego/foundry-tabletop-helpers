@@ -1,0 +1,74 @@
+{{!-- lpcs-tab-skills.hbs --}}
+{{!-- Skills tab: proficiency table with grouping and sort cycling --}}
+<section class="lpcs-tab lpcs-tab--skills {{#if isActiveTab}}active{{/if}}"
+         id="lpcs-tab-panel-skills"
+         role="tabpanel"
+         aria-labelledby="lpcs-tab-btn-skills"
+         data-tab="skills"
+         data-group="primary"
+         {{#unless isActiveTab}}hidden{{/unless}}>
+
+  {{!-- Table Header --}}
+  <div class="lpcs-skills-table-header">
+    <span class="lpcs-skills-col-prof">PROF</span>
+    <span class="lpcs-skills-col-mod">MOD</span>
+    <span class="lpcs-skills-col-name">SKILL</span>
+    <span class="lpcs-skills-col-bonus">BONUS</span>
+    <button class="lpcs-skills-sort-btn"
+            data-action="cycleSkillSort"
+            data-sort-mode="{{skillSortMode}}"
+            type="button"
+            aria-label="Change skill sort order">
+      <i class="fas fa-medal lpcs-sort-icon lpcs-sort-icon--proficiency" aria-hidden="true"></i>
+      <i class="fas fa-layer-group lpcs-sort-icon lpcs-sort-icon--ability" aria-hidden="true"></i>
+      <i class="fas fa-arrow-down-a-z lpcs-sort-icon lpcs-sort-icon--alphabetical" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  {{!-- Skill Groups --}}
+  <div class="lpcs-skills-body">
+    {{#each skillGroups}}
+    {{#if label}}
+    <div class="lpcs-skills-group-header">{{label}}</div>
+    {{/if}}
+    <div class="lpcs-skills-group" role="list">
+      {{#each skills}}
+      <button class="lpcs-skill-row rollable"
+              role="listitem"
+              data-action="rollSkill"
+              data-skill="{{key}}"
+              type="button"
+              aria-label="{{label}} ({{ability}}) {{mod}}">
+        <span class="lpcs-skills-col-prof">
+          <i class="{{profIcon}} {{profCss}}" aria-hidden="true"></i>
+        </span>
+        <span class="lpcs-skills-col-mod">{{ability}}</span>
+        <span class="lpcs-skills-col-name">
+          <span class="lpcs-skill-label" data-action="showSkillInfo">{{label}}</span>
+          {{#if isPassiveRelevant}}
+          <span class="lpcs-skill-passive-badge" aria-label="Passive {{label}} {{passive}}">DC {{passive}}</span>
+          {{/if}}
+        </span>
+        <span class="lpcs-skills-col-bonus">{{mod}}</span>
+      </button>
+      {{/each}}
+    </div>
+    {{/each}}
+  </div>
+
+  {{!-- Skill Info Modal --}}
+  <div class="lpcs-skill-info-modal" data-skill-info-modal aria-hidden="true"
+       role="dialog" aria-label="Skill Info">
+    <div class="lpcs-skill-info-backdrop" data-skill-info-close></div>
+    <div class="lpcs-skill-info-card">
+      <header class="lpcs-skill-info-header">
+        <h2 class="lpcs-skill-info-title" data-skill-info-title></h2>
+        <button class="lpcs-skill-info-close-btn" data-skill-info-close type="button"
+                aria-label="Close">&times;</button>
+      </header>
+      <p class="lpcs-skill-info-desc" data-skill-info-desc></p>
+      <ul class="lpcs-skill-info-examples" data-skill-info-examples></ul>
+    </div>
+  </div>
+
+</section>

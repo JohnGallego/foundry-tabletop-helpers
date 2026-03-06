@@ -1,0 +1,260 @@
+/* ── Skills Tab ──────────────────────────────────────────────── */
+
+/* Table header + rows share the same grid columns */
+.lpcs-sheet .lpcs-skill-row {
+  display: grid;
+  grid-template-columns: 36px 40px 1fr 48px;
+  align-items: center;
+  gap: var(--lpcs-space-xs);
+  padding: 0 var(--lpcs-space-sm);
+}
+
+.lpcs-sheet .lpcs-skills-table-header {
+  display: grid;
+  grid-template-columns: 36px 40px 1fr 48px auto;
+  align-items: center;
+  gap: var(--lpcs-space-xs);
+  padding: var(--lpcs-space-sm) var(--lpcs-space-sm) var(--lpcs-space-xs);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--lpcs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--lpcs-border);
+  position: sticky;
+  top: 0;
+  background: var(--lpcs-bg-base);
+  z-index: 2;
+}
+
+/* ── Skill Rows ─────────────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-skill-row {
+  min-height: var(--lpcs-touch-min);
+  background: var(--lpcs-bg-glass);
+  border: 1px solid transparent;
+  border-radius: var(--lpcs-radius-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
+  font-family: var(--lpcs-font-body);
+  color: var(--lpcs-text-primary);
+}
+
+.lpcs-sheet .lpcs-skill-row:hover {
+  background: var(--lpcs-bg-glass-hover);
+  border-color: var(--lpcs-border);
+}
+
+/* ── Column Styling ─────────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-skills-col-prof {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.lpcs-sheet .lpcs-skills-col-mod {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--lpcs-text-muted);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.lpcs-sheet .lpcs-skills-col-name {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-xs);
+  overflow: hidden;
+}
+
+.lpcs-sheet .lpcs-skill-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lpcs-sheet .lpcs-skills-col-bonus {
+  font-family: var(--lpcs-font-mono);
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ── Proficiency Icons ──────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-prof--none   { color: var(--lpcs-text-muted); }
+.lpcs-sheet .lpcs-prof--half   { color: var(--lpcs-text-secondary); }
+.lpcs-sheet .lpcs-prof--prof   { color: var(--lpcs-accent-bronze); }
+.lpcs-sheet .lpcs-prof--expert { color: var(--lpcs-accent-gold); }
+
+/* ── Passive DC Badge ───────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-skill-passive-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--lpcs-accent-bronze);
+  background: rgba(200, 167, 93, 0.1);
+  padding: 1px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Group Headers ──────────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-skills-group-header {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--lpcs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--lpcs-space-md) var(--lpcs-space-sm) var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-skills-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Sort Toggle Button (in header row) ────────────────────── */
+
+.lpcs-sheet .lpcs-skills-sort-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--lpcs-radius-sm);
+  background: transparent;
+  border: 1px solid var(--lpcs-border);
+  color: var(--lpcs-accent-bronze);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-size: 0.75rem;
+  padding: 0;
+}
+
+.lpcs-sheet .lpcs-skills-sort-btn:active {
+  transform: scale(0.92);
+}
+
+.lpcs-sheet .lpcs-skills-sort-btn:hover {
+  background: var(--lpcs-bg-glass-hover);
+  border-color: var(--lpcs-border-accent);
+}
+
+/* Sort icon visibility — controlled via data-sort-mode attribute */
+.lpcs-sheet .lpcs-sort-icon { display: none; }
+.lpcs-sheet [data-sort-mode="proficiency"] .lpcs-sort-icon--proficiency { display: inline; }
+.lpcs-sheet [data-sort-mode="ability"] .lpcs-sort-icon--ability { display: inline; }
+.lpcs-sheet [data-sort-mode="alphabetical"] .lpcs-sort-icon--alphabetical { display: inline; }
+
+/* ── Skill Info Modal ───────────────────────────────────────── */
+
+.lpcs-sheet .lpcs-skill-info-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.lpcs-sheet .lpcs-skill-info-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lpcs-sheet .lpcs-skill-info-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+.lpcs-sheet .lpcs-skill-info-card {
+  position: relative;
+  z-index: 1;
+  width: clamp(280px, 88%, 420px);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--lpcs-bg-panel);
+  border: 1px solid var(--lpcs-border-accent);
+  border-radius: var(--lpcs-radius-lg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-md);
+  padding: var(--lpcs-space-lg);
+}
+
+.lpcs-sheet .lpcs-skill-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lpcs-space-md);
+}
+
+.lpcs-sheet .lpcs-skill-info-title {
+  font-family: var(--lpcs-font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--lpcs-text-primary);
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.lpcs-sheet .lpcs-skill-info-close-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--lpcs-radius-sm);
+  border: 1px solid var(--lpcs-border);
+  background: transparent;
+  color: var(--lpcs-text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lpcs-sheet .lpcs-skill-info-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--lpcs-text-primary);
+}
+
+.lpcs-sheet .lpcs-skill-info-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--lpcs-text-secondary);
+  line-height: 1.6;
+}
+
+.lpcs-sheet .lpcs-skill-info-examples {
+  margin: 0;
+  padding: 0 0 0 var(--lpcs-space-lg);
+  font-size: 0.8rem;
+  color: var(--lpcs-text-secondary);
+  line-height: 1.6;
+}
+
+.lpcs-sheet .lpcs-skill-info-examples li {
+  margin-bottom: var(--lpcs-space-xs);
+}
+
+.lpcs-sheet .lpcs-skill-info-examples li::marker {
+  color: var(--lpcs-accent-bronze);
+}

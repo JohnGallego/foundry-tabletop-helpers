@@ -34,9 +34,11 @@ export async function preloadPrintTemplates(): Promise<void> {
   const paths = templates.map(getTemplatePath);
   
   try {
-    // Use Foundry's loadTemplates if available
-    const g = globalThis as Record<string, unknown>;
-    const loadTemplates = g.loadTemplates as ((paths: string[]) => Promise<void>) | undefined;
+    // Use Foundry's loadTemplates if available (prefer v13 namespaced path)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const g = globalThis as any;
+    const loadTemplates = (g.foundry?.applications?.handlebars?.loadTemplates ?? g.loadTemplates) as
+      ((paths: string[]) => Promise<void>) | undefined;
     
     if (loadTemplates) {
       await loadTemplates(paths);
