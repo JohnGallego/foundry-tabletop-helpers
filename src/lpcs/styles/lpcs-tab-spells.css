@@ -110,3 +110,42 @@
 .lpcs-sheet .lpcs-tag--conc { background: rgba(74,122,181,0.25); color: #7ab0e0; }
 .lpcs-sheet .lpcs-tag--ritual { background: rgba(200,167,93,0.2); color: var(--lpcs-accent-bronze); }
 
+/* ── Spellcasting Header Stats ─────────────────────────────── */
+.lpcs-sheet .lpcs-stat-value {
+  font-family: var(--lpcs-font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--lpcs-text-primary);
+  line-height: 1;
+}
+
+.lpcs-sheet .lpcs-stat-label {
+  font-size: 0.65rem;
+  color: var(--lpcs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Spell List ────────────────────────────────────────────── */
+.lpcs-sheet .lpcs-spells-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lpcs-space-md);
+}
+
+.lpcs-sheet .lpcs-spell-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lpcs-sheet .lpcs-spell-components,
+.lpcs-sheet .lpcs-spell-time,
+.lpcs-sheet .lpcs-spell-range {
+  font-size: 0.7rem;
+  font-family: var(--lpcs-font-mono);
+  white-space: nowrap;
+}
+

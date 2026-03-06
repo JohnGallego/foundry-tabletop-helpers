@@ -23,6 +23,10 @@
   flex-shrink: 0;
 }
 
+.lpcs-sheet .lpcs-trait-values {
+  color: var(--lpcs-text-primary);
+}
+
 .lpcs-sheet .lpcs-prof-list {
   display: grid;
   grid-template-columns: auto 1fr;

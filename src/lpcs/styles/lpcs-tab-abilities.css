@@ -166,3 +166,13 @@
   text-transform: capitalize;
 }
 
+.lpcs-sheet .lpcs-sense-value {
+  font-family: var(--lpcs-font-mono);
+  color: var(--lpcs-text-primary);
+}
+
+.lpcs-sheet .lpcs-hitdice-count {
+  font-family: var(--lpcs-font-mono);
+  color: var(--lpcs-text-primary);
+}
+
