@@ -61,16 +61,20 @@
 
 /* ── Currency Editor Modal ─────────────────────────────────── */
 .lpcs-sheet .lpcs-currency-editor {
-  display: none;
-  position: absolute;
-  inset: 0;
-  z-index: 100;
-}
-
-.lpcs-sheet .lpcs-currency-editor.open {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.lpcs-sheet .lpcs-currency-editor.open {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .lpcs-sheet .lpcs-currency-editor-backdrop {
@@ -436,16 +440,20 @@
 
 /* ── Item Detail Modal ─────────────────────────────────────── */
 .lpcs-sheet .lpcs-item-detail-modal {
-  display: none;
-  position: absolute;
-  inset: 0;
-  z-index: 100;
-}
-
-.lpcs-sheet .lpcs-item-detail-modal.open {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.lpcs-sheet .lpcs-item-detail-modal.open {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .lpcs-sheet .lpcs-item-detail-backdrop {
