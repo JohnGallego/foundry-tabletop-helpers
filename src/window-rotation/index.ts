@@ -9,7 +9,7 @@
  */
 
 import { Log, MOD } from "../logger";
-import { rotationMode, rotationLabel, animationsEnabled, supportV1, targetUserIds, type RotMode } from "../settings";
+import { rotationMode, rotationLabel, animationsEnabled, supportV1, targetUserIds, shouldShowRotateButton, type RotMode } from "../settings";
 import {
   getHooks,
   getGame,
@@ -444,6 +444,7 @@ export function registerWindowRotationHooks(): void {
     ((app: AppV2Like) =>
       safe(() => {
         if (isExcludedApp(app)) return;
+        if (!shouldShowRotateButton()) return;
 
         // Inject rotate button directly into the header bar (not the "…" dropdown)
         const header = app?.window?.header;
@@ -493,6 +494,7 @@ export function registerWindowRotationHooks(): void {
   onGetApplicationV1HeaderButtons((app, buttons) =>
     safe(() => {
       if (!supportV1()) return;
+      if (!shouldShowRotateButton()) return;
       buttons.unshift({
         label: rotationLabel(),
         class: "fth-rotate",
