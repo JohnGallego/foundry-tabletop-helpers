@@ -8,40 +8,30 @@
          data-group="primary"
          {{#unless isActiveTab}}hidden{{/unless}}>
 
-  {{!-- Feature Groups --}}
-  {{#if vm.features.length}}
+  {{!-- Feature Groups (Feats → Origin Feats → Class Features) --}}
   {{#each vm.features}}
   <div class="lpcs-feature-group">
     <h3 class="lpcs-section-title">{{label}}</h3>
     <div class="lpcs-feature-list">
       {{#each features}}
-      {{> lpcs-drawer drawerId=(concat "feat-" id) title=name img=img uses=uses
-                      description=description}}
+      <div class="lpcs-feature-item">
+        {{> lpcs-drawer drawerId=(concat "feat-" id) title=name img=img uses=uses
+                        description=description}}
+        {{#if effectAnnotations.length}}
+        <div class="lpcs-feature-effects">
+          {{#each effectAnnotations}}
+          <span class="lpcs-effect-badge" title="{{source}}: {{value}} {{targetLabel}}">
+            {{#if icon}}<img src="{{icon}}" alt="" class="lpcs-effect-badge-icon" aria-hidden="true">{{/if}}
+            <span class="lpcs-effect-badge-label">{{value}} {{targetLabel}}</span>
+          </span>
+          {{/each}}
+        </div>
+        {{/if}}
+      </div>
       {{/each}}
     </div>
   </div>
   {{/each}}
-  {{else}}
-  <div class="lpcs-empty-tab">
-    <i class="fas fa-scroll lpcs-empty-icon" aria-hidden="true"></i>
-    <p>No features or feats.</p>
-  </div>
-  {{/if}}
-
-  {{!-- Damage Traits --}}
-  {{#if vm.traits.length}}
-  <div class="lpcs-traits-section">
-    <h3 class="lpcs-section-title">Damage & Condition Traits</h3>
-    <ul class="lpcs-traits-list">
-      {{#each vm.traits}}
-      <li class="lpcs-trait-group">
-        <span class="lpcs-trait-label">{{label}}</span>
-        <span class="lpcs-trait-values">{{values}}</span>
-      </li>
-      {{/each}}
-    </ul>
-  </div>
-  {{/if}}
 
   {{!-- Proficiencies --}}
   <div class="lpcs-proficiencies-section">
@@ -65,6 +55,46 @@
       {{/if}}
     </dl>
   </div>
+
+  {{!-- Species Traits --}}
+  {{#each vm.speciesTraits}}
+  <div class="lpcs-feature-group">
+    <h3 class="lpcs-section-title">{{label}}</h3>
+    <div class="lpcs-feature-list">
+      {{#each features}}
+      <div class="lpcs-feature-item">
+        {{> lpcs-drawer drawerId=(concat "feat-" id) title=name img=img uses=uses
+                        description=description}}
+        {{#if effectAnnotations.length}}
+        <div class="lpcs-feature-effects">
+          {{#each effectAnnotations}}
+          <span class="lpcs-effect-badge" title="{{source}}: {{value}} {{targetLabel}}">
+            {{#if icon}}<img src="{{icon}}" alt="" class="lpcs-effect-badge-icon" aria-hidden="true">{{/if}}
+            <span class="lpcs-effect-badge-label">{{value}} {{targetLabel}}</span>
+          </span>
+          {{/each}}
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/each}}
+
+  {{!-- Damage Traits --}}
+  {{#if vm.traits.length}}
+  <div class="lpcs-traits-section">
+    <h3 class="lpcs-section-title">Damage &amp; Condition Traits</h3>
+    <ul class="lpcs-traits-list">
+      {{#each vm.traits}}
+      <li class="lpcs-trait-group">
+        <span class="lpcs-trait-label">{{label}}</span>
+        <span class="lpcs-trait-values">{{values}}</span>
+      </li>
+      {{/each}}
+    </ul>
+  </div>
+  {{/if}}
 
   {{!-- Exhaustion --}}
   {{#if vm.exhaustion.level}}

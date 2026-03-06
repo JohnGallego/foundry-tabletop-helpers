@@ -44,3 +44,16 @@
 
 .lpcs-sheet .lpcs-exhaust-pip.active { color: var(--lpcs-accent-crimson); }
 
+/* ── Feature Effect Annotations ──────────────────────────────── */
+.lpcs-sheet .lpcs-feature-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.lpcs-sheet .lpcs-feature-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lpcs-space-xs);
+  padding: 2px var(--lpcs-space-md) var(--lpcs-space-xs);
+}
+

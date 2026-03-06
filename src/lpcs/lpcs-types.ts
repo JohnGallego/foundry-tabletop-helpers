@@ -36,6 +36,7 @@ export interface LPCSViewModel {
   actions: LPCSAction[];
   bonusActions: LPCSAction[];
   reactions: LPCSAction[];
+  combatGroups: LPCSCombatGroup[];
 
   /** Spells tab */
   spellcasting: LPCSSpellcasting | null;
@@ -49,6 +50,7 @@ export interface LPCSViewModel {
 
   /** Features tab */
   features: LPCSFeatureGroup[];
+  speciesTraits: LPCSFeatureGroup[];
   traits: LPCSTraitGroup[];
   proficiencies: LPCSProficiencies;
 
@@ -91,6 +93,8 @@ export interface LPCSAbility {
   score: number;      // 18
   mod: string;        // "+4"
   modValue: number;   // 4
+  saveMod: string;    // "+4" — formatted saving throw modifier
+  saveProficient: boolean;
 }
 
 export interface LPCSSave {
@@ -109,7 +113,23 @@ export interface LPCSSkill {
   proficient: boolean;
   profLevel: number;    // 0, 0.5, 1, 2
   passive: number;
+  /** true for Perception, Investigation, Insight — skills that show passive DC */
+  isPassiveRelevant: boolean;
+  /** FA icon class for proficiency level */
+  profIcon: string;
+  /** CSS class for proficiency coloring */
+  profCss: string;
+  /** Skill description for the info popup */
+  description: string;
+  /** Example uses for the info popup */
+  examples: string[];
 }
+
+export interface LPCSSkillGroup {
+  label: string;
+  skills: LPCSSkill[];
+}
+
 
 export interface LPCSSense {
   label: string;
@@ -122,10 +142,36 @@ export interface LPCSWeapon {
   name: string;
   attackBonus: string;  // "+7"
   damage: string;       // "1d8+4 piercing"
+  damageFormula: string; // "1d8+4"
+  damageType: string;    // "piercing"
+  damageTypeIcon: string; // "fas fa-crosshairs"
+  damageTypeCss: string;  // "lpcs-dmg--piercing"
+  category: "melee" | "ranged" | "other";
   range: string;
   properties: string[];
+  notes: string;
   mastery: string | null;
   img: string;
+  /** FA icon class fallback when img is empty (e.g. unarmed strike) */
+  iconClass: string;
+  /** Active effect annotations (e.g. Dueling +2 damage) */
+  effectAnnotations: LPCSEffectAnnotation[];
+}
+
+/** An annotation badge showing an active effect bonus on a weapon or stat. */
+export interface LPCSEffectAnnotation {
+  /** Human-readable source name, e.g. "Dueling", "Archery" */
+  source: string;
+  /** The change value, e.g. "+2" */
+  value: string;
+  /** What this modifies: "attack", "damage", "save-dc", "ac", "hp", etc. */
+  target: string;
+  /** Human-readable target label for display, e.g. "melee damage", "spell attack" */
+  targetLabel: string;
+  /** Icon from the source effect or item */
+  icon: string;
+  /** Combined display label, e.g. "+2 Dueling" */
+  label: string;
 }
 
 export interface LPCSAction {
@@ -207,6 +253,8 @@ export interface LPCSFeature {
   description: string;
   uses: { value: number; max: number } | null;
   source: string;
+  /** Active effects originating from this feature */
+  effectAnnotations: LPCSEffectAnnotation[];
 }
 
 export interface LPCSTraitGroup {
@@ -228,6 +276,71 @@ export interface LPCSProficiencies {
 export interface LPCSExhaustion {
   level: number;
   pips: Array<{ n: number; active: boolean }>;
+}
+
+export interface LPCSCombatSpell {
+  id: string;
+  name: string;
+  level: number;
+  img: string;
+  concentration: boolean;
+  ritual: boolean;
+  description: string;
+  /** "C" for cantrips, "Lvl 1" for level 1, etc. */
+  levelLabel: string;
+  /** Source that grants this spell: class name, feat name, etc. ("Cleric", "Magic Initiate") */
+  source: string;
+
+  /** Table columns */
+  attackSave: string;      // "+7", "DC 15 WIS", or ""
+  damageFormula: string;   // "3d8", "" for non-damaging
+  damageType: string;      // "fire", "radiant", "healing", ""
+  damageTypeIcon: string;  // FA class
+  damageTypeCss: string;   // color class
+  isHealing: boolean;      // true → show heart icon instead of damage type
+  /** Effect label for non-damage spells: "Creation", "Utility", "Control", etc. */
+  effectLabel: string;
+  range: string;           // "Self", "Touch", "120 ft."
+  castingTime: string;     // "1A", "1BA", "1R", "10m", "1h"
+  /** Pre-computed notes: restrictions, duration, AoE, components combined */
+  notes: string;
+  /** AoE icon class (rendered separately in template) */
+  aoeIcon: string;
+  /** AoE size label e.g. "20 ft." */
+  aoeLabel: string;
+  /** Usage restriction label, e.g. "1/LR", "2/SR" */
+  usesLabel: string;
+  school: string;          // "evo", "abj", etc.
+  /** Full spell description HTML for expanded detail panel */
+  fullDescription: string;
+  /** Active effect annotations (e.g. spell attack/damage bonuses) */
+  effectAnnotations: LPCSEffectAnnotation[];
+}
+
+export interface LPCSStandardAction {
+  key: string;
+  name: string;
+  /** Description with interpolated character values */
+  description: string;
+  icon: string;
+}
+
+export interface LPCSWeaponSubGroup {
+  category: string;   // "melee" | "ranged" | "other"
+  label: string;      // "Melee" | "Ranged" | "Other"
+  weapons: LPCSWeapon[];
+}
+
+export interface LPCSCombatGroup {
+  key: string;       // "action" | "bonus" | "reaction" | "other"
+  label: string;     // "Actions" | "Bonus Actions" | "Reactions" | "Other"
+  weaponGroups: LPCSWeaponSubGroup[];
+  spells: LPCSCombatSpell[];
+  items: LPCSAction[];
+  standardActions: LPCSStandardAction[];
+  isEmpty: boolean;
+  /** True when spells should render before weapons (spellcasting classes) */
+  spellsFirst: boolean;
 }
 
 export interface LPCSDeathSaves {

@@ -1,0 +1,58 @@
+{{!-- lpcs-combat-weapons-block.hbs — Weapons sub-grouped by category --}}
+{{#each weaponGroups}}
+<div class="lpcs-weapon-subgroup">
+  <span class="lpcs-weapon-subgroup-badge">{{label}}</span>
+  <table class="lpcs-weapons-table" aria-label="{{label}} weapons">
+    <thead>
+      <tr>
+        <th scope="col" class="lpcs-col-name">Weapon</th>
+        <th scope="col" class="lpcs-col-atk">Atk</th>
+        <th scope="col" class="lpcs-col-dmg">Dmg</th>
+        <th scope="col" class="lpcs-col-range">Range</th>
+        <th scope="col" class="lpcs-col-notes">Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each weapons}}
+      <tr class="lpcs-weapon-row" data-item-id="{{id}}">
+        <td class="lpcs-col-name">
+          <button class="lpcs-weapon-use rollable" data-action="useItem" data-item-id="{{id}}"
+                  type="button" aria-label="Use {{name}}">
+            {{#if img}}<img src="{{img}}" alt="" class="lpcs-item-icon" aria-hidden="true">
+            {{else if iconClass}}<i class="{{iconClass}} lpcs-item-icon-fa" aria-hidden="true"></i>
+            {{/if}}
+            <span class="lpcs-weapon-name">{{name}}</span>
+            {{#if mastery}}<span class="lpcs-mastery-badge">{{mastery}}</span>{{/if}}
+          </button>
+        </td>
+        <td class="lpcs-col-atk lpcs-atk-bonus">{{attackBonus}}</td>
+        <td class="lpcs-col-dmg lpcs-damage">{{damageFormula}} <i class="{{damageTypeIcon}} {{damageTypeCss}} lpcs-dmg-type-icon"
+             title="{{damageType}}" data-action="showDamageType"
+             data-damage-type="{{damageType}}"></i>
+          {{#each effectAnnotations}}
+          {{#if (eq target "damage")}}
+          <span class="lpcs-effect-badge" title="{{source}}: {{value}} {{target}}">
+            {{#if icon}}<img src="{{icon}}" alt="" class="lpcs-effect-badge-icon" aria-hidden="true">{{/if}}
+            <span class="lpcs-effect-badge-label">{{label}}</span>
+          </span>
+          {{/if}}
+          {{/each}}
+        </td>
+        <td class="lpcs-col-range">{{range}}</td>
+        <td class="lpcs-col-notes">
+          {{notes}}
+          {{#each effectAnnotations}}
+          {{#if (eq target "attack")}}
+          <span class="lpcs-effect-badge" title="{{source}}: {{value}} {{target}}">
+            {{#if icon}}<img src="{{icon}}" alt="" class="lpcs-effect-badge-icon" aria-hidden="true">{{/if}}
+            <span class="lpcs-effect-badge-label">{{label}}</span>
+          </span>
+          {{/if}}
+          {{/each}}
+        </td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+{{/each}}

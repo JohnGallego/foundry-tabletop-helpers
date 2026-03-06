@@ -204,6 +204,18 @@ export const FEATURE_SUMMARIES: Record<string, string> = {
 const MAX_DESCRIPTION_LENGTH = 750;
 
 /**
+ * Strip Foundry enriched-text references (@UUID, @Compendium, etc.) from text.
+ * Preserves display text from `@UUID[...]{Display Text}` patterns.
+ */
+function stripRefs(text: string): string {
+  return text
+    .replace(/@(?:UUID|Compendium|Item|Actor|JournalEntry|RollTable|Scene|Macro)\[[^\]]*\]\{([^}]+)\}/gi, "$1")
+    .replace(/@(?:UUID|Compendium|Item|Actor|JournalEntry|RollTable|Scene|Macro)\[[^\]]*\]/gi, "")
+    .replace(/&(?:amp;)?Reference\[([^\s\]]+)[^\]]*\]/gi, "$1")
+    .replace(/Foundry Note\b[^.]*\./gi, "");
+}
+
+/**
  * Replace {placeholder} tokens inside a summary string with values from a
  * SummaryContext. Any placeholder whose corresponding value is null/undefined
  * is replaced with "?" so the output is always human-readable.
@@ -242,7 +254,8 @@ export function extractStructuredSummary(html: string): string | null {
 
   // Remove <table>…</table> blocks entirely — tables (like Fast Crafting) are
   // not distillable into inline text and are the primary cause of overflow.
-  const withoutTables = html.replace(/<table[\s\S]*?<\/table>/gi, "");
+  // Also strip Foundry enriched-text references before parsing.
+  const withoutTables = stripRefs(html.replace(/<table[\s\S]*?<\/table>/gi, ""));
 
   // Extract individual <p>…</p> blocks to avoid bleeding across paragraphs.
   const paragraphPattern = /<p[^>]*>([\s\S]*?)<\/p>/gi;
@@ -259,8 +272,8 @@ export function extractStructuredSummary(html: string): string | null {
     const headingMatch = headingPattern.exec(inner);
     if (!headingMatch) continue;
 
-    // Strip any HTML inside the heading (e.g. <strong><em>Name</em></strong>)
-    const headingRaw = headingMatch[1].replace(/<[^>]*>/g, "").trim();
+    // Strip any HTML and Foundry refs inside the heading
+    const headingRaw = stripRefs(headingMatch[1].replace(/<[^>]*>/g, "")).trim();
 
     // Remove trailing period from heading if present (we'll add our own separator)
     const heading = headingRaw.replace(/\.$/, "").trim();
@@ -269,8 +282,8 @@ export function extractStructuredSummary(html: string): string | null {
     // Get the text after the <strong> block — this is the benefit description
     const afterHeading = inner.slice(headingMatch.index + headingMatch[0].length);
 
-    // Strip remaining HTML tags to get plain text
-    const plainText = afterHeading.replace(/<[^>]*>/g, "").trim();
+    // Strip remaining HTML tags and Foundry references to get plain text
+    const plainText = stripRefs(afterHeading.replace(/<[^>]*>/g, "")).trim();
     if (!plainText) continue;
 
     // Extract only the first sentence (ends at . ! or ?)

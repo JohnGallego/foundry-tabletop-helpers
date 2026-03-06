@@ -12,13 +12,22 @@ import type {
   LPCSViewModel, LPCSHitPoints, LPCSAbility, LPCSSave, LPCSSkill,
   LPCSSense, LPCSWeapon, LPCSAction, LPCSSpellcasting, LPCSSpellSlotLevel,
   LPCSSpellLevel, LPCSSpell, LPCSInventoryItem, LPCSEncumbrance,
-  LPCSFeatureGroup, LPCSTraitGroup, LPCSProficiencies, LPCSHitDice, LPCSSpeed,
-  LPCSHitDiceSummary,
+  LPCSFeature, LPCSFeatureGroup, LPCSTraitGroup, LPCSProficiencies, LPCSHitDice, LPCSSpeed,
+  LPCSHitDiceSummary, LPCSCombatSpell, LPCSCombatGroup, LPCSStandardAction,
+  LPCSWeaponSubGroup, LPCSEffectAnnotation,
 } from "./lpcs-types";
 
 import { ABILITY_KEYS, abilityLabel } from "../print-sheet/extractors/dnd5e-extract-helpers";
+import { SKILL_DESCRIPTIONS } from "./data/skill-descriptions";
+import { getActivityValues } from "../print-sheet/extractors/dnd5e-system-types";
 import { Log } from "../logger";
 import { getRollMode } from "./lpcs-settings";
+import { COMBAT_ACTIONS, interpolateCombatAction } from "./data/combat-actions";
+import type { CombatContext } from "./data/combat-actions";
+import { getDamageTypeInfo } from "./data/damage-icons";
+import { getAoeTypeInfo } from "./data/aoe-icons";
+import { getFeatureSummary } from "../print-sheet/data/feature-summaries";
+import type { SummaryContext } from "../print-sheet/data/feature-summaries";
 
 /* ── Utility ──────────────────────────────────────────────── */
 
@@ -32,12 +41,193 @@ function hpColor(pct: number): string {
   return "#8b1e2d";
 }
 
-/** Strip HTML tags and return first sentence (≤120 chars). */
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Strip Foundry enriched-text references (@UUID, @Compendium, etc.) and HTML tags.
+ * Preserves display text from `@UUID[...]{Display Text}` patterns.
+ */
+function stripFoundryRefs(html: string): string {
+  return html
+    // @UUID[...]{display text} → display text
+    .replace(/@(?:UUID|Compendium|Item|Actor|JournalEntry|RollTable|Scene|Macro)\[[^\]]*\]\{([^}]+)\}/gi, "$1")
+    // @UUID[...] without display text → empty
+    .replace(/@(?:UUID|Compendium|Item|Actor|JournalEntry|RollTable|Scene|Macro)\[[^\]]*\]/gi, "")
+    // &Reference[Tremorsense] or &amp;Reference[Tremorsense] → Tremorsense
+    .replace(/&(?:amp;)?Reference\[([^\s\]]+)[^\]]*\]/gi, "$1")
+    // Strip "Foundry Note ..." helper text that dnd5e injects
+    .replace(/Foundry Note\b[^.]*\./gi, "")
+    // Strip HTML tags
+    .replace(/<[^>]+>/g, " ")
+    // Collapse whitespace
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Strip HTML tags and return first sentence (≤120 chars). Used for compact spell table rows. */
 function shortDesc(html: string): string {
-  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const text = stripFoundryRefs(html);
   const end = text.search(/[.!?]/);
   const sentence = end !== -1 ? text.slice(0, end + 1) : text;
   return sentence.length > 120 ? sentence.slice(0, 117) + "…" : sentence;
+}
+
+/** Strip HTML and return full text, only truncating past ~200 words (1200 chars). Used for drawer descriptions. */
+function drawerDesc(html: string): string {
+  const text = stripFoundryRefs(html);
+  if (text.length <= 1200) return text;
+  return text.slice(0, 1200).trimEnd() + "…";
+}
+
+/* ── Active Effect Annotations ────────────────────────────── */
+
+/** Well-known change keys that map to bonus targets and weapon categories. */
+interface EffectKeyMapping {
+  target: string;
+  targetLabel: string;
+  category: "melee" | "ranged" | "spell" | "all";
+}
+
+const EFFECT_KEY_MAP: Record<string, EffectKeyMapping> = {
+  // Weapon bonuses
+  "system.bonuses.mwak.attack":    { target: "attack",    targetLabel: "melee attack",    category: "melee" },
+  "system.bonuses.mwak.damage":    { target: "damage",    targetLabel: "melee damage",    category: "melee" },
+  "system.bonuses.rwak.attack":    { target: "attack",    targetLabel: "ranged attack",   category: "ranged" },
+  "system.bonuses.rwak.damage":    { target: "damage",    targetLabel: "ranged damage",   category: "ranged" },
+  "system.bonuses.weapon.attack":  { target: "attack",    targetLabel: "weapon attack",   category: "all" },
+  "system.bonuses.weapon.damage":  { target: "damage",    targetLabel: "weapon damage",   category: "all" },
+  // Spell bonuses
+  "system.bonuses.msak.attack":    { target: "spell-atk", targetLabel: "spell attack",    category: "spell" },
+  "system.bonuses.msak.damage":    { target: "spell-dmg", targetLabel: "spell damage",    category: "spell" },
+  "system.bonuses.rsak.attack":    { target: "spell-atk", targetLabel: "spell attack",    category: "spell" },
+  "system.bonuses.rsak.damage":    { target: "spell-dmg", targetLabel: "spell damage",    category: "spell" },
+  "system.bonuses.spell.attack":   { target: "spell-atk", targetLabel: "spell attack",    category: "spell" },
+  "system.bonuses.spell.damage":   { target: "spell-dmg", targetLabel: "spell damage",    category: "spell" },
+  "system.bonuses.spell.dc":       { target: "save-dc",   targetLabel: "spell save DC",   category: "spell" },
+  // General bonuses (AC, saves, HP, etc.)
+  "system.attributes.ac.bonus":    { target: "ac",        targetLabel: "AC",              category: "all" },
+  "system.attributes.hp.bonuses.overall": { target: "hp", targetLabel: "max HP",          category: "all" },
+  "system.bonuses.abilities.save": { target: "save",      targetLabel: "saving throws",   category: "all" },
+};
+
+/** Parsed effect data from a single ActiveEffect. */
+interface ParsedEffect {
+  sourceName: string;
+  sourceItemId: string;
+  icon: string;
+  annotations: LPCSEffectAnnotation[];
+}
+
+/** All parsed effects from the actor, organized for lookup. */
+interface ParsedEffectData {
+  /** All parsed effects */
+  effects: ParsedEffect[];
+  /** Annotations grouped by weapon/spell category */
+  byCategory: {
+    melee: LPCSEffectAnnotation[];
+    ranged: LPCSEffectAnnotation[];
+    spell: LPCSEffectAnnotation[];
+    all: LPCSEffectAnnotation[];
+  };
+  /** Annotations grouped by source item ID (for feature lookups) */
+  bySourceItem: Map<string, LPCSEffectAnnotation[]>;
+}
+
+/**
+ * Parse all active effects from the actor into structured annotation data.
+ * Called once per render, results shared across weapons, spells, and features.
+ */
+function parseAllEffects(actor: Record<string, unknown>): ParsedEffectData {
+  const byCategory: ParsedEffectData["byCategory"] = { melee: [], ranged: [], spell: [], all: [] };
+  const bySourceItem = new Map<string, LPCSEffectAnnotation[]>();
+  const effects: ParsedEffect[] = [];
+
+  const allEffects = typeof (actor as Record<string, unknown>).allApplicableEffects === "function"
+    ? (actor as { allApplicableEffects(): Iterable<Record<string, unknown>> }).allApplicableEffects()
+    : [];
+
+  for (const effect of allEffects) {
+    if (effect.disabled || effect.isSuppressed) continue;
+
+    const changes = effect.changes as Array<{
+      key: string;
+      mode: number;
+      value: string;
+    }> | undefined;
+    if (!changes?.length) continue;
+
+    // Resolve source name and item ID from origin
+    let sourceName = String(effect.name ?? "Effect");
+    const originStr = String(effect.origin ?? "");
+    const sourceItemId = originStr.split(".").pop() ?? "";
+
+    const originItem = sourceItemId
+      ? (actor as { items?: { get?(id: string): Record<string, unknown> | undefined } }).items?.get?.(sourceItemId)
+      : undefined;
+    if (originItem?.name) sourceName = String(originItem.name);
+
+    const icon = String(effect.icon ?? originItem?.img ?? "");
+    const parsed: ParsedEffect = { sourceName, sourceItemId, icon, annotations: [] };
+
+    for (const change of changes) {
+      const mapping = EFFECT_KEY_MAP[change.key];
+      if (!mapping) continue;
+
+      const value = change.value.startsWith("+") || change.value.startsWith("-")
+        ? change.value
+        : `+${change.value}`;
+
+      const annotation: LPCSEffectAnnotation = {
+        source: sourceName,
+        value,
+        target: mapping.target,
+        targetLabel: mapping.targetLabel,
+        icon,
+        label: `${value} ${sourceName}`,
+      };
+
+      parsed.annotations.push(annotation);
+      byCategory[mapping.category].push(annotation);
+
+      if (sourceItemId) {
+        if (!bySourceItem.has(sourceItemId)) bySourceItem.set(sourceItemId, []);
+        bySourceItem.get(sourceItemId)!.push(annotation);
+      }
+    }
+
+    if (parsed.annotations.length > 0) effects.push(parsed);
+  }
+
+  return { effects, byCategory, bySourceItem };
+}
+
+/**
+ * Get effect annotations applicable to a weapon based on its category.
+ */
+function getWeaponAnnotations(
+  category: "melee" | "ranged" | "other",
+  data: ParsedEffectData,
+): LPCSEffectAnnotation[] {
+  const result = [...data.byCategory.all.filter(a => a.target === "attack" || a.target === "damage")];
+  if (category === "melee") result.push(...data.byCategory.melee);
+  else if (category === "ranged") result.push(...data.byCategory.ranged);
+  return result;
+}
+
+/**
+ * Get spell-related effect annotations.
+ */
+function getSpellAnnotations(data: ParsedEffectData): LPCSEffectAnnotation[] {
+  return [...data.byCategory.spell];
+}
+
+/**
+ * Get effect annotations originating from a specific item (for features tab).
+ */
+function getFeatureAnnotations(itemId: string, data: ParsedEffectData): LPCSEffectAnnotation[] {
+  return data.bySourceItem.get(itemId) ?? [];
 }
 
 /* ── Sub-builders ─────────────────────────────────────────── */
@@ -65,11 +255,23 @@ function buildSpeed(system: Record<string, unknown>): LPCSSpeed {
 }
 
 function buildAbilities(system: Record<string, unknown>): LPCSAbility[] {
-  const abilities = (system.abilities as Record<string, Record<string, number>> | undefined) ?? {};
+  const abilities = (system.abilities as Record<string, Record<string, unknown>> | undefined) ?? {};
   return ABILITY_KEYS.map((key) => {
     const a = abilities[key] ?? { value: 10, mod: 0 };
-    const score = a.value ?? 10;
-    const modValue = a.mod ?? Math.floor((score - 10) / 2);
+    const score = (a.value as number) ?? 10;
+    const modValue = (a.mod as number) ?? Math.floor((score - 10) / 2);
+
+    // Save modifier — same logic as buildSaves()
+    const saveRaw = a.save;
+    let saveMod: number;
+    if (typeof saveRaw === "number") {
+      saveMod = saveRaw;
+    } else if (saveRaw !== null && typeof saveRaw === "object") {
+      saveMod = (saveRaw as Record<string, number>).value ?? 0;
+    } else {
+      saveMod = modValue;
+    }
+
     return {
       key,
       label: abilityLabel(key),
@@ -77,6 +279,8 @@ function buildAbilities(system: Record<string, unknown>): LPCSAbility[] {
       score,
       mod: formatMod(modValue),
       modValue,
+      saveMod: formatMod(saveMod),
+      saveProficient: !!(a.proficient),
     };
   });
 }
@@ -103,20 +307,42 @@ function buildSaves(system: Record<string, unknown>): LPCSSave[] {
   });
 }
 
+const PASSIVE_SKILL_KEYS = new Set(["prc", "inv", "ins"]);
+
+function profIconForLevel(level: number): string {
+  if (level >= 2) return "fas fa-star";
+  if (level >= 1) return "fas fa-circle";
+  if (level > 0)  return "fas fa-adjust";
+  return "far fa-circle";
+}
+
+function profCssForLevel(level: number): string {
+  if (level >= 2) return "lpcs-prof--expert";
+  if (level >= 1) return "lpcs-prof--prof";
+  if (level > 0)  return "lpcs-prof--half";
+  return "lpcs-prof--none";
+}
+
 function buildSkills(system: Record<string, unknown>): LPCSSkill[] {
   const skills = (system.skills as Record<string, Record<string, unknown>> | undefined) ?? {};
   return Object.entries(skills).map(([key, s]) => {
     const total = (s.total as number) ?? (s.mod as number) ?? 0;
     const profLevel = (s.value as number) ?? 0;
+    const desc = SKILL_DESCRIPTIONS[key];
     return {
       key,
-      label: (s.label as string) ?? key,
+      label: (s.label as string) ?? desc?.name ?? key,
       mod: formatMod(total),
       modValue: total,
       ability: ((s.ability as string) ?? "").toUpperCase(),
       proficient: profLevel > 0,
       profLevel,
       passive: (s.passive as number) ?? 10 + total,
+      isPassiveRelevant: PASSIVE_SKILL_KEYS.has(key),
+      profIcon: profIconForLevel(profLevel),
+      profCss: profCssForLevel(profLevel),
+      description: desc?.description ?? "",
+      examples: desc?.examples ?? [],
     };
   }).sort((a, b) => a.label.localeCompare(b.label));
 }
@@ -135,12 +361,13 @@ function buildSenses(system: Record<string, unknown>): LPCSSense[] {
   return result;
 }
 
-function buildWeapons(actor: Record<string, unknown>): LPCSWeapon[] {
+function buildWeapons(actor: Record<string, unknown>, effectData?: ParsedEffectData): LPCSWeapon[] {
+  const annotations = effectData ?? parseAllEffects(actor);
   const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
   const prof = ((actor.system as Record<string, unknown> | undefined)
     ?.attributes as Record<string, unknown> | undefined)?.prof as number ?? 2;
 
-  return items
+  const weapons: LPCSWeapon[] = items
     .filter((i) => i.type === "weapon" && (i.system as Record<string, unknown>)?.equipped)
     .map((item) => {
       const sys = item.system as Record<string, unknown> ?? {};
@@ -159,15 +386,58 @@ function buildWeapons(actor: Record<string, unknown>): LPCSWeapon[] {
       const strMod = attrs.str?.mod ?? 0;
       const dexMod = attrs.dex?.mod ?? 0;
       const isFinesse = hasProp("fin") || hasProp("finesse");
-      const isRanged = (sys.actionType as string) === "rwak" || (sys.type as Record<string, string>)?.value === "ranged";
+      const isThrown = hasProp("thr") || hasProp("thrown");
+      const weaponType = (sys.type as Record<string, string>)?.value ?? "";
+      const isRanged = (sys.actionType as string) === "rwak"
+        || weaponType === "simpleR" || weaponType === "martialR"
+        || weaponType === "ranged";
       const abilityMod = isRanged || (isFinesse && dexMod > strMod) ? dexMod : strMod;
 
       const attackBonus = prof + abilityMod + ((sys.attackBonus as number) ?? 0);
 
-      // Damage — basic formula fallback
-      const damageFormula = (sys.damage as Record<string, string> | undefined)?.base ?? "1d6";
-      const damageType = (sys.damage as Record<string, string> | undefined)?.damageType ?? "";
-      const damage = `${damageFormula}+${abilityMod} ${damageType}`.trim();
+      // Damage — handle dnd5e 5.x nested object or legacy string
+      const damageRaw = sys.damage as Record<string, unknown> | undefined;
+      let damageFormula = "";
+      let damageType = "";
+      let hasModInFormula = false;
+      if (damageRaw) {
+        const base = damageRaw.base;
+        if (base && typeof base === "object") {
+          // dnd5e 5.x: base is { number, denomination, bonus, types }
+          const dp = base as Record<string, unknown>;
+          const num = (dp.number as number) ?? 1;
+          const den = dp.denomination as number | undefined;
+          const bonus = dp.bonus as string | undefined;
+          if (den) {
+            damageFormula = `${num}d${den}`;
+            if (bonus) {
+              hasModInFormula = bonus.includes("@mod");
+              damageFormula += bonus.startsWith("+") || bonus.startsWith("-") ? bonus : `+${bonus}`;
+            }
+          } else if (bonus) {
+            hasModInFormula = bonus.includes("@mod");
+            damageFormula = bonus;
+          }
+          // Types can be Set or array
+          const types = dp.types;
+          if (types instanceof Set) damageType = [...types][0] ?? "";
+          else if (Array.isArray(types)) damageType = types[0] ?? "";
+        } else if (typeof base === "string") {
+          hasModInFormula = base.includes("@mod");
+          damageFormula = base;
+        }
+        if (!damageType) {
+          damageType = String(damageRaw.damageType ?? "");
+        }
+      }
+      if (!damageFormula) damageFormula = "1d6";
+      // Replace @mod placeholder with actual ability modifier
+      const damageStr = damageFormula.replace(/@mod/g, String(abilityMod));
+      // Only append ability mod if it wasn't already embedded via @mod or bonus
+      const resolvedFormula = !hasModInFormula && abilityMod
+        ? `${damageStr}+${abilityMod}`
+        : damageStr;
+      const damage = `${resolvedFormula} ${damageType}`.trim();
 
       // Range
       const rangeData = sys.range as Record<string, number | string> | undefined ?? {};
@@ -176,25 +446,104 @@ function buildWeapons(actor: Record<string, unknown>): LPCSWeapon[] {
       if (rangeData.long) range += `/${rangeData.long} ft.`;
 
       // Properties list
+      const PROP_LABELS: Record<string, string> = {
+        fin: "Finesse", hvy: "Heavy", lgt: "Light", lod: "Loading",
+        rch: "Reach", thr: "Thrown", two: "Two-handed", ver: "Versatile", amm: "Ammunition",
+      };
       const propLabels: string[] = [];
+      const noteWords: string[] = [];
       for (const p of ["fin", "hvy", "lgt", "lod", "rch", "thr", "two", "ver", "amm"]) {
-        if (hasProp(p)) propLabels.push(p.toUpperCase());
+        if (hasProp(p)) {
+          propLabels.push(p.toUpperCase());
+          noteWords.push(PROP_LABELS[p]);
+        }
       }
 
       // Mastery
       const mastery = (sys.mastery as string | undefined) ?? null;
+
+      // Category: thrown weapons are melee-primary, so list under melee only
+      const category: "melee" | "ranged" | "other" = (isRanged && !isThrown) ? "ranged" : "melee";
+
+      // Damage type icon
+      const dmgInfo = getDamageTypeInfo(damageType);
 
       return {
         id: String(item.id ?? ""),
         name: String(item.name ?? ""),
         attackBonus: formatMod(attackBonus),
         damage,
+        damageFormula: resolvedFormula,
+        damageType,
+        damageTypeIcon: dmgInfo.icon,
+        damageTypeCss: dmgInfo.cssClass,
+        category,
         range,
         properties: propLabels,
+        notes: noteWords.join(", "),
         mastery,
         img: String(item.img ?? ""),
+        iconClass: "",
+        effectAnnotations: getWeaponAnnotations(category, annotations),
       } satisfies LPCSWeapon;
     });
+
+  // Append Unarmed Strike and Improvised Weapon as always-available options
+  const system = actor.system as Record<string, unknown> ?? {};
+  const abilities = system.abilities as Record<string, Record<string, number>> | undefined ?? {};
+  const strMod = abilities.str?.mod ?? 0;
+  const bludgInfo = getDamageTypeInfo("bludgeoning");
+
+  // Unarmed Strike: STR-based, 1 + STR mod bludgeoning (no die roll)
+  const unarmedMod = strMod;
+  const unarmedAtk = prof + unarmedMod;
+  const unarmedDmg = Math.max(1, 1 + unarmedMod);
+  weapons.push({
+    id: "__unarmed__",
+    name: "Unarmed Strike",
+    attackBonus: formatMod(unarmedAtk),
+    damage: `${unarmedDmg} bludgeoning`,
+    damageFormula: String(unarmedDmg),
+    damageType: "bludgeoning",
+    damageTypeIcon: bludgInfo.icon,
+    damageTypeCss: bludgInfo.cssClass,
+    category: "other",
+    range: "5 ft.",
+    properties: [],
+    notes: "",
+    mastery: null,
+    img: "",
+    iconClass: "fas fa-hand-fist",
+    effectAnnotations: getWeaponAnnotations("melee", annotations),
+  });
+
+  // Improvised Weapon: STR-based (or DEX for thrown), 1d4 + STR mod bludgeoning
+  const improvMod = strMod;
+  const improvAtk = improvMod; // no proficiency bonus
+  // Only append +mod when mod is non-zero
+  const improvFormula = improvMod !== 0
+    ? `1d4${improvMod >= 0 ? "+" : ""}${improvMod}`
+    : "1d4";
+  weapons.push({
+    id: "__improvised__",
+    name: "Improvised Weapon",
+    attackBonus: formatMod(improvAtk),
+    damage: `${improvFormula} bludgeoning`,
+    damageFormula: improvFormula,
+    damageType: "bludgeoning",
+    damageTypeIcon: bludgInfo.icon,
+    damageTypeCss: bludgInfo.cssClass,
+    category: "other",
+    range: "5 ft./20 ft.",
+    properties: [],
+    notes: "No proficiency",
+    mastery: null,
+    img: "",
+    iconClass: "fas fa-chair",
+    effectAnnotations: [],
+  });
+
+  return weapons;
 }
 
 function buildActions(actor: Record<string, unknown>, actionType: string): LPCSAction[] {
@@ -203,11 +552,9 @@ function buildActions(actor: Record<string, unknown>, actionType: string): LPCSA
 
   return items
     .filter((i) => {
-      const sys = i.system as Record<string, unknown> | undefined ?? {};
-      const activation = sys.activation as Record<string, string> | undefined ?? {};
       return (
         !EXCLUDED_TYPES.has(String(i.type ?? "")) &&
-        activation.type === actionType
+        getItemActivationType(i) === actionType
       );
     })
     .map((item) => {
@@ -217,7 +564,7 @@ function buildActions(actor: Record<string, unknown>, actionType: string): LPCSA
       return {
         id: String(item.id ?? ""),
         name: String(item.name ?? ""),
-        description: shortDesc(String((sys.description as Record<string, string> | undefined)?.value ?? "")),
+        description: drawerDesc(String((sys.description as Record<string, string> | undefined)?.value ?? "")),
         img: String(item.img ?? ""),
         uses: uses?.max ? { value: uses.value ?? 0, max: uses.max } : null,
         recharge: recharge?.value ? `${recharge.value}+` : null,
@@ -353,31 +700,105 @@ function buildEncumbrance(system: Record<string, unknown>): LPCSEncumbrance {
   return { value, max, pct, encumbered: pct >= 100 };
 }
 
-function buildFeatures(actor: Record<string, unknown>): LPCSFeatureGroup[] {
+function buildSummaryContext(actor: Record<string, unknown>): SummaryContext {
   const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
-  const groups = new Map<string, LPCSFeatureGroup>();
+  const system = actor.system as Record<string, unknown> ?? {};
+  const details = system.details as Record<string, unknown> | undefined ?? {};
+  const level = (details.level as number) ?? 0;
+  const prof = (system.attributes as Record<string, unknown> | undefined)?.prof as number ?? 2;
+
+  const classes = items
+    .filter((i) => i.type === "class")
+    .map((c) => ({
+      name: String(c.name ?? ""),
+      level: ((c.system as Record<string, unknown> | undefined)?.levels as number) ?? 0,
+    }));
+
+  const classLevel = (name: string) => classes.find((c) => c.name.toLowerCase() === name)?.level ?? 0;
+
+  const rogueLevel = classLevel("rogue");
+  const monkLevel = classLevel("monk");
+  const paladinLevel = classLevel("paladin");
+  const sorcererLevel = classLevel("sorcerer");
+  const bardLevel = classLevel("bard");
+
+  return {
+    level,
+    proficiencyBonus: prof,
+    classes,
+    sneakAttackDice: rogueLevel > 0 ? `${Math.ceil(rogueLevel / 2)}d6` : null,
+    kiPoints: monkLevel > 0 ? monkLevel : null,
+    layOnHandsPool: paladinLevel > 0 ? paladinLevel * 5 : null,
+    sorceryPoints: sorcererLevel > 0 ? sorcererLevel : null,
+    bardicInspirationDie: bardLevel >= 15 ? "d12" : bardLevel >= 10 ? "d10" : bardLevel >= 5 ? "d8" : bardLevel > 0 ? "d6" : null,
+  };
+}
+
+function featureDescription(name: string, rawHtml: string, ctx: SummaryContext): string {
+  const stripped = stripFoundryRefs(rawHtml);
+  return getFeatureSummary(name, stripped, ctx, rawHtml);
+}
+
+function buildFeatures(actor: Record<string, unknown>, effectData?: ParsedEffectData): { mainGroups: LPCSFeatureGroup[]; speciesGroup: LPCSFeatureGroup[] } {
+  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+  const ctx = buildSummaryContext(actor);
+  const efx = effectData ?? parseAllEffects(actor);
+
+  // Buckets: feats (non-origin), origin feats, class features (keyed by class name), species traits, other
+  const feats: LPCSFeature[] = [];
+  const originFeats: LPCSFeature[] = [];
+  const classGroups = new Map<string, LPCSFeature[]>();
+  const speciesTraits: LPCSFeature[] = [];
+  const other: LPCSFeature[] = [];
 
   for (const item of items.filter((i) => i.type === "feat")) {
     const sys = item.system as Record<string, unknown> ?? {};
     const typeObj = sys.type as Record<string, string> | undefined ?? {};
-    const source = typeObj.subtype ?? typeObj.value ?? "Other";
-
-    if (!groups.has(source)) {
-      groups.set(source, { label: source, features: [] });
-    }
+    const typeValue = typeObj.value ?? "";
+    const subtype = typeObj.subtype ?? "";
 
     const uses = sys.uses as Record<string, number> | undefined;
-    groups.get(source)!.features.push({
-      id: String(item.id ?? ""),
+    const rawHtml = String((sys.description as Record<string, string> | undefined)?.value ?? "");
+    const itemId = String(item.id ?? "");
+    const feat: LPCSFeature = {
+      id: itemId,
       name: String(item.name ?? ""),
       img: String(item.img ?? ""),
-      description: shortDesc(String((sys.description as Record<string, string> | undefined)?.value ?? "")),
+      description: featureDescription(String(item.name ?? ""), rawHtml, ctx),
       uses: uses?.max ? { value: uses.value ?? 0, max: uses.max } : null,
-      source,
-    });
+      source: subtype || typeValue || "Other",
+      effectAnnotations: getFeatureAnnotations(itemId, efx),
+    };
+
+    if (typeValue === "class") {
+      const className = subtype || "Class";
+      if (!classGroups.has(className)) classGroups.set(className, []);
+      classGroups.get(className)!.push(feat);
+    } else if (typeValue === "race") {
+      speciesTraits.push(feat);
+    } else if (typeValue === "background" || subtype === "origin") {
+      originFeats.push(feat);
+    } else if (typeValue === "feat") {
+      feats.push(feat);
+    } else {
+      other.push(feat);
+    }
   }
 
-  return [...groups.values()].sort((a, b) => a.label.localeCompare(b.label));
+  // Build ordered groups: Feats → Origin Feats → Class Features → Other
+  // Species traits are returned separately so the template can render proficiencies between them.
+  const mainGroups: LPCSFeatureGroup[] = [];
+  if (feats.length) mainGroups.push({ label: "Feats", features: feats });
+  if (originFeats.length) mainGroups.push({ label: "Origin Feats", features: originFeats });
+  for (const [className, features] of [...classGroups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    mainGroups.push({ label: `${className} Features`, features });
+  }
+  if (other.length) mainGroups.push({ label: "Other", features: other });
+
+  const speciesGroup: LPCSFeatureGroup[] = [];
+  if (speciesTraits.length) speciesGroup.push({ label: "Species Traits", features: speciesTraits });
+
+  return { mainGroups, speciesGroup };
 }
 
 function buildTraits(system: Record<string, unknown>): LPCSTraitGroup[] {
@@ -405,27 +826,52 @@ function buildTraits(system: Record<string, unknown>): LPCSTraitGroup[] {
   return result;
 }
 
+const ARMOR_LABELS: Record<string, string> = {
+  lgt: "Light Armor", med: "Medium Armor", hvy: "Heavy Armor", shl: "Shields",
+};
+const WEAPON_LABELS: Record<string, string> = {
+  sim: "Simple Weapons", mar: "Martial Weapons",
+};
+const TOOL_LABELS: Record<string, string> = {
+  alchemist: "Alchemist's Supplies", brewer: "Brewer's Supplies",
+  calligrapher: "Calligrapher's Supplies", carpenter: "Carpenter's Tools",
+  cartographer: "Cartographer's Tools", cobbler: "Cobbler's Tools",
+  cook: "Cook's Utensils", glassblower: "Glassblower's Tools",
+  jeweler: "Jeweler's Tools", leatherworker: "Leatherworker's Tools",
+  mason: "Mason's Tools", painter: "Painter's Supplies",
+  potter: "Potter's Tools", smith: "Smith's Tools",
+  tinker: "Tinker's Tools", weaver: "Weaver's Tools",
+  woodcarver: "Woodcarver's Tools", disguise: "Disguise Kit",
+  forgery: "Forgery Kit", herbalism: "Herbalism Kit",
+  poisoner: "Poisoner's Kit", navigator: "Navigator's Tools",
+  thief: "Thieves' Tools", vehicle: "Vehicles",
+};
+
+function resolveProfLabel(abbrev: string, labelMap: Record<string, string>): string {
+  return labelMap[abbrev.toLowerCase()] ?? capitalize(abbrev);
+}
+
 function buildProficiencies(actor: Record<string, unknown>): LPCSProficiencies {
   const sys = actor.system as Record<string, unknown> ?? {};
   const traits = sys.traits as Record<string, unknown> | undefined ?? {};
 
-  const extractTrait = (key: string): string[] => {
+  const extractTrait = (key: string, labelMap: Record<string, string>): string[] => {
     const t = traits[key] as Record<string, unknown> | undefined;
     if (!t) return [];
     const values: string[] = [];
     const raw = t.value;
-    if (raw instanceof Set) for (const v of raw) values.push(String(v));
-    else if (Array.isArray(raw)) for (const v of raw) values.push(String(v));
+    if (raw instanceof Set) for (const v of raw) values.push(resolveProfLabel(String(v), labelMap));
+    else if (Array.isArray(raw)) for (const v of raw) values.push(resolveProfLabel(String(v), labelMap));
     const custom = t.custom as string | undefined;
     if (custom?.trim()) values.unshift(...custom.split(";").map((s) => s.trim()).filter(Boolean));
     return values;
   };
 
   return {
-    armor: extractTrait("armorProf").join(", "),
-    weapons: extractTrait("weaponProf").join(", "),
-    tools: extractTrait("toolProf").join(", "),
-    languages: extractTrait("languages").join(", "),
+    armor: extractTrait("armorProf", ARMOR_LABELS).join(", "),
+    weapons: extractTrait("weaponProf", WEAPON_LABELS).join(", "),
+    tools: extractTrait("toolProf", TOOL_LABELS).join(", "),
+    languages: extractTrait("languages", {}).join(", "),
   };
 }
 
@@ -497,6 +943,434 @@ function buildXP(system: Record<string, unknown>): import("./lpcs-types").LPCSEx
   return { value, max, pct: Math.min(100, Math.round((value / max) * 100)) };
 }
 
+/* ── Combat Groups ────────────────────────────────────────── */
+
+/**
+ * Determine the activation type for an item, checking dnd5e 5.x activities
+ * first, then falling back to legacy activation.type.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getItemActivationType(item: any): string {
+  try {
+    for (const activity of getActivityValues(item.system?.activities)) {
+      const type = (activity as unknown as Record<string, unknown>)?.activation as Record<string, unknown> | undefined;
+      if (type?.type) return String(type.type);
+    }
+  } catch {
+    // Fall through to legacy activation
+  }
+  const activation = (item.system as Record<string, unknown> | undefined)
+    ?.activation as Record<string, string> | undefined;
+  return activation?.type ?? "";
+}
+
+/**
+ * Build the interpolation context for standard combat action descriptions.
+ */
+function buildCombatContext(actor: Record<string, unknown>): CombatContext {
+  const system = actor.system as Record<string, unknown> ?? {};
+  const attrs = system.attributes as Record<string, unknown> | undefined ?? {};
+  const abilities = system.abilities as Record<string, Record<string, number>> | undefined ?? {};
+  const prof = (attrs.prof as number) ?? 2;
+  const strMod = abilities.str?.mod ?? 0;
+
+  // Spell save DC
+  const spellcastingAbility = attrs.spellcasting as string | undefined;
+  const spellMod = spellcastingAbility ? (abilities[spellcastingAbility]?.mod ?? 0) : 0;
+  const spellSaveDC = spellcastingAbility ? 8 + prof + spellMod : 0;
+
+  // Grapple DC: 8 + prof + STR mod
+  const grappleDC = 8 + prof + strMod;
+
+  // Sneak attack dice: ceil(rogueLevel / 2)d6
+  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+  const rogueClass = items.find((i) =>
+    i.type === "class" && String(i.name ?? "").toLowerCase() === "rogue"
+  );
+  const rogueLevel = rogueClass
+    ? ((rogueClass.system as Record<string, unknown> | undefined)?.levels as number ?? 0)
+    : 0;
+  const sneakDice = rogueLevel > 0 ? Math.ceil(rogueLevel / 2) : 0;
+  const sneakAttackDice = sneakDice > 0 ? `${sneakDice}d6` : "0";
+
+  return { proficiencyBonus: prof, spellSaveDC, grappleDC, sneakAttackDice };
+}
+
+/**
+ * Detect which equipped weapons should appear as off-hand candidates
+ * in the Bonus Action group.
+ *
+ * Rules: if 2+ equipped weapons have the Light property, the second+ are
+ * off-hand candidates. If the character has the Dual Wielder feat, the
+ * Light restriction is removed. Weapons with the Nick mastery are excluded
+ * (TWF becomes part of the Attack action).
+ */
+function detectOffhandWeapons(actor: Record<string, unknown>, weapons: LPCSWeapon[]): LPCSWeapon[] {
+  if (weapons.length < 2) return [];
+
+  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+  const hasDualWielder = items.some((i) =>
+    i.type === "feat" && String(i.name ?? "").toLowerCase().includes("dual wielder")
+  );
+
+  // Check which weapons have the Light property
+  const equipped = items.filter((i) =>
+    i.type === "weapon" && (i.system as Record<string, unknown>)?.equipped
+  );
+
+  const hasPropOnItem = (item: Record<string, unknown>, p: string): boolean => {
+    const propsRaw = (item.system as Record<string, unknown>)?.properties as
+      Set<string> | string[] | Record<string, boolean> | undefined;
+    if (propsRaw instanceof Set) return propsRaw.has(p);
+    if (Array.isArray(propsRaw)) return propsRaw.includes(p);
+    if (propsRaw && typeof propsRaw === "object") return !!(propsRaw as Record<string, boolean>)[p];
+    return false;
+  };
+
+  // Build candidates: light weapons (or all if Dual Wielder), excluding nick mastery
+  const candidates = equipped.filter((item) => {
+    const hasLight = hasPropOnItem(item, "lgt");
+    const mastery = ((item.system as Record<string, unknown>)?.mastery as string | undefined) ?? "";
+    if (mastery.toLowerCase() === "nick") return false;
+    return hasDualWielder || hasLight;
+  });
+
+  if (candidates.length < 2) return [];
+
+  // The first weapon is the main-hand, the rest are off-hand
+  const offhandIds = new Set(candidates.slice(1).map((i) => String(i.id ?? "")));
+  return weapons
+    .filter((w) => offhandIds.has(w.id))
+    .map((w) => ({ ...w, name: `${w.name} (Off-hand)` }));
+}
+
+/**
+ * Build combat-relevant spells for a given action type.
+ * Filters prepared spells + all cantrips by their activation type.
+ * Extracts full spell data for table display (atk/DC, damage, range, etc.).
+ */
+function buildCombatSpells(actor: Record<string, unknown>, actionType: string, effectData?: ParsedEffectData): LPCSCombatSpell[] {
+  const spellAnns = effectData ? getSpellAnnotations(effectData) : [];
+  const items = actor.items as Array<Record<string, unknown>> | undefined ?? [];
+  const system = actor.system as Record<string, unknown> ?? {};
+  const attrs = system.attributes as Record<string, unknown> | undefined ?? {};
+  const abilities = system.abilities as Record<string, Record<string, number>> | undefined ?? {};
+  const prof = (attrs.prof as number) ?? 2;
+  const spellcastingAbility = attrs.spellcasting as string | undefined;
+  const abilityMod = spellcastingAbility ? (abilities[spellcastingAbility]?.mod ?? 0) : 0;
+  const attackMod = prof + abilityMod;
+  const dc = 8 + prof + abilityMod;
+
+  const result: LPCSCombatSpell[] = [];
+
+  for (const item of items.filter((i) => i.type === "spell")) {
+    const sys = item.system as Record<string, unknown> ?? {};
+    const level = (sys.level as number) ?? 0;
+
+    // Only include cantrips (always) or prepared spells
+    const prepared = !!(sys.prepared ?? (sys.preparation as Record<string, unknown> | undefined)?.prepared);
+    if (level > 0 && !prepared) continue;
+
+    // Check activation type matches
+    const activationType = getItemActivationType(item);
+    if (activationType !== actionType) continue;
+
+    const props = sys.properties as Set<string> | string[] | undefined;
+    const hasProp = (p: string): boolean => {
+      if (props instanceof Set) return props.has(p);
+      if (Array.isArray(props)) return props.includes(p);
+      return false;
+    };
+
+    // ── Components ──
+    const compParts: string[] = [];
+    if (hasProp("vocal")) compParts.push("V");
+    if (hasProp("somatic")) compParts.push("S");
+    if (hasProp("material")) compParts.push("M");
+
+    // ── Casting time ──
+    const activation = sys.activation as Record<string, unknown> | undefined ?? {};
+    const actType = (activation.type as string) ?? "";
+    const actVal = (activation.value as number) ?? 1;
+    let castingTime = "";
+    if (actType === "action") castingTime = actVal > 1 ? `${actVal}A` : "1A";
+    else if (actType === "bonus") castingTime = "1BA";
+    else if (actType === "reaction") castingTime = "1R";
+    else if (actType === "minute") castingTime = `${actVal}m`;
+    else if (actType === "hour") castingTime = `${actVal}h`;
+    else if (actType) castingTime = actType;
+
+    // ── Range ──
+    const rangeData = sys.range as Record<string, unknown> | undefined ?? {};
+    let range = "";
+    const rangeUnits = (rangeData.units as string) ?? "";
+    if (rangeUnits === "self") range = "Self";
+    else if (rangeUnits === "touch") range = "Touch";
+    else if (rangeData.value) range = `${rangeData.value} ft.`;
+    else if (rangeUnits) range = rangeUnits;
+
+    // ── Duration ──
+    const durData = sys.duration as Record<string, unknown> | undefined ?? {};
+    const isConc = hasProp("concentration");
+    let duration = "";
+    const durUnits = (durData.units as string) ?? "";
+    if (durUnits === "inst") duration = "Instant";
+    else if (durUnits === "perm") duration = "Permanent";
+    else if (durUnits === "spec") duration = "Special";
+    else if (durData.value) {
+      const unit = durUnits === "minute" ? "m" : durUnits === "hour" ? "h" : durUnits === "round" ? "r" : durUnits;
+      duration = `${durData.value}${unit}`;
+    }
+
+    // ── AoE (target) ──
+    const targetData = sys.target as Record<string, unknown> | undefined ?? {};
+    const targetType = (targetData.type as string) ?? "";
+    const targetValue = targetData.value as number | undefined;
+    const aoeInfo = getAoeTypeInfo(targetType);
+
+    // ── Attack/Save & Damage from activities ──
+    let attackSave = "";
+    let damageFormula = "";
+    let damageType = "";
+    let isHealing = false;
+
+    const activityList = getActivityValues(sys.activities as Parameters<typeof getActivityValues>[0]);
+    if (activityList.length > 0) {
+      try {
+        const act = activityList[0];
+        // Attack
+        if (act?.attack?.type) {
+          attackSave = formatMod(attackMod);
+        }
+        // Save
+        if (act?.save?.dc?.calculation) {
+          const ability = act.save.ability;
+          const saveAbility = (ability instanceof Set ? [...ability][0] : (ability ?? "")).toUpperCase().slice(0, 3);
+          attackSave = `DC ${dc}${saveAbility ? " " + saveAbility : ""}`;
+        }
+        // Damage
+        const damageParts = act?.damage?.parts;
+        const rawDamageArr = Array.isArray(damageParts) ? damageParts :
+          damageParts instanceof Map ? Array.from(damageParts.values()) :
+          damageParts && typeof damageParts === "object" ? Object.values(damageParts) : [];
+        if (rawDamageArr.length > 0) {
+          const first = rawDamageArr[0] as unknown as Record<string, unknown>;
+          // Try structured damage data (number + denomination + bonus)
+          if (first && typeof first === "object" && first.denomination) {
+            const num = (first.number as number) ?? 1;
+            const den = first.denomination as number;
+            const bonus = first.bonus as string | undefined;
+            damageFormula = `${num}d${den}`;
+            if (bonus) {
+              const resolved = bonus.replace(/@mod/g, String(abilityMod));
+              damageFormula += resolved.startsWith("+") || resolved.startsWith("-") ? resolved : `+${resolved}`;
+            }
+            // Get damage type from types Set/Array
+            const types = first.types;
+            if (types instanceof Set) damageType = [...types][0] ?? "";
+            else if (Array.isArray(types)) damageType = types[0] ?? "";
+          } else {
+            // Fallback: formula string in bonus field
+            const formula = typeof first === "string" ? first :
+              (first && typeof first === "object" && "bonus" in first ? String(first.bonus ?? "") : "");
+            if (formula) damageFormula = formula.replace(/@mod/g, String(abilityMod));
+          }
+        }
+        // Healing
+        if (!damageFormula && act?.healing) {
+          const healParts = act.healing.parts as unknown;
+          const healArr = Array.isArray(healParts) ? healParts as Array<Record<string, unknown>> : [];
+          if (healArr.length > 0) {
+            const first = healArr[0];
+            if (first && typeof first === "object" && first.denomination) {
+              const num = (first.number as number) ?? 1;
+              const den = first.denomination as number;
+              const bonus = first.bonus as string | undefined;
+              damageFormula = `${num}d${den}`;
+              if (bonus) {
+                const resolved = bonus.replace(/@mod/g, String(abilityMod));
+                damageFormula += resolved.startsWith("+") || resolved.startsWith("-") ? resolved : `+${resolved}`;
+              }
+            } else if (act.healing.formula) {
+              damageFormula = String(act.healing.formula).replace(/@mod/g, String(abilityMod));
+            }
+            isHealing = true;
+            damageType = "healing";
+          } else if (act.healing.formula) {
+            damageFormula = String(act.healing.formula).replace(/@mod/g, String(abilityMod));
+            isHealing = true;
+            damageType = "healing";
+          }
+        }
+      } catch { /* ignore activity extraction errors */ }
+    }
+
+    const dmgInfo = isHealing
+      ? { icon: "fas fa-heart", cssClass: "lpcs-dmg--healing" }
+      : damageType ? getDamageTypeInfo(damageType) : { icon: "", cssClass: "" };
+
+    // ── Effect label for non-damage spells ──
+    let effectLabel = "";
+    if (!damageFormula) {
+      const school = String(sys.school ?? "");
+      const SCHOOL_EFFECTS: Record<string, string> = {
+        con: "Creation", evo: "Creation", ill: "Control",
+        enc: "Control", abj: "Warding", div: "Detection",
+        nec: "Debuff", trs: "Utility",
+      };
+      effectLabel = SCHOOL_EFFECTS[school] ?? "Utility";
+    }
+
+    // ── Source (class/feat that grants the spell) ──
+    const flags = item.flags as Record<string, Record<string, unknown>> | undefined;
+    const sourceRaw = (sys.sourceClass as string)
+      ?? (flags?.dnd5e?.sourceClass as string)
+      ?? "";
+    // Look up the class/feat name from source identifier
+    let source = "";
+    if (sourceRaw) {
+      const sourceItem = items.find((i) =>
+        (i.type === "class" || i.type === "subclass" || i.type === "feat" || i.type === "background") &&
+        (String(i.identifier ?? "").toLowerCase() === sourceRaw.toLowerCase() ||
+         String(i.name ?? "").toLowerCase() === sourceRaw.toLowerCase())
+      );
+      source = sourceItem ? String(sourceItem.name ?? sourceRaw) : capitalize(sourceRaw);
+    }
+
+    // ── Uses / restriction label ──
+    const uses = sys.uses as Record<string, unknown> | undefined;
+    let usesLabel = "";
+    const usesMax = (uses?.max as number) ?? 0;
+    if (usesMax > 0) {
+      const recovery = uses?.recovery as Array<Record<string, string>> | undefined;
+      const period = recovery?.[0]?.period ?? "";
+      const PERIOD_ABBR: Record<string, string> = { lr: "LR", sr: "SR", dawn: "Dawn", dusk: "Dusk", day: "Day" };
+      const periodLabel = PERIOD_ABBR[period] ?? period.toUpperCase();
+      usesLabel = periodLabel ? `${usesMax}/${periodLabel}` : `${usesMax}×`;
+    }
+
+    // ── AoE fields ──
+    const aoeIcon = aoeInfo.icon;
+    const aoeLabel = targetValue ? `${targetValue} ft.` : "";
+
+    // ── Notes (restrictions, duration, components) ──
+    const noteParts: string[] = [];
+    if (usesLabel) noteParts.push(usesLabel);
+    // Duration — skip "Instant" since it's the default/obvious
+    if (duration && duration !== "Instant") noteParts.push(`D: ${duration}`);
+    // Components — V/S/M letters only, no material description
+    const compStr = compParts.join("/");
+    if (compStr) noteParts.push(compStr);
+    const notes = noteParts.join("; ");
+
+    result.push({
+      id: String(item.id ?? ""),
+      name: String(item.name ?? ""),
+      level,
+      img: String(item.img ?? ""),
+      concentration: isConc,
+      ritual: hasProp("ritual"),
+      description: shortDesc(String((sys.description as Record<string, string> | undefined)?.value ?? "")),
+      levelLabel: level === 0 ? "C" : `Lvl ${level}`,
+      source,
+      attackSave,
+      damageFormula,
+      damageType,
+      damageTypeIcon: dmgInfo.icon,
+      damageTypeCss: dmgInfo.cssClass,
+      isHealing,
+      effectLabel,
+      range,
+      castingTime,
+      notes,
+      aoeIcon,
+      aoeLabel,
+      usesLabel,
+      school: String(sys.school ?? ""),
+      fullDescription: String((sys.description as Record<string, string> | undefined)?.value ?? ""),
+      effectAnnotations: spellAnns,
+    });
+  }
+
+  return result.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+}
+
+/**
+ * Group weapons by category (melee → ranged → other), omitting empty groups.
+ */
+function buildWeaponSubGroups(weapons: LPCSWeapon[]): LPCSWeaponSubGroup[] {
+  const CATEGORY_ORDER: Array<{ category: "melee" | "ranged" | "other"; label: string }> = [
+    { category: "melee", label: "Melee" },
+    { category: "ranged", label: "Ranged" },
+    { category: "other", label: "Other" },
+  ];
+  return CATEGORY_ORDER
+    .map(({ category, label }) => ({
+      category,
+      label,
+      weapons: weapons.filter((w) => w.category === category),
+    }))
+    .filter((g) => g.weapons.length > 0);
+}
+
+/**
+ * Build the four action-economy combat groups for the combat tab.
+ */
+function buildCombatGroups(actor: Record<string, unknown>, effectData?: ParsedEffectData): LPCSCombatGroup[] {
+  const efx = effectData ?? parseAllEffects(actor);
+  const weapons = buildWeapons(actor, efx);
+  const ctx = buildCombatContext(actor);
+  const system = actor.system as Record<string, unknown> ?? {};
+  const attrs = system.attributes as Record<string, unknown> | undefined ?? {};
+  const spellsFirst = !!(attrs.spellcasting);
+
+  const groups: Array<{ key: string; label: string; actionType: string }> = [
+    { key: "action", label: "Actions", actionType: "action" },
+    { key: "bonus", label: "Bonus Actions", actionType: "bonus" },
+    { key: "reaction", label: "Reactions", actionType: "reaction" },
+    { key: "other", label: "Other", actionType: "other" },
+  ];
+
+  // Off-hand weapons for the bonus action group
+  const offhandWeapons = detectOffhandWeapons(actor, weapons);
+
+  // Build standard actions per group
+  const standardActionsByGroup = new Map<string, LPCSStandardAction[]>();
+  for (const def of Object.values(COMBAT_ACTIONS)) {
+    if (!standardActionsByGroup.has(def.group)) {
+      standardActionsByGroup.set(def.group, []);
+    }
+    standardActionsByGroup.get(def.group)!.push({
+      key: def.key,
+      name: def.name,
+      description: interpolateCombatAction(def.description, ctx),
+      icon: def.icon,
+    });
+  }
+
+  return groups.map(({ key, label, actionType }) => {
+    const groupWeapons = key === "action" ? weapons : key === "bonus" ? offhandWeapons : [];
+    const spells = buildCombatSpells(actor, actionType, efx);
+    const items = buildActions(actor, actionType);
+    const standardActions = standardActionsByGroup.get(key) ?? [];
+
+    // Sub-group weapons by category
+    const weaponGroups = buildWeaponSubGroups(groupWeapons);
+
+    return {
+      key,
+      label,
+      weaponGroups,
+      spells,
+      items,
+      standardActions,
+      isEmpty: weaponGroups.length === 0 && spells.length === 0 &&
+               items.length === 0 && standardActions.length === 0,
+      spellsFirst,
+    } satisfies LPCSCombatGroup;
+  });
+}
+
 /* ── Empty fallback ───────────────────────────────────────── */
 
 function createEmptyViewModel(name: string): LPCSViewModel {
@@ -523,6 +1397,7 @@ function createEmptyViewModel(name: string): LPCSViewModel {
     actions: [],
     bonusActions: [],
     reactions: [],
+    combatGroups: [],
     spellcasting: null,
     spellSlots: [],
     spells: [],
@@ -530,6 +1405,7 @@ function createEmptyViewModel(name: string): LPCSViewModel {
     currency: [],
     encumbrance: { value: 0, max: 0, pct: 0, encumbered: false },
     features: [],
+    speciesTraits: [],
     traits: [],
     proficiencies: { armor: "", weapons: "", tools: "", languages: "" },
     deathSaves: { successes: 0, failures: 0, show: false, successPips: [], failurePips: [], rollMode: "digital" as const },
@@ -557,6 +1433,9 @@ export function buildLPCSViewModel(actor: any): LPCSViewModel {
   const attrs = system.attributes as Record<string, unknown> | undefined ?? {};
   const prof = (attrs.prof as number) ?? 2;
   const initTotal = (attrs.init as Record<string, number> | undefined)?.total ?? (attrs.init as number | undefined) ?? 0;
+
+  // Parse active effects once, share across all builders
+  const effectData = parseAllEffects(actor);
 
   return {
     name: String(actor.name ?? "Unknown"),
@@ -591,10 +1470,11 @@ export function buildLPCSViewModel(actor: any): LPCSViewModel {
     skills: buildSkills(system),
     senses: buildSenses(system),
 
-    weapons: buildWeapons(actor),
+    weapons: buildWeapons(actor, effectData),
     actions: buildActions(actor, "action"),
     bonusActions: buildActions(actor, "bonus"),
     reactions: buildActions(actor, "reaction"),
+    combatGroups: buildCombatGroups(actor, effectData),
 
     spellcasting: buildSpellcasting(system),
     spellSlots: buildSpellSlots(system),
@@ -613,7 +1493,10 @@ export function buildLPCSViewModel(actor: any): LPCSViewModel {
     })(),
     encumbrance: buildEncumbrance(system),
 
-    features: buildFeatures(actor),
+    ...(() => {
+      const { mainGroups, speciesGroup } = buildFeatures(actor, effectData);
+      return { features: mainGroups, speciesTraits: speciesGroup };
+    })(),
     traits: buildTraits(system),
     proficiencies: buildProficiencies(actor),
 

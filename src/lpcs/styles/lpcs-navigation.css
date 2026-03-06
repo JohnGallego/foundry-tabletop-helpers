@@ -18,7 +18,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--lpcs-space-xs);
   padding: var(--lpcs-space-xs) var(--lpcs-space-md);
   min-height: var(--lpcs-touch-min);
   min-width: 56px;
@@ -74,8 +74,7 @@
   color: var(--lpcs-accent-bronze);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin: 0 0 var(--lpcs-space-sm);
-  padding-bottom: var(--lpcs-space-xs);
+  padding-bottom: var(--lpcs-space-md);
   border-bottom: 1px solid var(--lpcs-border);
 }
 

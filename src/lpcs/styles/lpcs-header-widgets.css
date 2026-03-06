@@ -16,6 +16,7 @@
 }
 
 .lpcs-sheet .lpcs-abar-card {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -56,6 +57,67 @@
   text-transform: uppercase;
   color: var(--lpcs-text-secondary);
   line-height: 1;
+}
+
+/* ── Save Shield Badge ──────────────────────────────────────── */
+/* Floats top-left of each ability card: shield icon with "SAVE" label
+   and modifier stacked on top. Responsive sizing via container queries. */
+.lpcs-sheet .lpcs-abar-save {
+  position: absolute;
+  top: -8px;
+  left: -2px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 40px;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+
+.lpcs-sheet .lpcs-abar-save .fas.fa-shield {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0.6;
+}
+
+.lpcs-sheet .lpcs-abar-save-label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.45rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 1px;
+}
+
+.lpcs-sheet .lpcs-abar-save-mod {
+  position: relative;
+  z-index: 1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--lpcs-font-mono, monospace);
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Proficient: radiant gold */
+.lpcs-sheet .lpcs-abar-save--prof {
+  color: var(--lpcs-accent-gold, #c8a75d);
+}
+
+.lpcs-sheet .lpcs-abar-save--prof .fas.fa-shield {
+  opacity: 0.85;
+}
+
+.lpcs-sheet .lpcs-abar-save--prof .lpcs-abar-save-label {
+  color: var(--lpcs-bg-surface, #0f1115);
+}
+
+.lpcs-sheet .lpcs-abar-save--prof .lpcs-abar-save-mod {
+  color: var(--lpcs-bg-surface, #0f1115);
 }
 
 /* ── Stats Bar ───────────────────────────────────────────────── */
@@ -289,13 +351,6 @@
 
 .lpcs-sheet .lpcs-bar-fill--xp { background: linear-gradient(to right, var(--lpcs-accent-bronze), var(--lpcs-accent-gold)); }
 
-/* ── Identity + inspiration row ──────────────────────────────── */
-.lpcs-sheet .lpcs-identity-inspiration-row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--lpcs-space-md);
-}
-
 /* ── XP Widget ───────────────────────────────────────────────── */
 .lpcs-sheet .lpcs-xp-widget {
   display: flex;
@@ -394,4 +449,38 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   line-height: 1;
+}
+
+/* ── AC Shield Card ─────────────────────────────────────────── */
+/* Replaces the plain AC card with a shield silhouette for emphasis. */
+.lpcs-sheet .lpcs-qstat-card--ac {
+  position: relative;
+  background: none;
+  border: none;
+  border-top: none;
+  overflow: visible;
+}
+
+.lpcs-sheet .lpcs-qstat-card--ac .lpcs-ac-shield-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2rem;
+  color: var(--lpcs-accent-bronze);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.lpcs-sheet .lpcs-qstat-card--ac .lpcs-qstat-value {
+  position: relative;
+  z-index: 1;
+  font-size: 1.15rem;
+  color: var(--lpcs-text-primary);
+}
+
+.lpcs-sheet .lpcs-qstat-card--ac .lpcs-qstat-label {
+  position: relative;
+  z-index: 1;
 }

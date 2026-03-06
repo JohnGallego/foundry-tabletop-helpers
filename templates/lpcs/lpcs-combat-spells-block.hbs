@@ -1,0 +1,97 @@
+{{!-- lpcs-combat-spells-block.hbs — Spells table --}}
+{{#if spells.length}}
+<div class="lpcs-spell-table-wrap lpcs-weapon-subgroup">
+  <span class="lpcs-weapon-subgroup-badge">Spells</span>
+  <table class="lpcs-spells-table" aria-label="Spells">
+    <thead>
+      <tr>
+        <th scope="col" class="lpcs-col-name">Spell</th>
+        <th scope="col" class="lpcs-col-atk">Atk/DC</th>
+        <th scope="col" class="lpcs-col-effect">Effect</th>
+        <th scope="col" class="lpcs-col-time">Time</th>
+        <th scope="col" class="lpcs-col-range">Range</th>
+        <th scope="col" class="lpcs-col-notes">Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each spells}}
+      <tr class="lpcs-spell-row {{#if concentration}}lpcs-spell-row--conc{{/if}}"
+          data-item-id="{{id}}" data-action="toggleSpellDetail">
+        <td class="lpcs-col-name">
+          <button class="lpcs-weapon-use rollable" data-action="useItem" data-item-id="{{id}}"
+                  type="button" aria-label="Cast {{name}}">
+            {{#if img}}<img src="{{img}}" alt="" class="lpcs-item-icon" aria-hidden="true">{{/if}}
+            <span class="lpcs-spell-name-block">
+              <span class="lpcs-weapon-name">{{name}}</span>
+              <span class="lpcs-spell-sub">{{#if source}}{{source}} &middot; {{/if}}{{levelLabel}}</span>
+            </span>
+          </button>
+        </td>
+        <td class="lpcs-col-atk lpcs-atk-bonus">
+          {{#if attackSave}}{{attackSave}}{{else}}&mdash;{{/if}}
+          {{#each effectAnnotations}}
+          {{#if (eq target "spell-atk")}}
+          <span class="lpcs-effect-badge" title="{{source}}: {{value}} {{targetLabel}}">
+            {{#if icon}}<img src="{{icon}}" alt="" class="lpcs-effect-badge-icon" aria-hidden="true">{{/if}}
+            <span class="lpcs-effect-badge-label">{{label}}</span>
+          </span>
+          {{/if}}
+          {{#if (eq target "save-dc")}}
+          <span class="lpcs-effect-badge" title="{{source}}: {{value}} {{targetLabel}}">
+            {{#if icon}}<img src="{{icon}}" alt="" class="lpcs-effect-badge-icon" aria-hidden="true">{{/if}}
+            <span class="lpcs-effect-badge-label">{{label}}</span>
+          </span>
+          {{/if}}
+          {{/each}}
+        </td>
+        <td class="lpcs-col-effect lpcs-damage">
+          {{#if damageFormula}}
+            {{damageFormula}}
+            {{#if damageTypeIcon}}<i class="{{damageTypeIcon}} {{damageTypeCss}} lpcs-dmg-type-icon"
+               title="{{damageType}}"></i>{{/if}}
+            {{#each effectAnnotations}}
+            {{#if (eq target "spell-dmg")}}
+            <span class="lpcs-effect-badge" title="{{source}}: {{value}} {{targetLabel}}">
+              {{#if icon}}<img src="{{icon}}" alt="" class="lpcs-effect-badge-icon" aria-hidden="true">{{/if}}
+              <span class="lpcs-effect-badge-label">{{label}}</span>
+            </span>
+            {{/if}}
+            {{/each}}
+          {{else if effectLabel}}
+            <span class="lpcs-effect-label">{{effectLabel}}</span>
+          {{else}}
+            &mdash;
+          {{/if}}
+        </td>
+        <td class="lpcs-col-time">{{#if castingTime}}{{castingTime}}{{else}}&mdash;{{/if}}</td>
+        <td class="lpcs-col-range">{{#if range}}{{range}}{{else}}&mdash;{{/if}}</td>
+        <td class="lpcs-col-notes">
+          {{#if notes}}{{notes}}{{/if}}
+          {{#if aoeIcon}}
+            {{#if notes}} {{/if}}
+            {{#if aoeLabel}}{{aoeLabel}} {{/if}}<i class="{{aoeIcon}} lpcs-aoe-icon" title="Area of Effect"></i>
+          {{/if}}
+          {{#if concentration}}
+            {{#if notes}} {{/if}}<span class="lpcs-spell-tag lpcs-tag--conc" title="Concentration">C</span>
+          {{/if}}
+          {{#unless notes}}{{#unless aoeIcon}}{{#unless concentration}}&mdash;{{/unless}}{{/unless}}{{/unless}}
+        </td>
+      </tr>
+      {{!-- Expandable spell detail row --}}
+      <tr class="lpcs-spell-detail-row" data-spell-detail="{{id}}" hidden>
+        <td colspan="6">
+          <div class="lpcs-spell-detail-card">
+            <div class="lpcs-spell-detail-meta">
+              {{#if castingTime}}<span><strong>Casting Time:</strong> {{castingTime}}</span>{{/if}}
+              {{#if range}}<span><strong>Range:</strong> {{range}}</span>{{/if}}
+              {{#if aoeLabel}}<span><strong>Area:</strong> {{aoeLabel}}{{#if aoeIcon}} <i class="{{aoeIcon}}"></i>{{/if}}</span>{{/if}}
+            </div>
+            <div class="lpcs-spell-detail-body">{{{fullDescription}}}</div>
+          </div>
+        </td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+{{/if}}

@@ -14,6 +14,7 @@ import { MOD, Log } from "../logger";
 import { buildLPCSViewModel } from "./lpcs-view-model";
 import { lpcsEnabled, lpcsDefaultTab, isPhysicalMode } from "./lpcs-settings";
 import { isDnd5eWorld } from "../types";
+import type { LPCSSkill, LPCSSkillGroup } from "./lpcs-types";
 
 /* ── Runtime access to Foundry globals ────────────────────── */
 // These are resolved at runtime inside the init hook after Foundry has loaded.
@@ -159,6 +160,22 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           chevron?.classList.toggle("rotated");
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        toggleSpellDetail(this: any, event: Event, target: HTMLElement): void {
+          // Don't toggle if they clicked the cast button
+          if ((event.target as HTMLElement).closest("[data-action='useItem']")) return;
+          const row = target.closest(".lpcs-spell-row") as HTMLElement | null;
+          const itemId = row?.dataset.itemId;
+          if (!itemId) return;
+          const detailRow = this.element?.querySelector(`[data-spell-detail="${itemId}"]`) as HTMLElement | null;
+          if (!detailRow) return;
+          const isHidden = detailRow.hasAttribute("hidden");
+          if (isHidden) {
+            detailRow.removeAttribute("hidden");
+          } else {
+            detailRow.setAttribute("hidden", "");
+          }
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         toggleInspiration(this: any): void {
           const current = this.actor.system?.attributes?.inspiration;
           this.actor.update({ "system.attributes.inspiration": !current });
@@ -171,6 +188,46 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const current = (globalThis as any).foundry?.utils?.getProperty(this.actor, prop) ?? 0;
           this.actor.update({ [prop]: current === n ? n - 1 : n });
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        showCombatActionInfo(this: any, _event: Event, target: HTMLElement): void {
+          const actionKey = target.dataset.actionKey;
+          if (!actionKey) return;
+          // Find the matching standard action from the view model's combat groups
+          const vm = this._lastCombatVM;
+          if (!vm?.combatGroups) return;
+          for (const group of vm.combatGroups) {
+            const sa = group.standardActions?.find(
+              (a: { key: string }) => a.key === actionKey
+            );
+            if (sa) {
+              this._openCombatInfoModal(sa.name, sa.description);
+              return;
+            }
+          }
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        showDamageType(this: any, _event: Event, target: HTMLElement): void {
+          const dmgType = target.dataset.damageType;
+          if (!dmgType) return;
+          const title = dmgType.charAt(0).toUpperCase() + dmgType.slice(1);
+          this._openCombatInfoModal(title, `${title} damage`);
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        cycleSkillSort(this: any): void {
+          const modes = ["proficiency", "ability", "alphabetical"] as const;
+          const idx = modes.indexOf(this._skillSortMode);
+          this._skillSortMode = modes[(idx + 1) % modes.length];
+          this.render({ parts: ["skills"] });
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        showSkillInfo(this: any, event: Event, target: HTMLElement): void {
+          event.stopPropagation();
+          const skillKey = (target.closest("[data-skill]") as HTMLElement | null)?.dataset.skill;
+          if (!skillKey) return;
+          const vm = this._lastSkillsVM;
+          const skill = vm?.find((s: LPCSSkill) => s.key === skillKey);
+          if (skill) this._openSkillInfoModal(skill);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         openRestModal(this: any, _event: Event): void {
@@ -224,6 +281,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     };
 
     static PARTS = {
+      systemBar:     { template: `modules/${MOD}/templates/lpcs/lpcs-system-bar.hbs` },
       header:        { template: `modules/${MOD}/templates/lpcs/lpcs-header.hbs` },
       abilityScores: { template: `modules/${MOD}/templates/lpcs/lpcs-ability-scores.hbs` },
       statsBar:      { template: `modules/${MOD}/templates/lpcs/lpcs-stats-bar.hbs` },
@@ -238,9 +296,9 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         template: `modules/${MOD}/templates/lpcs/lpcs-tab-spells.hbs`,
         scrollable: [""],
       },
-      abilities: {
+      skills: {
         container: { classes: ["lpcs-tab-body"], id: "lpcs-tabs" },
-        template: `modules/${MOD}/templates/lpcs/lpcs-tab-abilities.hbs`,
+        template: `modules/${MOD}/templates/lpcs/lpcs-tab-skills.hbs`,
         scrollable: [""],
       },
       features: {
@@ -263,7 +321,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     static TABS = [
       { tab: "combat",    label: "Actions",    icon: "fas fa-swords" },
       { tab: "spells",    label: "Spells",     icon: "fas fa-hat-wizard" },
-      { tab: "abilities", label: "Abilities",  icon: "fas fa-fist-raised" },
+      { tab: "skills",    label: "Skills",      icon: "fas fa-hand-sparkles" },
       { tab: "features",  label: "Features",   icon: "fas fa-scroll" },
       { tab: "inventory", label: "Inventory",  icon: "fas fa-backpack" },
       { tab: "journal",   label: "Journal",    icon: "fas fa-book-open" },
@@ -313,6 +371,14 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      */
     private _hpWidthAnimation: Animation | null = null;
 
+    /** Whether the combat info modal is currently open. */
+    private _combatInfoModalOpen = false;
+    /** AbortController for combat info modal DOM listeners. */
+    private _combatInfoModalAbortCtrl: AbortController | null = null;
+    /** Cached view model for combat action lookups in the action handler. */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private _lastCombatVM: any = null;
+
     /** Whether the rest modal is currently open. */
     private _restModalOpen = false;
     /**
@@ -325,6 +391,15 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
      * Cleared on mouseup / touchend / touchcancel so partial holds don't fire.
      */
     private _longRestHoldTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** Current skills tab sort/group mode. Resets on page reload. */
+    private _skillSortMode: "proficiency" | "ability" | "alphabetical" = "proficiency";
+    /** Cached skills array for the skill info action handler. */
+    private _lastSkillsVM: LPCSSkill[] = [];
+    /** Whether the skill info modal is currently open. */
+    private _skillInfoModalOpen = false;
+    /** AbortController for skill info modal DOM listeners. */
+    private _skillInfoModalAbortCtrl: AbortController | null = null;
 
     /** Whether the exhaustion stepper dialog is currently open. */
     private _exhaustionDialogOpen = false;
@@ -365,15 +440,29 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       context = await super._preparePartContext(partId, context, options);
 
       if (partId === "tabNav") {
-        context.tabs = (this.constructor as typeof LPCSSheet).TABS.map((t) => ({
-          ...t,
-          active: t.tab === this.tabGroups.primary,
-        }));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const vm = context.vm as Record<string, unknown> | undefined;
+        const hasSpells = !!vm?.spellcasting;
+        context.tabs = (this.constructor as typeof LPCSSheet).TABS
+          .filter((t) => t.tab !== "spells" || hasSpells)
+          .map((t) => ({
+            ...t,
+            active: t.tab === this.tabGroups.primary,
+          }));
+      }
+
+      // Build skill groups for the skills tab
+      if (partId === "skills") {
+        const vm = context.vm as Record<string, unknown> | undefined;
+        const skills = (vm?.skills as LPCSSkill[] | undefined) ?? [];
+        this._lastSkillsVM = skills;
+        context.skillGroups = this._buildSkillGroups(skills, this._skillSortMode);
+        context.skillSortMode = this._skillSortMode;
       }
 
       // Inject active tab state into each tab part
       const tabKey = this.tabGroups.primary;
-      if (partId !== "header" && partId !== "abilityScores" && partId !== "statsBar" && partId !== "tabNav") {
+      if (partId !== "systemBar" && partId !== "header" && partId !== "abilityScores" && partId !== "statsBar" && partId !== "tabNav") {
         context.isActiveTab = partId === tabKey;
         context.currentTab = tabKey;
       }
@@ -694,6 +783,54 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           longBtn.addEventListener("touchcancel", cancelHold, { signal: restSignal });
         }
       }
+
+      // ── Combat info modal ──────────────────────────────────────────
+      // Cache VM for action handler lookup (also satisfies TS unused-local check).
+      this._lastCombatVM = (context as { vm?: unknown }).vm;
+      this._combatInfoModalAbortCtrl?.abort();
+      this._combatInfoModalAbortCtrl = new AbortController();
+      const combatInfoSignal = this._combatInfoModalAbortCtrl.signal;
+
+      const combatInfoModal = el.querySelector<HTMLElement>("[data-combat-info-modal]");
+      if (combatInfoModal) {
+        combatInfoModal.classList.toggle("open", this._combatInfoModalOpen);
+        combatInfoModal.setAttribute("aria-hidden", String(!this._combatInfoModalOpen));
+
+        // Close triggers
+        combatInfoModal.querySelectorAll<HTMLElement>("[data-combat-info-close]").forEach((btn) => {
+          btn.addEventListener("click", () => this._closeCombatInfoModal(), { signal: combatInfoSignal });
+        });
+
+        // Escape key dismiss
+        document.addEventListener("keydown", (e: KeyboardEvent) => {
+          if (e.key === "Escape" && this._combatInfoModalOpen) this._closeCombatInfoModal();
+        }, { signal: combatInfoSignal });
+      }
+
+      // ── Skill info modal ──────────────────────────────────────────
+      this._skillInfoModalAbortCtrl?.abort();
+      this._skillInfoModalAbortCtrl = new AbortController();
+      const skillInfoSignal = this._skillInfoModalAbortCtrl.signal;
+
+      const skillInfoModal = el.querySelector<HTMLElement>("[data-skill-info-modal]");
+      if (skillInfoModal) {
+        skillInfoModal.classList.toggle("open", this._skillInfoModalOpen);
+        skillInfoModal.setAttribute("aria-hidden", String(!this._skillInfoModalOpen));
+
+        skillInfoModal.querySelectorAll<HTMLElement>("[data-skill-info-close]").forEach((btn) => {
+          btn.addEventListener("click", () => this._closeSkillInfoModal(), { signal: skillInfoSignal });
+        });
+
+        document.addEventListener("keydown", (e: KeyboardEvent) => {
+          if (e.key === "Escape" && this._skillInfoModalOpen) this._closeSkillInfoModal();
+        }, { signal: skillInfoSignal });
+      }
+
+      // Ensure TS sees these as used (called via `any`-typed action handlers).
+      void this._openCombatInfoModal;
+      void this._lastCombatVM;
+      void this._openSkillInfoModal;
+      void this._lastSkillsVM;
     }
 
     /**
@@ -919,6 +1056,98 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       modal.setAttribute("aria-hidden", "true");
     }
 
+    /* ── Combat Info Modal Helpers ──────────────────────────── */
+
+    /** Open the combat info modal with the given title and description. */
+    private _openCombatInfoModal(title: string, description: string): void {
+      this._combatInfoModalOpen = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const modal = el?.querySelector<HTMLElement>("[data-combat-info-modal]");
+      if (!modal) return;
+      const titleEl = modal.querySelector<HTMLElement>("[data-combat-info-title]");
+      const descEl = modal.querySelector<HTMLElement>("[data-combat-info-desc]");
+      if (titleEl) titleEl.textContent = title;
+      if (descEl) descEl.textContent = description;
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    /** Close the combat info modal immediately (DOM + state). */
+    private _closeCombatInfoModal(): void {
+      this._combatInfoModalOpen = false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const modal = el?.querySelector<HTMLElement>("[data-combat-info-modal]");
+      if (!modal) return;
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    /* ── Skill Info Modal Helpers ─────────────────────────────── */
+
+    private _openSkillInfoModal(skill: LPCSSkill): void {
+      this._skillInfoModalOpen = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const modal = el?.querySelector<HTMLElement>("[data-skill-info-modal]");
+      if (!modal) return;
+      const titleEl = modal.querySelector<HTMLElement>("[data-skill-info-title]");
+      const descEl = modal.querySelector<HTMLElement>("[data-skill-info-desc]");
+      const exList = modal.querySelector<HTMLElement>("[data-skill-info-examples]");
+      if (titleEl) titleEl.textContent = skill.label;
+      if (descEl) descEl.textContent = skill.description;
+      if (exList) {
+        exList.innerHTML = "";
+        for (const ex of skill.examples) {
+          const li = document.createElement("li");
+          li.textContent = ex;
+          exList.appendChild(li);
+        }
+      }
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    private _closeSkillInfoModal(): void {
+      this._skillInfoModalOpen = false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const el = (this as any).element as HTMLElement | null;
+      const modal = el?.querySelector<HTMLElement>("[data-skill-info-modal]");
+      if (!modal) return;
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    /* ── Skill Grouping ───────────────────────────────────────── */
+
+    private _buildSkillGroups(
+      skills: LPCSSkill[],
+      mode: "proficiency" | "ability" | "alphabetical",
+    ): LPCSSkillGroup[] {
+      if (mode === "alphabetical") {
+        return [{ label: "", skills: [...skills].sort((a, b) => a.label.localeCompare(b.label)) }];
+      }
+
+      if (mode === "proficiency") {
+        const prof = skills.filter((s) => s.profLevel > 0).sort((a, b) => a.label.localeCompare(b.label));
+        const other = skills.filter((s) => s.profLevel === 0).sort((a, b) => a.label.localeCompare(b.label));
+        const groups: LPCSSkillGroup[] = [];
+        if (prof.length) groups.push({ label: "Proficient", skills: prof });
+        if (other.length) groups.push({ label: "Other Skills", skills: other });
+        return groups;
+      }
+
+      // mode === "ability"
+      const abilityOrder = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
+      const groups: LPCSSkillGroup[] = [];
+      for (const ab of abilityOrder) {
+        const matched = skills.filter((s) => s.ability === ab).sort((a, b) => a.label.localeCompare(b.label));
+        if (matched.length) groups.push({ label: ab, skills: matched });
+      }
+      return groups;
+    }
+
     /** Execute a long rest via the dnd5e actor method, bypassing dnd5e's own dialog. */
     private async _doLongRest(): Promise<void> {
       this._closeRestModal();
@@ -934,6 +1163,9 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
 /** Cached reference to the dynamically-built sheet class */
 let _LPCSSheetClass: (new (...args: unknown[]) => unknown) | null = null;
+
+/** Expose the cached LPCSSheet class for subclassing (e.g. KioskLPCSSheet). */
+export function getLPCSSheetClass() { return _LPCSSheetClass; }
 
 /**
  * Register the LPCS sheet with Foundry's DocumentSheetConfig.
@@ -962,6 +1194,12 @@ export function registerLPCSSheet(): void {
 
   _LPCSSheetClass = buildLPCSSheetClass();
   if (!_LPCSSheetClass) return;
+
+  // Ensure the class name survives minification — Foundry uses
+  // sheetClass.name to build the identifier ("scope.ClassName").
+  if (_LPCSSheetClass.name !== "LPCSSheet") {
+    Object.defineProperty(_LPCSSheetClass, "name", { value: "LPCSSheet" });
+  }
 
   try {
     (DocumentSheetConfig as Record<string, unknown> & {
@@ -1004,24 +1242,30 @@ export async function preloadLPCSTemplates(): Promise<void> {
     "lpcs-hp-drawer":          `modules/${MOD}/templates/lpcs/lpcs-hp-drawer.hbs`,
     "lpcs-exhaustion-dialog":  `modules/${MOD}/templates/lpcs/lpcs-exhaustion-dialog.hbs`,
     "lpcs-rest-modal":         `modules/${MOD}/templates/lpcs/lpcs-rest-modal.hbs`,
+    "lpcs-combat-info-modal":    `modules/${MOD}/templates/lpcs/lpcs-combat-info-modal.hbs`,
+    "lpcs-combat-weapons-block": `modules/${MOD}/templates/lpcs/lpcs-combat-weapons-block.hbs`,
+    "lpcs-combat-spells-block":  `modules/${MOD}/templates/lpcs/lpcs-combat-spells-block.hbs`,
   };
 
   // Non-partial PARTS templates — cached but not referenced by short name.
   const parts: string[] = [
+    `modules/${MOD}/templates/lpcs/lpcs-system-bar.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-header.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-ability-scores.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-stats-bar.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-nav.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-combat.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-spells.hbs`,
-    `modules/${MOD}/templates/lpcs/lpcs-tab-abilities.hbs`,
+    `modules/${MOD}/templates/lpcs/lpcs-tab-skills.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-features.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-inventory.hbs`,
     `modules/${MOD}/templates/lpcs/lpcs-tab-journal.hbs`,
   ];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const load = (globalThis as any).loadTemplates as
+  const g = globalThis as any;
+  // Prefer v13 namespaced path to avoid deprecation warning
+  const load = (g.foundry?.applications?.handlebars?.loadTemplates ?? g.loadTemplates) as
     | ((paths: string[] | Record<string, string>) => Promise<unknown>)
     | undefined;
 

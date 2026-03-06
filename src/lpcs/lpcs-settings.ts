@@ -60,7 +60,7 @@ export function registerLPCSSettings(settings: {
       config: true,
       type: String,
       choices: {
-        abilities: "Abilities",
+        skills: "Skills",
         combat: "Combat",
         spells: "Spells",
         inventory: "Inventory",
