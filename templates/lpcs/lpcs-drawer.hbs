@@ -1,6 +1,7 @@
 {{!-- lpcs-drawer.hbs --}}
 {{!-- Reusable expandable drawer partial. --}}
-{{!-- Expected context: drawerId, title, img, uses, description --}}
+{{!-- Required: drawerId, title, description --}}
+{{!-- Optional: img, uses {value, max}, recharge, badgeText, concentration --}}
 <div class="lpcs-drawer" data-drawer-id="{{drawerId}}">
   <button class="lpcs-drawer-header" data-action="toggleDrawer" type="button"
           aria-expanded="false" aria-controls="lpcs-drawer-body-{{drawerId}}">
