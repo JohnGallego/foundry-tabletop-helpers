@@ -54,6 +54,7 @@
   height: 100%;
   overflow: hidden;
   min-width: 320px;
+  max-width: 1024px;
   /* Container queries respond to THIS element's own width, not the viewport.
      Critical for Foundry floating windows — @media would always see desktop
      width even when the sheet is a small floating panel. */

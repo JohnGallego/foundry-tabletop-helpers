@@ -1,0 +1,15 @@
+{{!-- lpcs-system-bar.hbs --}}
+{{!-- Top bar with right-aligned action icons: inspiration, rest, menu --}}
+<div class="lpcs-system-bar">
+  <div class="lpcs-system-bar-actions">
+    {{> lpcs-inspiration}}
+    <button class="lpcs-sysbar-btn" data-action="openRestModal" type="button"
+            aria-label="Take a Rest">
+      <i class="fas fa-campground" aria-hidden="true"></i>
+    </button>
+    <button class="lpcs-sysbar-btn" data-action="openMenu" type="button"
+            aria-label="Menu">
+      <i class="fas fa-bars" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>

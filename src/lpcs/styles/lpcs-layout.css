@@ -17,6 +17,67 @@
   border-bottom: 1px solid var(--lpcs-border);
 }
 
+/* ── System Bar ─────────────────────────────────────────────── */
+/* Full-width strip at the top of the header, right-aligned action icons.
+   Height sized to fit 44px touch targets + padding. */
+.lpcs-sheet .lpcs-system-bar {
+  position: relative;
+  z-index: 10;           /* above header-content (z:1) so buttons stay clickable at small sizes */
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 var(--lpcs-space-sm);
+  margin-bottom: -10px;  /* tuck buttons slightly into the header below */
+  flex-shrink: 0;
+}
+
+.lpcs-sheet .lpcs-system-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lpcs-space-xs);
+}
+
+/* ── System Bar Buttons (shared) ────────────────────────────── */
+.lpcs-sheet .lpcs-sysbar-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(200, 167, 93, 0.15);
+  background: rgba(26, 29, 36, 0.6);
+  color: var(--lpcs-accent-bronze);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+.lpcs-sheet .lpcs-sysbar-btn:hover {
+  background: rgba(200, 167, 93, 0.1);
+  border-color: rgba(200, 167, 93, 0.4);
+  color: var(--lpcs-accent-gold);
+}
+
+.lpcs-sheet .lpcs-sysbar-btn:active {
+  transform: scale(0.9);
+}
+
+/* ── Inspiration active state (gold glow) ───────────────────── */
+.lpcs-sheet .lpcs-sysbar-btn--inspiration.is-active {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: var(--lpcs-accent-gold);
+  color: var(--lpcs-accent-gold);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.5), inset 0 0 6px rgba(212, 175, 55, 0.15);
+}
+
+.lpcs-sheet .lpcs-sysbar-btn--inspiration.is-active:hover {
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.7), inset 0 0 8px rgba(212, 175, 55, 0.2);
+}
+
 /* Identity + HP widget — in flow, sits above the portrait */
 .lpcs-sheet .lpcs-header-content {
   position: relative;
@@ -25,9 +86,10 @@
   flex-direction: column;
   justify-content: flex-start;
   gap: var(--lpcs-space-md);
+  margin-top: -40px;    /* pull header content up above the system bar row */
   padding: var(--lpcs-space-lg);
-  /* Desktop / Wide Screen (>1200px) default — container queries override for narrower widths */
-  width: 75%;
+  width: 100%;
+  max-width: 500px;
 }
 
 /* ── Identity block (name + subtitle + level hex) ────────────── */
@@ -116,56 +178,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* ── Inspiration Badge ────────────────────────────────────────── */
-.lpcs-sheet .lpcs-inspiration-badge {
-  -webkit-appearance: none;
-  appearance: none;
-  box-sizing: border-box;
-  font: inherit;
-  color: inherit;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 50px;
-  height: 50px;
-  border-radius: var(--lpcs-radius-sm);
-  background: rgba(26, 29, 36, 0.75);
-  border: 2px solid rgba(200, 167, 93, 0.22);
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-
-.lpcs-sheet .lpcs-inspiration-badge:hover {
-  background: rgba(200, 167, 93, 0.08);
-  border-color: rgba(200, 167, 93, 0.5);
-}
-
-.lpcs-sheet .lpcs-inspiration-badge.is-active {
-  background: rgba(212, 175, 55, 0.13);
-  border-color: var(--lpcs-accent-gold);
-  box-shadow: 0 0 14px rgba(212, 175, 55, 0.55), inset 0 0 6px rgba(212, 175, 55, 0.15);
-}
-
-.lpcs-sheet .lpcs-inspiration-badge.is-active:hover {
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.75), inset 0 0 8px rgba(212, 175, 55, 0.2);
-}
-
-.lpcs-sheet .lpcs-inspiration-icon {
-  font-size: 1.3rem;
-  color: rgba(200, 167, 93, 0.3);
-  transition: color 0.2s, filter 0.2s;
-}
-
-.lpcs-sheet .lpcs-inspiration-badge:hover .lpcs-inspiration-icon {
-  color: rgba(200, 167, 93, 0.6);
-}
-
-.lpcs-sheet .lpcs-inspiration-badge.is-active .lpcs-inspiration-icon {
-  color: var(--lpcs-accent-gold);
-  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.85));
 }
 
 /* ── Portrait panel ──────────────────────────────────────────── */

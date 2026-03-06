@@ -1,30 +1,3 @@
-/* ── Campfire Trigger ────────────────────────────────────────── */
-
-.lpcs-sheet .lpcs-rest-trigger {
-  -webkit-appearance: none;
-  appearance: none;
-  box-sizing: border-box;
-  position: absolute;
-  top: var(--lpcs-space-sm);
-  right: var(--lpcs-space-sm);
-  z-index: 5;       /* above portrait (z-index: 0) and header-content (z-index: 1) */
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: var(--lpcs-radius-sm);
-  border: 1px solid var(--lpcs-border);
-  background: rgba(26, 29, 36, 0.82);
-  color: var(--lpcs-accent-bronze);
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
-}
-.lpcs-sheet .lpcs-rest-trigger:hover {
-  background: rgba(200, 167, 93, 0.12);
-  border-color: var(--lpcs-border-accent);
-  color: var(--lpcs-accent-gold);
-}
-.lpcs-sheet .lpcs-rest-trigger:active { transform: scale(0.9); }
-
 /* ── Modal Overlay ───────────────────────────────────────────── */
 
 /* Anchored to .lpcs-header (position: relative; z-index: 2; overflow: visible).

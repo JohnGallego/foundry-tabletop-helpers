@@ -2,29 +2,15 @@
 {{!-- Character identity header: identity top-left, large portrait right --}}
 <header class="lpcs-header">
 
-  {{!-- Campfire rest trigger — top-right corner of the header, above the portrait --}}
-  <button class="lpcs-rest-trigger" data-action="openRestModal" type="button"
-          aria-label="Take a Rest">
-    <i class="fas fa-campground"></i>
-  </button>
-
-  {{!-- Left: identity → HP widget → quick stats, stacked top-to-bottom --}}
+  {{!-- Left: identity → HP widget → quick stats → XP, stacked top-to-bottom --}}
   <div class="lpcs-header-content">
-    {{!-- Identity + inspiration badge side by side --}}
-    <div class="lpcs-identity-inspiration-row">
-      {{> lpcs-identity name=vm.name subtitle=vm.subtitle background=vm.background level=vm.level}}
-      {{> lpcs-inspiration}}
-    </div>
+    {{> lpcs-identity name=vm.name subtitle=vm.subtitle background=vm.background level=vm.level}}
     {{> lpcs-hp hp=vm.hp deathSaves=vm.deathSaves}}
     {{> lpcs-quick-stats}}
     {{> lpcs-xp}}
   </div>
 
-  {{!-- Right: large portrait panel --}}
   {{> lpcs-portrait img=vm.img name=vm.name}}
-
-  {{!-- Rest modal — positioned to cover full sheet from header's stacking context --}}
   {{> lpcs-rest-modal rest=vm}}
 
 </header>
-

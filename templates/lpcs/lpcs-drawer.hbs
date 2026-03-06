@@ -8,6 +8,12 @@
     <img src="{{img}}" alt="" class="lpcs-drawer-icon" loading="lazy" aria-hidden="true">
     {{/if}}
     <span class="lpcs-drawer-title">{{title}}</span>
+    {{#if badgeText}}
+    <span class="lpcs-drawer-badge" aria-label="Level {{badgeText}}">{{badgeText}}</span>
+    {{/if}}
+    {{#if concentration}}
+    <span class="lpcs-drawer-conc" aria-label="Concentration">C</span>
+    {{/if}}
     {{#if uses}}
     <span class="lpcs-drawer-uses" aria-label="{{uses.value}} of {{uses.max}} uses">
       {{uses.value}}/{{uses.max}}
