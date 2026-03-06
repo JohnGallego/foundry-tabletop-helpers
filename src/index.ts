@@ -10,6 +10,7 @@ import { registerLPCSSettings } from "./lpcs/lpcs-settings";
 import { registerLPCSSheet, preloadLPCSTemplates } from "./lpcs/lpcs-sheet";
 import { autoOpenLPCS } from "./lpcs/lpcs-auto-open";
 import { registerInitiativeSettings, registerInitiativeHooks } from "./initiative/initiative-dialog";
+import { initKioskSetup, initKioskReady } from "./kiosk/kiosk-init";
 
 /* ── Hook Registration ─────────────────────────────────────── */
 
@@ -33,6 +34,10 @@ getHooks()?.on?.("init", () => {
   Log.info("init");
 });
 
+getHooks()?.on?.("setup", () => {
+  initKioskSetup();
+});
+
 getHooks()?.on?.("ready", () => {
   const game = getGame();
   Log.info("ready", {
@@ -43,6 +48,10 @@ getHooks()?.on?.("ready", () => {
 
   // Socket listener + macro pack provisioning
   initWindowRotationReady();
+
+  // Kiosk — full-screen sheet mode for designated players (before auto-open
+  // so kiosk handles its own sheet opening with maximize/fullscreen)
+  initKioskReady();
 
   // LPCS — auto-open sheet for assigned player characters
   autoOpenLPCS();

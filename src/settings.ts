@@ -10,6 +10,7 @@ import {
   getPlayerUsers,
   getSetting,
   setSetting,
+  getCurrentUserId,
 } from "./types";
 
 export type RotMode = 90 | 180;
@@ -190,6 +191,130 @@ export function registerSettings(): void {
     Log.warn("Failed to register Target Players submenu", e);
   }
 
+  /* ── Rotate Button Visibility ─────────────────────────────── */
+
+  // Which players see the rotate button (GM-only; stored as CSV; hidden)
+  settings.register(MOD, "rotateButtonPlayerIds", {
+    name: "Rotate Button Players (storage)",
+    hint: "Internal storage for player IDs who see the rotate button.",
+    scope: "world",
+    config: false,
+    type: String,
+    default: "",
+    restricted: true,
+  });
+
+  // GM-only submenu to configure which players see the rotate button
+  try {
+    const RotBtnFormAppBase = getFormApplicationClass() ?? class {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const RotBtnBaseWithDefaults = RotBtnFormAppBase as any;
+    class RotateButtonPlayersForm extends RotBtnBaseWithDefaults {
+      static get defaultOptions() {
+        const base = RotBtnBaseWithDefaults.defaultOptions ?? {};
+        return foundry.utils.mergeObject(base, {
+          id: `${MOD}-rotate-button-players`,
+          title: "Rotate Button Players",
+          template: `modules/${MOD}/templates/rotate-button-players.hbs`,
+          width: 420,
+        }, {inplace: false});
+      }
+      async getData() {
+        const selected = new Set(rotateButtonPlayerIds());
+        const users = getPlayerUsers();
+        return {
+          users: users.map((u) => ({ id: u.id, name: u.name, selected: selected.has(u.id), isActive: u.active })),
+        };
+      }
+      async _updateObject(_event: Event, formData: Record<string, unknown>) {
+        const raw = formData["userIds"];
+        const ids: string[] = Array.isArray(raw) ? (raw as string[]) : raw ? [String(raw)] : [];
+        await setSetting(MOD, "rotateButtonPlayerIds", ids.join(","));
+      }
+    }
+
+    settings.registerMenu(MOD, "rotateButtonPlayersMenu", {
+      name: "Rotate Button Players",
+      label: "Configure",
+      hint: "Choose which players see the rotation button on their windows.",
+      icon: "fa-solid fa-arrows-rotate",
+      type: RotateButtonPlayersForm,
+      restricted: true,
+    });
+  } catch (e) {
+    Log.warn("Failed to register Rotate Button Players submenu", e);
+  }
+
+  /* ── Kiosk Mode Settings ──────────────────────────────────── */
+
+  // Kiosk player IDs (GM-only; stored as CSV; hidden - configured via submenu)
+  settings.register(MOD, "kioskPlayerIds", {
+    name: "Kiosk Players (storage)",
+    hint: "Internal storage for kiosk player IDs.",
+    scope: "world",
+    config: false,
+    type: String,
+    default: "",
+    restricted: true,
+  });
+
+  // Kiosk canvas mode
+  settings.register(MOD, "kioskCanvasMode", {
+    name: "Kiosk Canvas Mode",
+    hint: "Controls canvas behavior for kiosk players. 'Disable' prevents canvas from loading (best performance). 'Low' sets Foundry performance mode to Low. 'None' leaves the canvas unchanged.",
+    scope: "world",
+    config: true,
+    type: String,
+    choices: {
+      disable: "Disable Canvas",
+      low: "Low Performance Mode",
+      none: "Don't Touch Canvas",
+    },
+    default: "disable",
+    restricted: true,
+  });
+
+  // GM-only submenu to configure kiosk players with checkboxes
+  try {
+    const KioskFormAppBase = getFormApplicationClass() ?? class {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const KioskBaseWithDefaults = KioskFormAppBase as any;
+    class KioskPlayersForm extends KioskBaseWithDefaults {
+      static get defaultOptions() {
+        const base = KioskBaseWithDefaults.defaultOptions ?? {};
+        return foundry.utils.mergeObject(base, {
+          id: `${MOD}-kiosk-players`,
+          title: "Kiosk Players",
+          template: `modules/${MOD}/templates/kiosk-players.hbs`,
+          width: 420,
+        }, {inplace: false});
+      }
+      async getData() {
+        const selected = new Set(kioskPlayerIds());
+        const users = getPlayerUsers();
+        return {
+          users: users.map((u) => ({ id: u.id, name: u.name, selected: selected.has(u.id), isActive: u.active })),
+        };
+      }
+      async _updateObject(_event: Event, formData: Record<string, unknown>) {
+        const raw = formData["userIds"];
+        const ids: string[] = Array.isArray(raw) ? (raw as string[]) : raw ? [String(raw)] : [];
+        await setSetting(MOD, "kioskPlayerIds", ids.join(","));
+      }
+    }
+
+    settings.registerMenu(MOD, "kioskPlayersMenu", {
+      name: "Kiosk Players",
+      label: "Configure",
+      hint: "Choose which players enter kiosk mode (full-screen sheet, hidden UI) on login.",
+      icon: "fa-solid fa-tv",
+      type: KioskPlayersForm,
+      restricted: true,
+    });
+  } catch (e) {
+    Log.warn("Failed to register Kiosk Players submenu", e);
+  }
+
   // Print Defaults submenu
   try {
     // FormApplication inheritance requires careful typing - use base class pattern
@@ -284,6 +409,43 @@ export const supportV1 = (): boolean => {
 export const targetUserIds = (): string[] => {
   const raw = getSetting<string>(MOD, "targetUserIds") ?? "";
   return raw.split(",").map(s => s.trim()).filter(Boolean);
+};
+
+/* ── Rotate Button Settings Getters ────────────────────────── */
+
+export const rotateButtonPlayerIds = (): string[] => {
+  const raw = getSetting<string>(MOD, "rotateButtonPlayerIds") ?? "";
+  return raw.split(",").map(s => s.trim()).filter(Boolean);
+};
+
+/** Returns true if the current user should see the rotate button.
+ *  GMs always see it; players only if they are in the list. */
+export const shouldShowRotateButton = (): boolean => {
+  if (getGame()?.user?.isGM) return true;
+  const userId = getCurrentUserId();
+  if (!userId) return false;
+  return rotateButtonPlayerIds().includes(userId);
+};
+
+/* ── Kiosk Settings Getters ────────────────────────────────── */
+
+export const kioskPlayerIds = (): string[] => {
+  const raw = getSetting<string>(MOD, "kioskPlayerIds") ?? "";
+  return raw.split(",").map(s => s.trim()).filter(Boolean);
+};
+
+export const isKioskPlayer = (): boolean => {
+  const userId = getCurrentUserId();
+  if (!userId) return false;
+  return kioskPlayerIds().includes(userId);
+};
+
+export type KioskCanvasMode = "disable" | "low" | "none";
+
+export const getKioskCanvasMode = (): KioskCanvasMode => {
+  const v = getSetting<string>(MOD, "kioskCanvasMode") ?? "disable";
+  if (v === "low" || v === "none") return v;
+  return "disable";
 };
 
 /* ── Print Settings Getters ────────────────────────────────── */

@@ -12,6 +12,7 @@
 import { Log } from "../logger";
 import { isDnd5eWorld, isGM, getGame } from "../types";
 import { lpcsEnabled, lpcsAutoOpen } from "./lpcs-settings";
+import { isKioskPlayer } from "../settings";
 
 /**
  * Attempt to auto-open the LPCS sheet for the current user's assigned character.
@@ -41,6 +42,11 @@ export function autoOpenLPCS(): void {
 
   if (isGM()) {
     Log.debug("LPCS auto-open: skipped for GM");
+    return;
+  }
+
+  if (isKioskPlayer()) {
+    Log.debug("LPCS auto-open: skipped for kiosk player (kiosk handles sheet)");
     return;
   }
 
