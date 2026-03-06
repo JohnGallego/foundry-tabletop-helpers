@@ -3,6 +3,9 @@
  * Injected into the print window via Vite raw import (import css from './dnd5e-print.css?raw').
  */
 
+/* ── Print Footer (hidden on screen, visible when printed) ── */
+.fth-print-footer { display: none; }
+
 /* ── Reset & Base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -397,41 +400,77 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
 /* ── Print Media ──────────────────────────────────────────── */
 @media print {
   body { padding: 0; }
-  @page { margin: 0.4in; }
+  @page {
+    margin: 0.4in;
+    margin-bottom: 0.7in; /* room for the fixed footer */
+  }
 
-  /* SUBSECTIONS: Keep these atomic units together - never break inside */
+  /* ATOMIC UNITS: never break inside these small elements */
   .fth-statblock { break-inside: avoid; }
-  .fth-action-group { break-inside: avoid; }
-  .fth-feat-group { break-inside: avoid; }
-  .fth-spell-level { break-inside: avoid; }
   .fth-spell-card { break-inside: avoid; }
-  .fth-inv-container-group { break-inside: avoid; }
   .fth-dm-table tr { break-inside: avoid; }
   .fth-track-card { break-inside: avoid; }
-  .fth-combat { break-inside: avoid; }
   .fth-abilities-saves-row { break-inside: avoid; }
   .fth-skills { break-inside: avoid; }
 
-  /* Section titles must stay with following content */
+  /* ROWS & ITEMS: keep individual rows/items together but allow breaks
+     between them inside their parent section — this is the key change
+     that prevents large white gaps on printed pages. */
+  .fth-pro-action-group { break-inside: avoid; }
+  .fth-pro-feat-group { break-inside: avoid; }
+  .fth-pro-inv-container { break-inside: avoid; }
+  .fth-pro-inv-item { break-inside: avoid; }
+  .fth-pro-action-item { break-inside: avoid; }
+  .fth-pro-feat { break-inside: avoid; }
+  .fth-pro-attack-table tr { break-inside: avoid; }
+  .fth-pro-spell-level-row { break-inside: avoid; }
+  .fth-action-group { break-inside: avoid; }
+  .fth-feat-group { break-inside: avoid; }
+  .fth-spell-level { break-inside: avoid; }
+  .fth-inv-container-group { break-inside: avoid; }
+  .fth-combat { break-inside: avoid; }
+
+  /* SECTION HEADERS: keep with the content that follows */
   .fth-section-title { break-after: avoid; }
+  .fth-pro-section-header { break-after: avoid; break-inside: avoid; }
   h3 { break-after: avoid; }
 
-  /* PARENT SECTIONS: Allow breaks between subsections to avoid large gaps */
-  /* These sections CAN break, but only between their child subsections */
-  .fth-actions { break-before: auto; }
-  .fth-features { break-before: auto; }
-  .fth-inventory { break-before: auto; }
-  .fth-spellcasting { break-before: auto; }
+  /* PRO SECTIONS: allow page breaks between children.
+     The border/background is sacrificed at break points, but content
+     packs tightly across pages instead of leaving white space. */
+  .fth-pro-section { break-inside: auto; }
 
   /* Spell cards always on new page */
   .fth-spell-cards-page { page-break-before: always; }
+  .fth-pro-spell-cards-page { page-break-before: always; }
 
-  /* Orphans/widows - require at least 3 lines before/after page break */
+  /* Orphans/widows — require at least 3 lines before/after page break */
   p, .fth-feat, .fth-action-item, .fth-inv-item { orphans: 3; widows: 3; }
+  .fth-pro-feat, .fth-pro-action-item, .fth-pro-inv-item { orphans: 3; widows: 3; }
 
   /* Background removal for print */
   .fth-stat-box { background: none !important; }
   .fth-dm-table tr:nth-child(even) td { background: none !important; }
+
+  /* ── Print Footer (repeats on every page) ──────────────── */
+  .fth-print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-top: 1px solid #c9b896;
+    font-size: 8pt;
+    color: #666;
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  }
+  .fth-print-footer-name { font-weight: 600; }
+  .fth-print-footer-page::after {
+    content: counter(page) " of " counter(pages);
+  }
 }
 
 /* DM Screen prints in landscape */
@@ -857,7 +896,6 @@ h1, h2, h3, h4 { font-family: "Segoe UI", Roboto, sans-serif; }
   padding: 10px 12px;
   margin-bottom: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-  break-inside: avoid;
 }
 .fth-pro-section-header {
   display: flex;
