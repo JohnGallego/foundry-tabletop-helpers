@@ -8,9 +8,9 @@
   flex-shrink: 0;
   background: linear-gradient(
     to right,
-    rgba(200, 167, 93, 0.07) 0%,
+    rgba(200, 167, 93, 0.09) 0%,
     rgba(15, 17, 21, 0.5)   50%,
-    rgba(139, 30, 45, 0.06) 100%
+    rgba(139, 30, 45, 0.08) 100%
   );
   border-bottom: 1px solid var(--lpcs-border);
 }
@@ -37,7 +37,7 @@
 }
 
 .lpcs-sheet .lpcs-abar-abbr {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   font-family: var(--lpcs-font-display);
   color: var(--lpcs-accent-bronze);
@@ -51,7 +51,7 @@
 }
 
 .lpcs-sheet .lpcs-abar-score {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -96,7 +96,7 @@
 .lpcs-sheet .lpcs-abar-save-mod {
   position: relative;
   z-index: 1;
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   font-weight: 700;
   font-family: var(--lpcs-font-mono, monospace);
   line-height: 1;
@@ -163,7 +163,7 @@
 }
 
 .lpcs-sheet .lpcs-hp-label-text {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -172,7 +172,7 @@
 
 /* Heart icon with gradient red — sits next to "HP" text */
 .lpcs-sheet .lpcs-hp-heart {
-  font-size: 0.65rem;
+  font-size: var(--lpcs-text-xs);
   background: linear-gradient(135deg, #c0392b, #e74c3c);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -183,7 +183,7 @@
 .lpcs-sheet .lpcs-hp-label-temp {
   flex: 0 0 20%;
   text-align: center;
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -268,7 +268,7 @@
 
 .lpcs-sheet .lpcs-hp-value {
   font-family: var(--lpcs-font-display);
-  font-size: 1.25rem;
+  font-size: var(--lpcs-text-xl);
   font-weight: 700;
   color: #ffffff;
   line-height: 1;
@@ -365,7 +365,7 @@
 }
 
 .lpcs-sheet .lpcs-xp-label {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -373,7 +373,7 @@
 }
 
 .lpcs-sheet .lpcs-xp-value {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 600;
   color: var(--lpcs-accent-gold);
   letter-spacing: 0.04em;
@@ -431,7 +431,7 @@
 }
 
 .lpcs-sheet .lpcs-qstat-sub {
-  font-size: 0.65rem;
+  font-size: var(--lpcs-text-xs);
   color: var(--lpcs-text-secondary);
   line-height: 1;
 }
@@ -443,7 +443,7 @@
 }
 
 .lpcs-sheet .lpcs-qstat-label {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   color: var(--lpcs-text-secondary);
   letter-spacing: 0.1em;

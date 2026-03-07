@@ -27,7 +27,7 @@
   border-radius: var(--lpcs-radius-md);
   color: var(--lpcs-text-secondary);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
   flex-shrink: 0;
   font-family: var(--lpcs-font-body);
 }
@@ -37,14 +37,23 @@
   color: var(--lpcs-text-primary);
 }
 
+.lpcs-sheet .lpcs-tab-btn:active {
+  transform: scale(0.93);
+  background: rgba(200, 167, 93, 0.15);
+  transition-duration: 0.05s;
+}
+
 .lpcs-sheet .lpcs-tab-btn.active {
   background: rgba(200, 167, 93, 0.12);
   border-color: var(--lpcs-border-accent);
   color: var(--lpcs-accent-bronze);
+  box-shadow:
+    0 0 12px rgba(200, 167, 93, 0.15),
+    inset 0 -2px 0 var(--lpcs-accent-bronze);
 }
 
 .lpcs-sheet .lpcs-tab-icon { font-size: 1rem; }
-.lpcs-sheet .lpcs-tab-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.lpcs-sheet .lpcs-tab-label { font-size: var(--lpcs-text-xs); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* ── Tab Body ────────────────────────────────────────────────── */
 .lpcs-sheet .lpcs-tab-body {
@@ -71,13 +80,26 @@
 
 /* ── Section Titles ──────────────────────────────────────────── */
 .lpcs-sheet .lpcs-section-title {
+  position: relative;
   font-family: var(--lpcs-font-display);
-  font-size: 0.8rem;
+  font-size: var(--lpcs-text-base);
   font-weight: 700;
   color: var(--lpcs-accent-bronze);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding-bottom: var(--lpcs-space-md);
+  padding-left: var(--lpcs-space-md);
   border-bottom: 1px solid var(--lpcs-border);
+}
+
+.lpcs-sheet .lpcs-section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  width: 3px;
+  height: calc(100% - var(--lpcs-space-md) - 0.15em);
+  background: linear-gradient(to bottom, var(--lpcs-accent-bronze), var(--lpcs-accent-crimson));
+  border-radius: 2px;
 }
 

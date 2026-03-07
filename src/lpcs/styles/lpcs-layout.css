@@ -13,7 +13,10 @@
   min-height: 180px;
   overflow: visible;    /* allows the inspiration badge and HP drawer to extend below the header */
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(200,167,93,0.10) 0%, transparent 60%);
+  background:
+    linear-gradient(135deg, rgba(200, 167, 93, 0.12) 0%, transparent 50%),
+    linear-gradient(to bottom, rgba(139, 30, 45, 0.06) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 20%, rgba(200, 167, 93, 0.08) 0%, transparent 60%);
   border-bottom: 1px solid var(--lpcs-border);
 }
 
@@ -64,6 +67,8 @@
 
 .lpcs-sheet .lpcs-sysbar-btn:active {
   transform: scale(0.9);
+  background: rgba(200, 167, 93, 0.2);
+  transition-duration: 0.05s;
 }
 
 /* ── Inspiration active state (gold glow) ───────────────────── */
@@ -149,7 +154,7 @@
 /* Large white name — matching mockup weight */
 .lpcs-sheet .lpcs-name {
   font-family: var(--lpcs-font-display);
-  font-size: 1.75rem;
+  font-size: var(--lpcs-text-2xl);
   font-weight: 700;
   color: var(--lpcs-text-primary);
   margin: 0;
@@ -161,7 +166,7 @@
 
 /* Smaller muted subtitle: "Human Rogue" */
 .lpcs-sheet .lpcs-subtitle {
-  font-size: 0.8rem;
+  font-size: var(--lpcs-text-base);
   color: var(--lpcs-text-secondary);
   margin: 0;
   white-space: nowrap;
@@ -171,7 +176,7 @@
 
 /* Background line below subtitle — e.g., "Soldier" */
 .lpcs-sheet .lpcs-background {
-  font-size: 0.72rem;
+  font-size: var(--lpcs-text-sm);
   color: var(--lpcs-text-muted);
   margin: 0;
   font-style: italic;
