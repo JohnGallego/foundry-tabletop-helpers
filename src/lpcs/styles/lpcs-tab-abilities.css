@@ -20,7 +20,7 @@
 }
 
 .lpcs-sheet .lpcs-ability-abbr {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   color: var(--lpcs-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -28,7 +28,7 @@
 
 .lpcs-sheet .lpcs-ability-score {
   font-family: var(--lpcs-font-display);
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   color: var(--lpcs-text-primary);
   line-height: 1;
@@ -88,7 +88,7 @@
 }
 
 /* Children of .lpcs-save-chip — scoped here to make ownership explicit */
-.lpcs-sheet .lpcs-save-chip .lpcs-save-abbr    { font-size: 0.7rem; color: var(--lpcs-text-secondary); }
+.lpcs-sheet .lpcs-save-chip .lpcs-save-abbr    { font-size: var(--lpcs-text-sm); color: var(--lpcs-text-secondary); }
 .lpcs-sheet .lpcs-save-chip .lpcs-save-mod     { font-weight: 700; }
 .lpcs-sheet .lpcs-save-chip .lpcs-save-prof-dot { color: var(--lpcs-accent-gold); font-size: 0.5rem; }
 
@@ -134,9 +134,9 @@
 .lpcs-sheet .lpcs-skill-prof.lpcs-prof--0\.5 { background: var(--lpcs-text-muted); border-color: var(--lpcs-text-muted); }
 
 .lpcs-sheet .lpcs-skill-name { flex: 1; }
-.lpcs-sheet .lpcs-skill-ability { font-size: 0.7rem; color: var(--lpcs-text-muted); }
+.lpcs-sheet .lpcs-skill-ability { font-size: var(--lpcs-text-sm); color: var(--lpcs-text-muted); }
 .lpcs-sheet .lpcs-skill-mod { font-family: var(--lpcs-font-mono); font-weight: 700; min-width: 28px; text-align: right; }
-.lpcs-sheet .lpcs-skill-passive { font-size: 0.7rem; color: var(--lpcs-text-muted); min-width: 20px; text-align: right; }
+.lpcs-sheet .lpcs-skill-passive { font-size: var(--lpcs-text-sm); color: var(--lpcs-text-muted); min-width: 20px; text-align: right; }
 
 /* ── Senses & Hit Dice ───────────────────────────────────────── */
 .lpcs-sheet .lpcs-senses-list,
@@ -156,7 +156,7 @@
   padding: var(--lpcs-space-xs) var(--lpcs-space-sm);
   background: var(--lpcs-bg-glass);
   border-radius: var(--lpcs-radius-sm);
-  font-size: 0.85rem;
+  font-size: var(--lpcs-text-base);
 }
 
 .lpcs-sheet .lpcs-sense-label,

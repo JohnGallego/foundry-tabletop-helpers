@@ -25,7 +25,7 @@
 }
 
 .lpcs-sheet .lpcs-slot-label {
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   color: var(--lpcs-text-secondary);
   min-width: 70px;
 }
@@ -95,13 +95,13 @@
   display: flex;
   align-items: center;
   gap: var(--lpcs-space-xs);
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   color: var(--lpcs-text-secondary);
   flex-shrink: 0;
 }
 
 .lpcs-sheet .lpcs-spell-tag {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   padding: 1px 4px;
   border-radius: 3px;
@@ -120,7 +120,7 @@
 }
 
 .lpcs-sheet .lpcs-stat-label {
-  font-size: 0.65rem;
+  font-size: var(--lpcs-text-xs);
   color: var(--lpcs-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -134,7 +134,7 @@
 }
 
 .lpcs-sheet .lpcs-spell-name {
-  font-size: 0.85rem;
+  font-size: var(--lpcs-text-base);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -144,7 +144,7 @@
 .lpcs-sheet .lpcs-spell-components,
 .lpcs-sheet .lpcs-spell-time,
 .lpcs-sheet .lpcs-spell-range {
-  font-size: 0.7rem;
+  font-size: var(--lpcs-text-sm);
   font-family: var(--lpcs-font-mono);
   white-space: nowrap;
 }

@@ -28,10 +28,12 @@
 
 .lpcs-sheet .lpcs-currency-coin:active {
   transform: scale(0.97);
+  background: rgba(200, 167, 93, 0.15);
+  transition-duration: 0.05s;
 }
 
 .lpcs-sheet .lpcs-coin-header {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   text-transform: uppercase;
   color: var(--lpcs-text-muted);
   letter-spacing: 0.05em;
@@ -40,7 +42,7 @@
   gap: 3px;
 }
 
-.lpcs-sheet .lpcs-coin-icon { font-size: 0.6rem; }
+.lpcs-sheet .lpcs-coin-icon { font-size: var(--lpcs-text-2xs); }
 .lpcs-sheet .lpcs-coin-icon--pp { color: #b0c4de; }
 .lpcs-sheet .lpcs-coin-icon--gp { color: var(--lpcs-accent-gold); }
 .lpcs-sheet .lpcs-coin-icon--ep { color: #a9b8a0; }
@@ -80,8 +82,9 @@
 .lpcs-sheet .lpcs-currency-editor-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.80);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .lpcs-sheet .lpcs-currency-editor-card {
@@ -175,7 +178,7 @@
   border-radius: var(--lpcs-radius-sm);
   color: var(--lpcs-text-primary);
   font-family: var(--lpcs-font-mono);
-  font-size: 0.85rem;
+  font-size: var(--lpcs-text-base);
   font-weight: 600;
   padding: var(--lpcs-space-sm) 0;
   cursor: pointer;
@@ -190,6 +193,8 @@
 
 .lpcs-sheet .lpcs-currency-editor-btn:active {
   transform: scale(0.95);
+  background: rgba(200, 167, 93, 0.15);
+  transition-duration: 0.05s;
 }
 
 .lpcs-sheet .lpcs-currency-adj--sub { color: var(--lpcs-accent-crimson); }
@@ -213,8 +218,8 @@
 }
 
 .lpcs-sheet .lpcs-enc-fill.encumbered { background: var(--lpcs-accent-crimson); }
-.lpcs-sheet .lpcs-enc-label { font-size: 0.75rem; color: var(--lpcs-text-secondary); flex-shrink: 0; }
-.lpcs-sheet .lpcs-enc-warning { font-size: 0.7rem; color: var(--lpcs-accent-crimson); font-weight: 700; }
+.lpcs-sheet .lpcs-enc-label { font-size: var(--lpcs-text-sm); color: var(--lpcs-text-secondary); flex-shrink: 0; }
+.lpcs-sheet .lpcs-enc-warning { font-size: var(--lpcs-text-sm); color: var(--lpcs-accent-crimson); font-weight: 700; }
 
 /* ── Item Artwork Grid ─────────────────────────────────────── */
 .lpcs-sheet .lpcs-inventory-grid {
@@ -250,6 +255,8 @@
 
 .lpcs-sheet .lpcs-item-card:active {
   transform: scale(0.98);
+  border-color: rgba(200, 167, 93, 0.35);
+  transition-duration: 0.05s;
 }
 
 /* ── Card Artwork ──────────────────────────────────────────── */
@@ -277,7 +284,7 @@
   position: absolute;
   top: 4px;
   left: 4px;
-  font-size: 0.7rem;
+  font-size: var(--lpcs-text-sm);
   font-weight: 700;
   font-family: var(--lpcs-font-mono);
   background: rgba(0, 0, 0, 0.7);
@@ -350,7 +357,7 @@
 }
 
 .lpcs-sheet .lpcs-container-header-weight {
-  font-size: 0.7rem;
+  font-size: var(--lpcs-text-sm);
   font-family: var(--lpcs-font-mono);
   color: var(--lpcs-text-secondary);
   flex-shrink: 0;
@@ -378,7 +385,7 @@
 }
 
 .lpcs-sheet .lpcs-container-empty {
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   color: var(--lpcs-text-muted);
   text-align: center;
   padding: var(--lpcs-space-md);
@@ -408,7 +415,7 @@
 }
 
 .lpcs-sheet .lpcs-item-card-name {
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
@@ -417,7 +424,7 @@
 }
 
 .lpcs-sheet .lpcs-item-card-meta {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   color: var(--lpcs-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -459,8 +466,9 @@
 .lpcs-sheet .lpcs-item-detail-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.80);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .lpcs-sheet .lpcs-item-detail-card {
@@ -520,7 +528,7 @@
 
 .lpcs-sheet .lpcs-item-detail-name {
   font-family: var(--lpcs-font-display);
-  font-size: 1.1rem;
+  font-size: var(--lpcs-text-lg);
   font-weight: 700;
   color: var(--lpcs-text-primary);
   margin: 0;
@@ -528,7 +536,7 @@
 }
 
 .lpcs-sheet .lpcs-item-detail-type {
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   color: var(--lpcs-text-secondary);
   text-transform: capitalize;
 }
@@ -559,14 +567,14 @@
 /* Quantity badge — in the footer row */
 .lpcs-sheet .lpcs-item-detail-qty-badge {
   font-family: var(--lpcs-font-mono);
-  font-size: 0.85rem;
+  font-size: var(--lpcs-text-base);
   font-weight: 700;
   color: var(--lpcs-text-primary);
 }
 
 /* Rarity */
 .lpcs-sheet .lpcs-item-detail-rarity {
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   font-weight: 600;
   text-transform: capitalize;
 }
@@ -581,7 +589,7 @@
 /* Stats block (weapons/armor) */
 .lpcs-sheet .lpcs-item-detail-stats {
   font-family: var(--lpcs-font-mono);
-  font-size: 0.8rem;
+  font-size: var(--lpcs-text-base);
   line-height: 1.5;
   color: var(--lpcs-accent-bronze);
   margin: 0;
@@ -606,7 +614,7 @@
   background: rgba(200, 167, 93, 0.08);
   color: var(--lpcs-accent-bronze);
   font-family: var(--lpcs-font-body);
-  font-size: 0.85rem;
+  font-size: var(--lpcs-text-base);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
@@ -620,6 +628,8 @@
 
 .lpcs-sheet .lpcs-item-detail-equip-btn:active {
   transform: scale(0.97);
+  background: rgba(200, 167, 93, 0.2);
+  transition-duration: 0.05s;
 }
 
 .lpcs-sheet .lpcs-item-detail-equip-btn.is-equipped {
@@ -636,7 +646,7 @@
 
 /* Description */
 .lpcs-sheet .lpcs-item-detail-desc {
-  font-size: 0.8rem;
+  font-size: var(--lpcs-text-base);
   color: var(--lpcs-text-primary);
   line-height: 1.5;
   margin: 0;
@@ -655,7 +665,7 @@
 }
 
 .lpcs-sheet .lpcs-item-detail-weight {
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   color: var(--lpcs-text-secondary);
 }
 
@@ -669,7 +679,7 @@
   display: flex;
   align-items: center;
   gap: var(--lpcs-space-xs);
-  font-size: 0.85rem;
+  font-size: var(--lpcs-text-base);
   font-family: var(--lpcs-font-mono);
   font-weight: 600;
 }
@@ -688,7 +698,7 @@
 }
 
 .lpcs-sheet .lpcs-item-detail-capacity {
-  font-size: 0.8rem;
+  font-size: var(--lpcs-text-base);
   color: var(--lpcs-text-secondary);
   font-family: var(--lpcs-font-mono);
 }
@@ -696,7 +706,7 @@
 .lpcs-sheet .lpcs-item-detail-container-currency {
   display: flex;
   gap: var(--lpcs-space-md);
-  font-size: 0.8rem;
+  font-size: var(--lpcs-text-base);
 }
 
 .lpcs-sheet .lpcs-item-detail-container-currency .lpcs-container-coin {
@@ -715,7 +725,7 @@
 }
 
 .lpcs-sheet .lpcs-item-detail-contents-title {
-  font-size: 0.8rem;
+  font-size: var(--lpcs-text-base);
   font-weight: 700;
   color: var(--lpcs-text-secondary);
   text-transform: uppercase;
@@ -753,6 +763,8 @@
 
 .lpcs-sheet .lpcs-container-content-item:active {
   transform: scale(0.95);
+  background: rgba(200, 167, 93, 0.12);
+  transition-duration: 0.05s;
 }
 
 .lpcs-sheet .lpcs-container-content-img {
@@ -764,7 +776,7 @@
 }
 
 .lpcs-sheet .lpcs-container-content-name {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   text-align: center;
   line-height: 1.2;
   max-width: 64px;

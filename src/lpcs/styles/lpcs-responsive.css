@@ -8,7 +8,7 @@
 /* Compact nav: hide labels, shrink icons (≤540px) */
 @container lpcs-sheet (max-width: 540px) {
   .lpcs-sheet .lpcs-tab-label { display: none; }
-  .lpcs-sheet .lpcs-tab-icon  { font-size: 0.85rem; }
+  .lpcs-sheet .lpcs-tab-icon  { font-size: var(--lpcs-text-base); }
   .lpcs-sheet .lpcs-tab-btn   { padding: var(--lpcs-space-xs) var(--lpcs-space-sm); }
 }
 
@@ -25,7 +25,7 @@
   .lpcs-sheet .lpcs-abar-save         { width: 30px; height: 34px; }
   .lpcs-sheet .lpcs-abar-save .fas.fa-shield { font-size: 1.7rem; }
   .lpcs-sheet .lpcs-abar-save-label   { font-size: 0.4rem; }
-  .lpcs-sheet .lpcs-abar-save-mod     { font-size: 0.65rem; }
+  .lpcs-sheet .lpcs-abar-save-mod     { font-size: var(--lpcs-text-xs); }
 
   /* Ability bar: wrap into two rows of 3 */
   .lpcs-sheet .lpcs-ability-bar { flex-wrap: wrap; }
