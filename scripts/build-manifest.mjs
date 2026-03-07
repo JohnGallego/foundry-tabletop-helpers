@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-const root = new URL("..", import.meta.url).pathname;
+import { fileURLToPath } from "node:url";
+const root = path.resolve(fileURLToPath(import.meta.url), "../..");
 
 const pkg = JSON.parse(
   fs.readFileSync(path.join(root, "package.json"), "utf8")
