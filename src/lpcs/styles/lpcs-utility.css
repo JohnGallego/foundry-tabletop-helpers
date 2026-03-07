@@ -1,7 +1,7 @@
 /* ── Utility ─────────────────────────────────────────────────── */
 .lpcs-sheet .lpcs-empty-state {
   color: var(--lpcs-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--lpcs-text-base);
   font-style: italic;
   padding: var(--lpcs-space-sm) 0;
 }
@@ -21,10 +21,50 @@
 .lpcs-sheet .lpcs-text-muted { color: var(--lpcs-text-muted); }
 
 /* ── Touch / rollable ────────────────────────────────────────── */
-.lpcs-sheet button.rollable,
+/* Eliminate iOS tap-highlight and 300ms delay on ALL interactive elements.
+   Scoped to .lpcs-sheet so we never leak into other Foundry modules/apps. */
+.lpcs-sheet button,
+.lpcs-sheet [role="button"],
+.lpcs-sheet .lpcs-tab-btn,
+.lpcs-sheet .lpcs-sysbar-btn,
 .lpcs-sheet .lpcs-skill-row,
-.lpcs-sheet .lpcs-drawer-header {
+.lpcs-sheet .lpcs-spell-row,
+.lpcs-sheet .lpcs-spell-use,
+.lpcs-sheet .lpcs-weapon-row,
+.lpcs-sheet .lpcs-weapon-use,
+.lpcs-sheet .lpcs-drawer-header,
+.lpcs-sheet .lpcs-item-card,
+.lpcs-sheet .lpcs-abar-card,
+.lpcs-sheet .lpcs-qstat-card--btn,
+.lpcs-sheet .lpcs-currency-coin,
+.lpcs-sheet .lpcs-slot-pip,
+.lpcs-sheet .lpcs-ds-pip,
+.lpcs-sheet .lpcs-ds-group,
+.lpcs-sheet .lpcs-ds-roll-btn,
+.lpcs-sheet .lpcs-standard-action-link,
+.lpcs-sheet .lpcs-hp-bar-widget[data-action],
+.lpcs-sheet .lpcs-container-content-item,
+.lpcs-sheet .lpcs-ability-mod,
+.lpcs-sheet .lpcs-save-chip,
+.lpcs-sheet .lpcs-effect-badge {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+
+/* ── Active-state bronze flash ──────────────────────────────── */
+/* Provides immediate visual press feedback on touch devices.
+   Applied to interactive rows/cards that don't already have their
+   own colored :active background (e.g. HP drawer mode buttons). */
+.lpcs-sheet .lpcs-skill-row:active,
+.lpcs-sheet .lpcs-spell-row:active,
+.lpcs-sheet .lpcs-weapon-row:active,
+.lpcs-sheet .lpcs-drawer-header:active,
+.lpcs-sheet .lpcs-abar-card:active,
+.lpcs-sheet .lpcs-save-chip:active,
+.lpcs-sheet .lpcs-ability-mod:active,
+.lpcs-sheet .lpcs-standard-action-link:active,
+.lpcs-sheet .lpcs-effect-badge:active {
+  background: rgba(200, 167, 93, 0.18);
+  transition-duration: 0.05s;
 }
 
