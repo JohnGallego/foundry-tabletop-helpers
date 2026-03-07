@@ -4,8 +4,8 @@
   --lpcs-bg-base:           #0f1115;
   --lpcs-bg-panel:          #1a1d24;
   --lpcs-bg-panel-hover:    #22262f;
-  --lpcs-bg-glass:          rgba(255, 255, 255, 0.04);
-  --lpcs-bg-glass-hover:    rgba(255, 255, 255, 0.08);
+  --lpcs-bg-glass:          rgba(255, 255, 255, 0.06);
+  --lpcs-bg-glass-hover:    rgba(255, 255, 255, 0.10);
 
   --lpcs-accent-bronze:     #c8a75d;
   --lpcs-accent-crimson:    #8b1e2d;
@@ -39,6 +39,16 @@
   --lpcs-font-display:      "Roboto Slab", serif;
   --lpcs-font-body:         "Roboto", sans-serif;
   --lpcs-font-mono:         "Roboto Condensed", sans-serif;
+
+  /* Type Scale */
+  --lpcs-text-2xs:          0.6rem;     /* labels, badges, abbreviations */
+  --lpcs-text-xs:           0.65rem;    /* column headers, tab labels */
+  --lpcs-text-sm:           0.75rem;    /* secondary text, notes, metadata */
+  --lpcs-text-base:         0.85rem;    /* body text, row content, descriptions */
+  --lpcs-text-md:           1rem;       /* stat values, standard UI text */
+  --lpcs-text-lg:           1.1rem;     /* modal titles, emphasized values */
+  --lpcs-text-xl:           1.25rem;    /* hero numbers */
+  --lpcs-text-2xl:          1.75rem;    /* character name */
 
   /* Touch targets (Apple HIG minimum) */
   --lpcs-touch-min:         44px;
