@@ -84,7 +84,7 @@
 
 .lpcs-sheet .lpcs-exh-dialog-title {
   font-family: var(--lpcs-font-display);
-  font-size: 0.65rem;
+  font-size: var(--lpcs-text-xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -115,7 +115,7 @@
   background: rgba(200, 167, 93, 0.18);
   border-color: var(--lpcs-accent-gold);
 }
-.lpcs-sheet .lpcs-exh-step-btn:active:not(:disabled) { transform: scale(0.92); }
+.lpcs-sheet .lpcs-exh-step-btn:active:not(:disabled) { transform: scale(0.92); background: rgba(200, 167, 93, 0.22); transition-duration: 0.05s; }
 .lpcs-sheet .lpcs-exh-step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .lpcs-sheet .lpcs-exh-level-display {
@@ -129,7 +129,7 @@
 }
 
 .lpcs-sheet .lpcs-exh-hint {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   color: var(--lpcs-text-secondary);
   letter-spacing: 0.06em;
 }
@@ -144,7 +144,7 @@
   background: rgba(200, 167, 93, 0.1);
   color: var(--lpcs-text-primary);
   font-family: var(--lpcs-font-display);
-  font-size: 0.7rem; font-weight: 700;
+  font-size: var(--lpcs-text-sm); font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
@@ -154,4 +154,4 @@
   background: rgba(200, 167, 93, 0.2);
   border-color: rgba(200, 167, 93, 0.55);
 }
-.lpcs-sheet .lpcs-exh-apply-btn:active { transform: scale(0.96); }
+.lpcs-sheet .lpcs-exh-apply-btn:active { transform: scale(0.96); background: rgba(200, 167, 93, 0.25); transition-duration: 0.05s; }

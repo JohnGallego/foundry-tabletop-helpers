@@ -11,7 +11,7 @@
 
 .lpcs-sheet .lpcs-ds-label {
   font-family: var(--lpcs-font-display);
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -45,7 +45,7 @@
 }
 
 .lpcs-sheet .lpcs-ds-pip i {
-  font-size: 1.1rem;
+  font-size: var(--lpcs-text-lg);
   transition: color 0.2s;
 }
 
@@ -76,6 +76,8 @@
 
 .lpcs-sheet [data-roll-mode="physical"] .lpcs-ds-group:active {
   transform: scale(0.96);
+  background: rgba(200, 167, 93, 0.15);
+  transition-duration: 0.05s;
 }
 
 /* Hover feedback trickles into pips when the group is hovered */
@@ -122,7 +124,7 @@
   background: rgba(200, 167, 93, 0.08);
   color: var(--lpcs-text-primary, #f0ead6);
   font-family: var(--lpcs-font-display);
-  font-size: 0.7rem;
+  font-size: var(--lpcs-text-sm);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -138,6 +140,8 @@
 
 .lpcs-sheet .lpcs-ds-roll-btn:active {
   transform: scale(0.96);
+  background: rgba(200, 167, 93, 0.2);
+  transition-duration: 0.05s;
 }
 
 .lpcs-sheet .lpcs-ds-roll-btn i {

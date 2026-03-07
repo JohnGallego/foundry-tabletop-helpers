@@ -29,9 +29,9 @@
 .lpcs-sheet .lpcs-rest-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.80);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   cursor: pointer;
 }
 
@@ -64,7 +64,7 @@
 
 .lpcs-sheet .lpcs-rest-card-title {
   font-family: var(--lpcs-font-display);
-  font-size: 1.1rem;
+  font-size: var(--lpcs-text-lg);
   font-weight: 700;
   color: var(--lpcs-text-primary);
   letter-spacing: 0.05em;
@@ -90,6 +90,12 @@
   color: var(--lpcs-text-primary);
 }
 
+.lpcs-sheet .lpcs-rest-close-btn:active {
+  transform: scale(0.9);
+  background: rgba(200, 167, 93, 0.15);
+  transition-duration: 0.05s;
+}
+
 /* ── Section ─────────────────────────────────────────────────── */
 
 .lpcs-sheet .lpcs-rest-section {
@@ -100,7 +106,7 @@
 
 .lpcs-sheet .lpcs-rest-section-title {
   font-family: var(--lpcs-font-display);
-  font-size: 0.7rem;
+  font-size: var(--lpcs-text-sm);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -109,7 +115,7 @@
 }
 
 .lpcs-sheet .lpcs-rest-rule-hint {
-  font-size: 0.65rem;
+  font-size: var(--lpcs-text-xs);
   color: var(--lpcs-text-secondary);
   letter-spacing: 0.04em;
   margin: 0;
@@ -152,7 +158,7 @@
   background: rgba(200, 167, 93, 0.14);
   border-color: var(--lpcs-accent-gold);
 }
-.lpcs-sheet .lpcs-rest-hd-btn:active:not(:disabled) { transform: scale(0.95); }
+.lpcs-sheet .lpcs-rest-hd-btn:active:not(:disabled) { transform: scale(0.95); background: rgba(200, 167, 93, 0.2); transition-duration: 0.05s; }
 .lpcs-sheet .lpcs-rest-hd-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
@@ -160,20 +166,20 @@
 
 .lpcs-sheet .lpcs-rest-hd-die {
   font-family: var(--lpcs-font-display);
-  font-size: 1.1rem;
+  font-size: var(--lpcs-text-lg);
   font-weight: 700;
   color: var(--lpcs-accent-gold);
   line-height: 1;
 }
 
 .lpcs-sheet .lpcs-rest-hd-count {
-  font-size: 0.6rem;
+  font-size: var(--lpcs-text-2xs);
   color: var(--lpcs-text-secondary);
   letter-spacing: 0.06em;
 }
 
 .lpcs-sheet .lpcs-rest-empty {
-  font-size: 0.65rem;
+  font-size: var(--lpcs-text-xs);
   color: var(--lpcs-text-muted);
   font-style: italic;
   margin: 0;
@@ -227,7 +233,7 @@
   position: relative;
   z-index: 1;
   font-family: var(--lpcs-font-display);
-  font-size: 0.75rem;
+  font-size: var(--lpcs-text-sm);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
