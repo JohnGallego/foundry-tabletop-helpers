@@ -1,0 +1,579 @@
+/* ── Quick Damage Panel ─────────────────────────────────────── */
+/*
+ * Persistent draggable panel for fast damage/heal/condition application.
+ * Dark-fantasy design language matching the batch initiative dialog.
+ */
+
+/* ── Panel shell ─────────────────────────────────────────────── */
+.fth-damage-panel {
+  position: fixed;
+  z-index: 100;
+  width: 220px;
+  background: #0f1115;
+  border: 1px solid rgba(200, 167, 93, 0.4);
+  border-radius: 10px;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(200, 167, 93, 0.06);
+  overflow: hidden;
+  font-family: "Roboto", sans-serif;
+  user-select: none;
+}
+
+/* ── Header / drag handle ────────────────────────────────────── */
+.dwf-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #1a1d24;
+  border-bottom: 1px solid rgba(200, 167, 93, 0.12);
+}
+
+.dwf-title {
+  font-family: "Roboto Slab", serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #c8a75d;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.dwf-title i {
+  margin-right: 4px;
+  font-size: 0.6rem;
+}
+
+.dwf-target-count {
+  flex: 1;
+  text-align: right;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #9a9590;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.dwf-close {
+  background: transparent;
+  border: none;
+  color: #5a5550;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dwf-close:hover {
+  color: #e8e4dc;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Panel body ──────────────────────────────────────────────── */
+.dwf-body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Damage section (amount + type) ──────────────────────────── */
+.dwf-damage-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Fast row: amount + action buttons ───────────────────────── */
+.dwf-fast-row {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.dwf-amount-input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(200, 167, 93, 0.2);
+  border-radius: 6px;
+  color: #e8e4dc;
+  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 6px 4px;
+  min-height: 40px;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.dwf-amount-input:focus {
+  outline: none;
+  border-color: rgba(200, 167, 93, 0.55);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.dwf-amount-input::placeholder {
+  color: #4a4540;
+  font-weight: 400;
+}
+
+/* Error flash on invalid input */
+.dwf-input-error {
+  animation: dwf-shake 0.3s ease-out;
+  border-color: #ef5350 !important;
+}
+
+@keyframes dwf-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* ── Action buttons (shared) ─────────────────────────────────── */
+.dwf-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 10px;
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: "Roboto", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-appearance: none;
+  appearance: none;
+  white-space: nowrap;
+}
+
+.dwf-action-btn:active {
+  transform: scale(0.94);
+  transition-duration: 0.05s;
+}
+
+.dwf-action-btn:focus-visible {
+  outline: 2px solid rgba(200, 167, 93, 0.7);
+  outline-offset: 2px;
+}
+
+/* Success flash after execution */
+.dwf-action-success {
+  background: rgba(76, 175, 80, 0.25) !important;
+  border-color: #4caf50 !important;
+  color: #4caf50 !important;
+  transition-duration: 0.05s;
+}
+
+/* Damage button */
+.dwf-action-damage {
+  background: rgba(239, 83, 80, 0.12);
+  border-color: rgba(239, 83, 80, 0.35);
+  color: #ef5350;
+}
+
+.dwf-action-damage:hover {
+  background: rgba(239, 83, 80, 0.22);
+  border-color: #ef5350;
+}
+
+/* Heal button */
+.dwf-action-heal {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+  color: #4caf50;
+}
+
+.dwf-action-heal:hover {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: #4caf50;
+}
+
+/* Apply condition button */
+.dwf-action-apply {
+  width: 100%;
+  background: rgba(200, 167, 93, 0.12);
+  border-color: rgba(200, 167, 93, 0.35);
+  color: #c8a75d;
+}
+
+.dwf-action-apply:hover {
+  background: rgba(200, 167, 93, 0.22);
+  border-color: #c8a75d;
+  color: #d4af37;
+}
+
+/* Remove condition button */
+.dwf-action-remove {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #7a7570;
+}
+
+.dwf-action-remove:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #9a9590;
+}
+
+/* ── Damage type input ───────────────────────────────────────── */
+.dwf-options-row {
+  display: flex;
+}
+
+.dwf-damage-type-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(200, 167, 93, 0.12);
+  border-radius: 5px;
+  color: #9a9590;
+  font-family: "Roboto", sans-serif;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  min-height: 28px;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.dwf-damage-type-input:focus {
+  outline: none;
+  border-color: rgba(200, 167, 93, 0.4);
+  background: rgba(255, 255, 255, 0.07);
+  color: #e8e4dc;
+}
+
+.dwf-damage-type-input::placeholder {
+  color: #4a4540;
+}
+
+/* ── Mode section: two-row grouped tabs ──────────────────────── */
+.dwf-mode-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dwf-mode-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dwf-mode-label {
+  font-size: 0.48rem;
+  font-weight: 700;
+  color: #4a4540;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  width: 36px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.dwf-mode-tabs {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.dwf-mode-tab {
+  flex: 1;
+  padding: 5px 2px;
+  min-height: 26px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #6a6560;
+  font-family: "Roboto", sans-serif;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.dwf-mode-tab:hover {
+  color: #9a9590;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dwf-mode-tab.active {
+  background: rgba(200, 167, 93, 0.12);
+  border-color: rgba(200, 167, 93, 0.3);
+  color: #c8a75d;
+}
+
+.dwf-mode-tab:active {
+  transform: scale(0.95);
+  transition-duration: 0.05s;
+}
+
+.dwf-mode-tab:focus-visible {
+  outline: 2px solid rgba(200, 167, 93, 0.7);
+  outline-offset: 1px;
+}
+
+/* ── Save fields (DC + ability) ──────────────────────────────── */
+.dwf-save-fields {
+  display: flex;
+  gap: 8px;
+}
+
+.dwf-save-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dwf-save-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #7a7570;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dwf-save-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(200, 167, 93, 0.15);
+  border-radius: 5px;
+  color: #e8e4dc;
+  font-family: "Roboto Condensed", "Roboto", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 6px;
+  min-height: 30px;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.dwf-save-input:focus {
+  outline: none;
+  border-color: rgba(200, 167, 93, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Condition fields ────────────────────────────────────────── */
+.dwf-condition-fields {
+  display: flex;
+}
+
+.dwf-condition-select {
+  text-align: left !important;
+}
+
+/* ── Condition + Remove action rows ──────────────────────────── */
+.dwf-condition-action,
+.dwf-remove-action {
+  display: flex;
+}
+
+/* select styling */
+select.dwf-save-input {
+  cursor: pointer;
+  text-align: left;
+  padding-right: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9590'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
+
+/* Hide number spinners */
+.dwf-amount-input::-webkit-inner-spin-button,
+.dwf-amount-input::-webkit-outer-spin-button,
+.dwf-save-input::-webkit-inner-spin-button,
+.dwf-save-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.dwf-amount-input[type="number"],
+.dwf-save-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .dwf-input-error {
+    animation: none;
+    border-color: #ef5350 !important;
+  }
+
+  .dwf-action-btn:active,
+  .dwf-mode-tab:active {
+    transform: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/* ── Chat Result Card ─────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════ */
+
+.fth-workflow-result {
+  font-family: "Roboto", sans-serif;
+  font-size: 0.8rem;
+  color: #e8e4dc;
+}
+
+.fth-wf-header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #c8a75d;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(200, 167, 93, 0.2);
+  margin-bottom: 6px;
+}
+
+.fth-wf-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fth-wf-table td {
+  padding: 3px 4px;
+  font-size: 0.75rem;
+  vertical-align: middle;
+}
+
+.fth-wf-table tr + tr {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fth-wf-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.fth-wf-save {
+  text-align: center;
+  font-family: "Roboto Condensed", sans-serif;
+  font-weight: 700;
+}
+
+.fth-wf-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 6px;
+  margin-left: 3px;
+}
+
+.fth-wf-pass { color: #4caf50; }
+.fth-wf-pass .fth-wf-badge { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+
+.fth-wf-fail { color: #b71c1c; }
+.fth-wf-fail .fth-wf-badge { background: rgba(183, 28, 28, 0.15); color: #ef5350; }
+
+.fth-wf-effect {
+  text-align: right;
+  font-family: "Roboto Condensed", sans-serif;
+  font-weight: 700;
+}
+
+.fth-wf-dmg { color: #ef5350; }
+.fth-wf-heal { color: #4caf50; }
+
+.fth-wf-hp {
+  text-align: right;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.7rem;
+  color: #9a9590;
+}
+
+.fth-wf-summary {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9a9590;
+  padding-top: 6px;
+  border-top: 1px solid rgba(200, 167, 93, 0.2);
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* ── Condition chat card badges ──────────────────────────────── */
+.fth-wf-cond-applied { color: #9b59b6; }
+.fth-wf-cond-badge {
+  background: rgba(155, 89, 182, 0.2) !important;
+  color: #bb86fc !important;
+}
+
+.fth-wf-cond-resisted {
+  color: #4caf50;
+  font-size: 0.7rem;
+}
+
+.fth-wf-cond-skipped,
+.fth-wf-cond-absent {
+  color: #5a5550;
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
+.fth-wf-cond-removed {
+  color: #4caf50;
+  font-size: 0.7rem;
+}
+
+/* ── Concentration check section ─────────────────────────────── */
+.fth-wf-conc-section {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(155, 89, 182, 0.2);
+}
+
+.fth-wf-conc-header {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #bb86fc;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.fth-wf-conc-header i {
+  margin-right: 4px;
+  font-size: 0.6rem;
+}
+
+.fth-wf-conc-lost {
+  background: rgba(155, 89, 182, 0.25) !important;
+  color: #e1bee7 !important;
+  font-weight: 800;
+}
