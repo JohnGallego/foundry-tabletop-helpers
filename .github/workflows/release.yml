@@ -79,6 +79,23 @@ jobs:
           cd ..
           sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256"
 
+      # ── Server Companion Build ──────────────────────────
+      - name: Build server companion
+        run: |
+          cd server-companion
+          npm ci
+          npm run build
+          node build.mjs
+          ls -lh build/
+
+      - name: Rename server companion tarball
+        run: |
+          # Rename to include the release tag for clarity
+          TARBALL=$(ls server-companion/build/fth-optimizer-*.tar.gz)
+          DEST="fth-optimizer-${GITHUB_REF_NAME}.tar.gz"
+          cp "$TARBALL" "$DEST"
+          sha256sum "$DEST" > "${DEST}.sha256"
+
       # Sync dist/module.json back to repo root and commit to main
       - name: Sync root module.json (commit to main)
         run: |
@@ -104,6 +121,8 @@ jobs:
             ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
             ${{ github.event.repository.name }}-${{ github.ref_name }}.zip.sha256
             dist/module.json
+            fth-optimizer-${{ github.ref_name }}.tar.gz
+            fth-optimizer-${{ github.ref_name }}.tar.gz.sha256
 
 
       - name: Publish to Foundry Package Release API

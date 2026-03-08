@@ -1,5 +1,9 @@
 # Node & dependencies
 node_modules/
+server-companion/node_modules/
+server-companion/dist/
+server-companion/build/
+server-companion/.stage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

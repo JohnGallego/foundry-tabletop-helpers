@@ -1,0 +1,25 @@
+[Unit]
+Description=FTH Asset Optimizer — Server companion for Foundry Tabletop Helpers
+After=network.target
+
+[Service]
+Type=simple
+User=fth-optimizer
+Group=fth-optimizer
+WorkingDirectory=/opt/fth-optimizer
+ExecStart=/usr/bin/node dist/index.js
+EnvironmentFile=/opt/fth-optimizer/.env
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/tmp/fth-optimizer
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
