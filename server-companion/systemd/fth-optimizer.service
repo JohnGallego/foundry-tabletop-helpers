@@ -19,7 +19,7 @@ NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 ReadWritePaths=/tmp/fth-optimizer
-PrivateTmp=yes
+PrivateTmp=no
 
 [Install]
 WantedBy=multi-user.target
