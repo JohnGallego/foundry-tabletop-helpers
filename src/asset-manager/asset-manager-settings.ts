@@ -6,6 +6,17 @@
  */
 
 import { Log, MOD } from "../logger";
+import { getGame } from "../types";
+
+/* ── Guards ───────────────────────────────────────────────── */
+
+/** Check if the Asset Manager feature is enabled in settings. */
+export function isAssetManagerEnabled(): boolean {
+  try {
+    const game = getGame();
+    return !!game?.settings?.get?.(MOD, AM_SETTINGS.ENABLE);
+  } catch { return false; }
+}
 
 /* ── Setting Keys ─────────────────────────────────────────── */
 
