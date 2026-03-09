@@ -19,6 +19,7 @@ const FILE_ACTIONS: ContextMenuAction[] = [
   { label: "Preview", icon: "fa-solid fa-eye", action: "preview" },
   { label: "Copy Path", icon: "fa-solid fa-copy", action: "copy-path" },
   { label: "Select", icon: "fa-solid fa-check", action: "select" },
+  { label: "Delete", icon: "fa-solid fa-trash", action: "delete" },
 ];
 
 /* ── Context Menu Manager ─────────────────────────────────── */
