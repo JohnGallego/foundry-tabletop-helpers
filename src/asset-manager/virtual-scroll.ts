@@ -2,7 +2,8 @@
  * Asset Manager — Virtual Scroller
  *
  * Renders only visible items + overscan for large file lists.
- * Keeps DOM node count under ~100 regardless of folder size.
+ * Uses DOM recycling to preserve loaded images across scroll updates,
+ * preventing thumbnail flicker and unnecessary re-requests.
  * Uses transform: translateY() positioning for zero-reflow scrolling.
  */
 
@@ -26,12 +27,14 @@ export class VirtualScroller {
   #spacer: HTMLElement;
   #viewport: HTMLElement;
   #config: Required<VirtualScrollConfig>;
-  #visibleStart = 0;
-  #visibleEnd = 0;
+  #visibleStart = -1;
+  #visibleEnd = -1;
   #raf = 0;
+  /** Map of currently rendered item index → DOM element. */
+  #rendered = new Map<number, HTMLElement>();
 
   constructor(config: VirtualScrollConfig) {
-    this.#config = { overscan: 2, ...config };
+    this.#config = { overscan: 4, ...config };
     this.#container = config.container;
 
     // Create inner structure
@@ -56,12 +59,18 @@ export class VirtualScroller {
   reconfigure(partial: Partial<Omit<VirtualScrollConfig, "container">>): void {
     Object.assign(this.#config, partial);
     this.#updateSpacerHeight();
+    // Force full re-render on config change
+    this.#clearRendered();
+    this.#visibleStart = -1;
+    this.#visibleEnd = -1;
     this.#update();
   }
 
   /** Force a full re-render of visible items. */
   refresh(): void {
-    this.#visibleStart = -1; // Force re-render
+    this.#clearRendered();
+    this.#visibleStart = -1;
+    this.#visibleEnd = -1;
     this.#update();
   }
 
@@ -69,6 +78,7 @@ export class VirtualScroller {
   destroy(): void {
     this.#container.removeEventListener("scroll", this.#onScroll);
     if (this.#raf) cancelAnimationFrame(this.#raf);
+    this.#clearRendered();
     this.#spacer.remove();
   }
 
@@ -98,23 +108,67 @@ export class VirtualScroller {
 
     // Skip if range hasn't changed
     if (startIndex === this.#visibleStart && endIndex === this.#visibleEnd) return;
+
+    const prevStart = this.#visibleStart;
+    const prevEnd = this.#visibleEnd;
     this.#visibleStart = startIndex;
     this.#visibleEnd = endIndex;
 
-    // Build HTML for visible items
-    const parts: string[] = [];
+    // Remove items no longer in range
+    for (const [idx, el] of this.#rendered) {
+      if (idx < startIndex || idx >= endIndex) {
+        el.remove();
+        this.#rendered.delete(idx);
+      }
+    }
+
+    // Add new items that aren't already rendered
+    // Build a document fragment for batch insertion
+    const newIndices: number[] = [];
     for (let i = startIndex; i < endIndex; i++) {
-      parts.push(renderItem(i));
+      if (!this.#rendered.has(i)) {
+        newIndices.push(i);
+      }
+    }
+
+    if (newIndices.length > 0) {
+      // Create new elements
+      const frag = document.createDocumentFragment();
+      for (const i of newIndices) {
+        const html = renderItem(i);
+        if (!html) continue;
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = html;
+        const el = wrapper.firstElementChild as HTMLElement;
+        if (el) {
+          this.#rendered.set(i, el);
+          frag.appendChild(el);
+        }
+      }
+      this.#viewport.appendChild(frag);
+    }
+
+    // Re-order DOM children to match index order (ensures correct visual order)
+    // Only needed if we added items before existing ones
+    if (newIndices.length > 0 && (prevStart < 0 || startIndex < prevStart || endIndex > prevEnd)) {
+      const sorted = [...this.#rendered.entries()].sort((a, b) => a[0] - b[0]);
+      for (const [, el] of sorted) {
+        this.#viewport.appendChild(el);
+      }
     }
 
     // Position viewport at the correct offset
     this.#viewport.style.transform = `translateY(${startRow * rowHeight}px)`;
-    this.#viewport.innerHTML = parts.join("");
   }
 
   #updateSpacerHeight(): void {
     const { rowHeight, itemsPerRow, totalItems } = this.#config;
     const totalRows = Math.ceil(totalItems / itemsPerRow);
     this.#spacer.style.height = `${totalRows * rowHeight}px`;
+  }
+
+  #clearRendered(): void {
+    this.#viewport.innerHTML = "";
+    this.#rendered.clear();
   }
 }
