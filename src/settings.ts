@@ -8,6 +8,7 @@ import {
   getHandlebars,
   getUI,
   getPlayerUsers,
+  getAllUsers,
   getSetting,
   setSetting,
   getCurrentUserId,
@@ -221,7 +222,7 @@ export function registerSettings(): void {
       }
       async getData() {
         const selected = new Set(rotateButtonPlayerIds());
-        const users = getPlayerUsers();
+        const users = getAllUsers();
         return {
           users: users.map((u) => ({ id: u.id, name: u.name, selected: selected.has(u.id), isActive: u.active })),
         };
@@ -234,9 +235,9 @@ export function registerSettings(): void {
     }
 
     settings.registerMenu(MOD, "rotateButtonPlayersMenu", {
-      name: "Rotate Button Players",
+      name: "Rotate Button Users",
       label: "Configure",
-      hint: "Choose which players see the rotation button on their windows.",
+      hint: "Choose which users (including GMs) see the rotation button on their windows.",
       icon: "fa-solid fa-arrows-rotate",
       type: RotateButtonPlayersForm,
       restricted: true,
@@ -419,9 +420,8 @@ export const rotateButtonPlayerIds = (): string[] => {
 };
 
 /** Returns true if the current user should see the rotate button.
- *  GMs always see it; players only if they are in the list. */
+ *  All users (including GMs) must be explicitly enabled in the list. */
 export const shouldShowRotateButton = (): boolean => {
-  if (getGame()?.user?.isGM) return true;
   const userId = getCurrentUserId();
   if (!userId) return false;
   return rotateButtonPlayerIds().includes(userId);

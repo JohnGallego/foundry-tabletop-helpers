@@ -167,6 +167,15 @@ export function getPlayerUsers(): FoundryUser[] {
   return [...game.users].filter((u) => !u.isGM);
 }
 
+/**
+ * Get all users (including GMs).
+ */
+export function getAllUsers(): FoundryUser[] {
+  const game = getGame();
+  if (!game?.users) return [];
+  return [...game.users];
+}
+
 /* ── Settings Helpers ─────────────────────────────────────── */
 
 /**

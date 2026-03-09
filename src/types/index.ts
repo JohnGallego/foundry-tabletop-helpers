@@ -41,6 +41,7 @@ export {
   isGM,
   getCurrentUserId,
   getPlayerUsers,
+  getAllUsers,
   getSetting,
   setSetting,
   hasProperty,
