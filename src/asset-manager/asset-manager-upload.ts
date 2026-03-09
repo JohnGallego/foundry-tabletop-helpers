@@ -26,6 +26,7 @@ import {
   serverOptimizeImage,
   serverOptimizeAudio,
   serverOptimizeVideo,
+  serverDeleteFile,
   type OptimizeImageOptions,
 } from "./asset-manager-optimizer-client";
 
@@ -507,7 +508,7 @@ export interface BatchOptResult {
 export async function batchOptimize(
   files: string[],
   preset: OptPreset,
-  uploadFn: (file: File, name: string) => Promise<string>,
+  uploadFn: (file: File, name: string, targetDir: string) => Promise<string>,
   onProgress: (current: number, total: number, fileName: string) => void,
 ): Promise<BatchOptResult> {
   const result: BatchOptResult = { processed: 0, skipped: 0, totalSaved: 0 };
@@ -553,6 +554,9 @@ export async function batchOptimize(
   for (let i = 0; i < allOptimizable.length; i++) {
     const filePath = allOptimizable[i]!;
     const fileName = filePath.split("/").pop() ?? filePath;
+    // Derive the target directory from the file's own path
+    const parts = filePath.split("/");
+    const targetDir = parts.length > 1 ? parts.slice(0, -1).join("/") : "";
     const ext = extname(filePath);
     const fileType = classifyExt(ext);
     const isAudio = OPTIMIZABLE_AUDIO_EXTS.has(ext);
@@ -566,6 +570,8 @@ export async function batchOptimize(
       const originalBlob = await res.blob();
       const originalSize = originalBlob.size;
       const inputFile = new File([originalBlob], fileName, { type: originalBlob.type });
+      let optimized = false;
+      let newName = fileName;
 
       // ── Try server companion ────────────────────────────
       if (serverCaps) {
@@ -577,34 +583,41 @@ export async function batchOptimize(
           if (p in PRESETS) serverOpts.preset = p;
           serverResult = await serverOptimizeImage(inputFile, serverOpts);
           if (serverResult && !serverResult.skipped) {
-            const newName = fileName.replace(/\.[^.]+$/, ".webp");
-            await uploadFn(new File([serverResult.blob], newName, { type: "image/webp" }), newName);
+            newName = fileName.replace(/\.[^.]+$/, ".webp");
+            await uploadFn(new File([serverResult.blob], newName, { type: "image/webp" }), newName, targetDir);
             result.processed++;
             result.totalSaved += originalSize - serverResult.optimizedSize;
-            continue;
+            optimized = true;
           }
         } else if (isAudio && serverCaps.audio) {
           const bitrate = detectAudioBitrate(fileName);
           serverResult = await serverOptimizeAudio(inputFile, { bitrate });
           if (serverResult && !serverResult.skipped) {
-            const newName = fileName.replace(/\.[^.]+$/, ".ogg");
-            await uploadFn(new File([serverResult.blob], newName, { type: "audio/ogg" }), newName);
+            newName = fileName.replace(/\.[^.]+$/, ".ogg");
+            await uploadFn(new File([serverResult.blob], newName, { type: "audio/ogg" }), newName, targetDir);
             result.processed++;
             result.totalSaved += originalSize - serverResult.optimizedSize;
-            continue;
+            optimized = true;
           }
         } else if (isVideo && serverCaps.video) {
           serverResult = await serverOptimizeVideo(inputFile);
           if (serverResult && !serverResult.skipped) {
-            const newName = fileName.replace(/\.[^.]+$/, ".webm");
-            await uploadFn(new File([serverResult.blob], newName, { type: "video/webm" }), newName);
+            newName = fileName.replace(/\.[^.]+$/, ".webm");
+            await uploadFn(new File([serverResult.blob], newName, { type: "video/webm" }), newName, targetDir);
             result.processed++;
             result.totalSaved += originalSize - serverResult.optimizedSize;
-            continue;
+            optimized = true;
           }
         }
 
-        if (serverResult?.skipped) { result.skipped++; continue; }
+        if (!optimized && serverResult?.skipped) { result.skipped++; continue; }
+        if (optimized) {
+          // Delete original if extension changed (e.g., .png → .webp)
+          if (newName !== fileName) {
+            serverDeleteFile(filePath).catch(() => { /* best effort */ });
+          }
+          continue;
+        }
       }
 
       // ── Client-side fallback ────────────────────────────
@@ -616,16 +629,19 @@ export async function batchOptimize(
         const audioResult = await optimizeAudio(inputFile, bitrate);
         if (audioResult && audioResult.blob.size < originalSize) {
           const outExt = audioMimeToExt(audioResult.mime);
-          const newName = fileName.replace(/\.[^.]+$/, `.${outExt}`);
+          newName = fileName.replace(/\.[^.]+$/, `.${outExt}`);
           const file = new File([audioResult.blob], newName, { type: audioResult.mime });
-          await uploadFn(file, newName);
+          await uploadFn(file, newName, targetDir);
           result.processed++;
           result.totalSaved += originalSize - audioResult.blob.size;
+          if (newName !== fileName) {
+            serverDeleteFile(filePath).catch(() => { /* best effort */ });
+          }
         } else {
           result.skipped++;
         }
       } else if (worker && config) {
-        const optimized = await new Promise<Blob>((resolve, reject) => {
+        const optimizedBlob = await new Promise<Blob>((resolve, reject) => {
           const id = ++taskId;
           const handler = (e: MessageEvent) => {
             if (e.data.id !== id) return;
@@ -644,12 +660,15 @@ export async function batchOptimize(
           });
         });
 
-        if (optimized.size < originalSize) {
-          const newName = fileName.replace(/\.[^.]+$/, ".webp");
-          const file = new File([optimized], newName, { type: "image/webp" });
-          await uploadFn(file, newName);
+        if (optimizedBlob.size < originalSize) {
+          newName = fileName.replace(/\.[^.]+$/, ".webp");
+          const file = new File([optimizedBlob], newName, { type: "image/webp" });
+          await uploadFn(file, newName, targetDir);
           result.processed++;
-          result.totalSaved += originalSize - optimized.size;
+          result.totalSaved += originalSize - optimizedBlob.size;
+          if (newName !== fileName) {
+            serverDeleteFile(filePath).catch(() => { /* best effort */ });
+          }
         } else {
           result.skipped++;
         }

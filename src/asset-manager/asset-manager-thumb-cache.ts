@@ -21,6 +21,9 @@ const STORE_NAME = "thumbnails";
 /** Max concurrent worker tasks. */
 const MAX_CONCURRENT = 4;
 
+/** Max object URLs held in memory. Oldest are evicted when exceeded. */
+const MAX_OBJECT_URLS = 500;
+
 /** Thumbnail WebP quality (0-1). */
 const THUMB_QUALITY = 0.75;
 
@@ -111,15 +114,20 @@ class ThumbCache {
     await this.#ready;
     const key = `${path}::${size}`;
 
-    // Check if we already have an active object URL
+    // Check if we already have an active object URL (move to end for LRU)
     const existing = this.#objectUrls.get(key);
-    if (existing) return existing;
+    if (existing) {
+      this.#objectUrls.delete(key);
+      this.#objectUrls.set(key, existing);
+      return existing;
+    }
 
     // Check IndexedDB cache
     const cached = await this.#getFromDb(key);
     if (cached) {
       const url = URL.createObjectURL(cached.blob);
       this.#objectUrls.set(key, url);
+      this.#evictOldUrls();
       return url;
     }
 
@@ -188,6 +196,18 @@ class ThumbCache {
     }
     this.#pending.clear();
     this.#queue.length = 0;
+  }
+
+  /** Evict oldest object URLs when over the cap. */
+  #evictOldUrls(): void {
+    while (this.#objectUrls.size > MAX_OBJECT_URLS) {
+      // Map iterator gives insertion order — first entry is oldest
+      const oldest = this.#objectUrls.keys().next().value;
+      if (oldest === undefined) break;
+      const url = this.#objectUrls.get(oldest);
+      if (url) URL.revokeObjectURL(url);
+      this.#objectUrls.delete(oldest);
+    }
   }
 
   /* ── Initialization ───────────────────────────────────── */
@@ -297,6 +317,7 @@ class ThumbCache {
           const blob = thumbBlob as unknown as Blob;
           const url = URL.createObjectURL(blob);
           this.#objectUrls.set(key, url);
+          this.#evictOldUrls();
 
           // Cache in IndexedDB (fire and forget)
           this.#putToDb({ key, path, size, blob, created: Date.now() }).catch(() => {

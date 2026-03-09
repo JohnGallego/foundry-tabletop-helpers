@@ -7,6 +7,7 @@
  */
 
 import { type AssetEntry, type AssetType } from "./asset-manager-types";
+import { getServerThumbUrl, isOptimizerConfigured } from "./asset-manager-optimizer-client";
 
 /* ── Types ────────────────────────────────────────────────── */
 
@@ -280,8 +281,12 @@ export function buildPreviewHTML(entry: AssetEntry, meta: FileMetadata | null, e
 
 function buildPreviewContent(entry: AssetEntry, esc: (s: string) => string): string {
   switch (entry.type) {
-    case "image":
-      return `<img src="${esc(entry.path)}" alt="${esc(entry.name)}" class="am-preview-img" decoding="async" />`;
+    case "image": {
+      // Use server thumbnail for preview if available, otherwise full image
+      const thumbUrl = isOptimizerConfigured() ? getServerThumbUrl(entry.path) : null;
+      const src = thumbUrl ?? entry.path;
+      return `<img src="${esc(src)}" alt="${esc(entry.name)}" class="am-preview-img" decoding="async" />`;
+    }
     case "audio":
       return `
         <div class="am-preview-audio-wrap">

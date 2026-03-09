@@ -18,7 +18,7 @@ import { Log } from "../logger";
 const CACHE_TTL = 60_000;
 
 /** Maximum number of cached directories. */
-const MAX_ENTRIES = 50;
+const MAX_ENTRIES = 20;
 
 /* ── Types ────────────────────────────────────────────────── */
 

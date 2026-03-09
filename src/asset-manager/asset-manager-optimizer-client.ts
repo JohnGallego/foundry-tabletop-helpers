@@ -241,6 +241,124 @@ export async function serverOptimizeVideo(
   }
 }
 
+/**
+ * Delete a file via the server companion.
+ * Used after batch optimization to remove the original (e.g., icon.png after icon.webp is uploaded).
+ * Returns true if deleted, false if failed or server unavailable.
+ */
+export async function serverDeleteFile(filePath: string): Promise<boolean> {
+  const config = getConfig();
+  if (!config) return false;
+
+  try {
+    const res = await fetch(`${config.url}/delete`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ path: filePath }),
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      Log.warn(`Optimizer server delete error: ${res.status}`, body);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    Log.debug("Optimizer server delete request failed", err);
+    return false;
+  }
+}
+
+/**
+ * Delete a folder recursively via the server companion.
+ * Returns true if deleted, false if failed or server unavailable.
+ */
+export async function serverDeleteFolder(folderPath: string): Promise<boolean> {
+  const config = getConfig();
+  if (!config) return false;
+
+  try {
+    const res = await fetch(`${config.url}/delete`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ path: folderPath, recursive: true }),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      Log.warn(`Optimizer server folder delete error: ${res.status}`, body);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    Log.debug("Optimizer server folder delete request failed", err);
+    return false;
+  }
+}
+
+export interface ThumbCacheStats {
+  count: number;
+  totalBytes: number;
+}
+
+/** Fetch thumbnail cache stats from the server. Cached in memory. */
+let cachedThumbStats: ThumbCacheStats | null = null;
+let thumbStatsTime = 0;
+const THUMB_STATS_CACHE_MS = 300_000; // 5 min cache
+
+export async function getThumbCacheStats(force = false): Promise<ThumbCacheStats | null> {
+  if (!force && cachedThumbStats && Date.now() - thumbStatsTime < THUMB_STATS_CACHE_MS) {
+    return cachedThumbStats;
+  }
+  const config = getConfig();
+  if (!config) return null;
+
+  try {
+    const res = await fetch(`${config.url}/thumb/stats`, {
+      headers: { Authorization: `Bearer ${config.token}` },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return cachedThumbStats;
+    const data = await res.json();
+    cachedThumbStats = { count: data.count ?? 0, totalBytes: data.totalBytes ?? 0 };
+    thumbStatsTime = Date.now();
+    return cachedThumbStats;
+  } catch {
+    return cachedThumbStats;
+  }
+}
+
+/** Invalidate the cached thumb stats (call after deletion or batch operations). */
+export function invalidateThumbStats(): void {
+  thumbStatsTime = 0;
+}
+
+/** Returns true if the optimizer server is configured (URL + token present). */
+export function isOptimizerConfigured(): boolean {
+  return getConfig() !== null;
+}
+
+/**
+ * Build a direct URL for a server-cached thumbnail.
+ * Used as `img.src` — browser HTTP cache handles the rest.
+ * Returns null if the server is not configured.
+ */
+export function getServerThumbUrl(assetPath: string): string | null {
+  const config = getConfig();
+  if (!config) return null;
+  return `${config.url}/thumb?path=${encodeURIComponent(assetPath)}&token=${encodeURIComponent(config.token)}&v=2`;
+}
+
 /** Reset cached state (e.g., when settings change). */
 export function resetOptimizerCache(): void {
   cachedUrl = null;
