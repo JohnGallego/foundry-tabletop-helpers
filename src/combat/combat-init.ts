@@ -532,23 +532,20 @@ function onRenderCombatTrackerRulesReference(_app: any, html: any, ..._rest: unk
 
 /**
  * Add a "Rules Reference" button to the Token scene controls.
+ * V13: controls is an object keyed by name, tools is also an object.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function onGetSceneControlButtonsRulesReference(controls: any[]): void {
+function onGetSceneControlButtonsRulesReference(controls: Record<string, any>): void {
   if (!isRulesReferenceEnabled()) return;
+  if (!controls.tokens?.tools) return;
 
-  // Find the token controls group
-  const tokenControls = controls.find(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (c: any) => c.name === "token",
-  );
-  if (!tokenControls?.tools) return;
-
-  tokenControls.tools.push({
+  controls.tokens.tools["fth-rules-reference"] = {
     name: "fth-rules-reference",
     title: "Rules Reference",
     icon: "fa-solid fa-book-sparkles",
+    order: Object.keys(controls.tokens.tools).length,
     button: true,
-    onClick: () => toggleRulesReference(),
-  });
+    visible: true,
+    onChange: () => toggleRulesReference(),
+  };
 }
