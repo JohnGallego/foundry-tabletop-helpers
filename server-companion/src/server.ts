@@ -8,6 +8,8 @@ import { registerImageRoute } from "./routes/optimize-image.js";
 import { registerAudioRoute } from "./routes/optimize-audio.js";
 import { registerVideoRoute } from "./routes/optimize-video.js";
 import { registerThumbnailRoute } from "./routes/thumbnail.js";
+import { registerDeleteRoute } from "./routes/delete-file.js";
+import { registerThumbCacheRoute } from "./routes/thumb-cache.js";
 
 export async function createServer(config: Config) {
   const app = Fastify({
@@ -47,6 +49,8 @@ export async function createServer(config: Config) {
   await registerAudioRoute(app, config);
   await registerVideoRoute(app, config);
   await registerThumbnailRoute(app);
+  await registerDeleteRoute(app, config.foundryDataPath);
+  await registerThumbCacheRoute(app, config.foundryDataPath);
 
   // Video routes get a longer timeout
   app.addHook("onRequest", async (request) => {

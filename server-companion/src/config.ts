@@ -12,6 +12,7 @@ export interface Config {
   logLevel: "debug" | "info" | "warn" | "error";
   ffmpegPath: string | undefined;
   ffprobePath: string | undefined;
+  foundryDataPath: string | undefined;
 }
 
 export function loadConfig(): Config {
@@ -45,6 +46,7 @@ export function loadConfig(): Config {
 
   const ffmpegPath = process.env.FTH_FFMPEG_PATH || undefined;
   const ffprobePath = process.env.FTH_FFPROBE_PATH || undefined;
+  const foundryDataPath = process.env.FTH_FOUNDRY_DATA_PATH || undefined;
 
   return {
     authToken,
@@ -56,5 +58,6 @@ export function loadConfig(): Config {
     logLevel,
     ffmpegPath,
     ffprobePath,
+    foundryDataPath,
   };
 }
