@@ -74,7 +74,7 @@ jobs:
 
       # ── Server Companion Build ──────────────────────────
       - name: Cache server companion deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: server-companion/node_modules
           key: server-companion-npm-${{ hashFiles('server-companion/package-lock.json') }}
