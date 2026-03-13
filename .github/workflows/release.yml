@@ -34,16 +34,9 @@ jobs:
           node -e "const fs=require('fs');const p='package.json';const pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.version='${TAG_VER}';fs.writeFileSync(p, JSON.stringify(pkg,null,2)+'\n');"
           cat package.json | sed -n '1,25p'
 
-      - name: Commit package.json version (to main)
-        run: |
-          if ! git diff --quiet -- package.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package.json
-            git commit -m "chore: set package.json version to ${GITHUB_REF_NAME#v}"
-            git push origin HEAD:main
-          fi
-
+      # package.json version is updated but NOT committed yet — deferred to
+      # a single combined commit after module.json is also stamped (avoids
+      # two separate pushes to main that can race).
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -54,8 +47,8 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Typecheck, Test & Build
+        run: npm run ci
 
       # Make manifest URLs tag-specific so installs are reproducible.
       - name: Stamp manifest URLs to tag
@@ -80,6 +73,19 @@ jobs:
           sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256"
 
       # ── Server Companion Build ──────────────────────────
+      - name: Cache server companion deps
+        uses: actions/cache@v4
+        with:
+          path: server-companion/node_modules
+          key: server-companion-npm-${{ hashFiles('server-companion/package-lock.json') }}
+          restore-keys: server-companion-npm-
+
+      - name: Sync server companion version to tag
+        run: |
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const p='server-companion/package.json';const pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.version='${TAG_VER}';fs.writeFileSync(p, JSON.stringify(pkg,null,2)+'\n');"
+          echo "server-companion/package.json → ${TAG_VER}"
+
       - name: Build server companion
         run: |
           cd server-companion
@@ -96,19 +102,50 @@ jobs:
           cp "$TARBALL" "$DEST"
           sha256sum "$DEST" > "${DEST}.sha256"
 
-      # Sync dist/module.json back to repo root and commit to main
-      - name: Sync root module.json (commit to main)
+      # ── Changelog ────────────────────────────────────────
+      - name: Prepend release entry to CHANGELOG.md
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          DATE="$(date -u +%Y-%m-%d)"
+
+          # Generate notes from commits since previous tag
+          PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sed -n '2p')
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(git log --pretty=format:"- %s" "${PREV_TAG}..HEAD" \
+              -- ':!package.json' ':!module.json' ':!server-companion/package.json' \
+              | head -50)
+          else
+            NOTES="- Initial release"
+          fi
+
+          # Build the new entry
+          HEADER="## [${VERSION}] — ${DATE}"
+
+          if [ -f CHANGELOG.md ]; then
+            # Insert after the first "---" separator
+            awk -v header="$HEADER" -v notes="$NOTES" '
+              /^---$/ && !done { print; print ""; print header; print ""; print notes; print ""; done=1; next }
+              { print }
+            ' CHANGELOG.md > CHANGELOG.tmp && mv CHANGELOG.tmp CHANGELOG.md
+          else
+            printf "# Changelog\n\n---\n\n%s\n\n%s\n" "$HEADER" "$NOTES" > CHANGELOG.md
+          fi
+          echo "📝 CHANGELOG.md updated for ${VERSION}"
+
+      # Commit all release files in a single push to main.
+      - name: Commit version files to main
         run: |
           cp dist/module.json module.json
-          if ! git diff --quiet -- module.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add module.json
-            git commit -m "chore: sync module.json for ${GITHUB_REF_NAME}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json module.json server-companion/package.json CHANGELOG.md
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: release ${GITHUB_REF_NAME}"
             git push origin HEAD:main
-            echo "✅ Pushed updated module.json to main."
+            echo "✅ Pushed release files to main."
           else
-            echo "ℹ️ module.json unchanged; nothing to push."
+            echo "ℹ️ No changes; nothing to push."
           fi
 
       - name: Publish GitHub Release

@@ -21,6 +21,6 @@
     "styles": [
         "styles.css"
     ],
-    "manifest": "https://raw.githubusercontent.com/JohnGallego/foundry-tabletop-helpers/v0.1.4-alpha/module.json",
-    "download": "https://github.com/JohnGallego/foundry-tabletop-helpers/releases/download/v0.1.4-alpha/foundry-tabletop-helpers-v0.1.4-alpha.zip"
+    "manifest": "REPLACED_AT_BUILD_TIME",
+    "download": "REPLACED_AT_BUILD_TIME"
 }

@@ -1,56 +1,26 @@
-# Foundry Tabletop Helpers — Claude Instructions
+# Foundry Tabletop Helpers
 
-## Project Vault
+Foundry VTT V13 module for D&D 5.5e — QoL tools for GMs and players.
 
-The Obsidian vault at `~/Documents/Vaults/Claude Brain/Foundry VTT/Foundry Tabletop Helpers/` contains project documentation that should be consulted and maintained:
-
-| Document | Purpose |
-|----------|---------|
-| **Goals & Tasks.md** | Living task tracker — current goals, active tasks, backlog, and completed work. **Always check this first** to understand what we're working on. |
-| **Architecture & Code Patterns.md** | Project structure, build pipeline, TypeScript conventions, Foundry V13 patterns, CSS architecture, ViewModel pattern, settings/state management. **Consult before writing code** to follow established patterns. |
-| **Design & Style Guide.md** | Visual design reference — color palette, typography scale, spacing, depth/atmosphere, touch UI standards, component patterns. **Consult before writing CSS** to maintain visual consistency. |
+Full project context lives in `.claude/`:
+- `.claude/CLAUDE.md` — architecture, build/deploy commands, skills, post-task workflow
+- `.claude/rules/project-spec.md` — product spec, features, roadmap
+- `.claude/rules/code-style.md` — naming, patterns, anti-patterns, build details
+- `.claude/rules/foundry-api.md` — V13 + dnd5e 4.x API gotchas (path-scoped to `src/**`)
+- `.claude/status.md` — session continuity (read at start, update at end)
 
 ## Skills
 
-Always invoke these skills when working on this project:
+Always invoke when working on this project:
 
-- **foundry-vtt-dev** — Foundry VTT V13+ module development, dnd5e system API, hooks, ApplicationV2, settings, sockets. Use for all code changes.
-- **ui-ux-engineer** — Dark arcane themed UI, glass-morphism, touch-first design, immersive interfaces. Use for all styling and visual work.
-- **dnd-dm-expert** — D&D 5e rules, character sheet data, spell/combat mechanics. Use when working with game data, ViewModels, or feature design decisions.
+- **forgewright:foundry-vtt-dev** — Foundry VTT V13+ module dev. Use for all code changes.
+- **forgewright:ui-ux-engineer** — Dark arcane UI, glass-morphism, touch-first. Use for all CSS.
+- **loresmith:rules-sage** — D&D 5e/5.5e rules. Use for game data and mechanics decisions.
+- **dnd-art-forge:dnd-fantasy-art** — Fantasy art generation. Use when creating artwork or icons.
+- **superpowers:brainstorming** — Always use before planning new features or implementations.
 
 ## Post-Task Workflow
 
-After completing any task, **always** run through these steps in order:
-
-### 1. Build the project
-
-```bash
-cd ~/Documents/Code\ Projects/foundry-tabletop-helpers && npm run build
-```
-
-Verify the build succeeds with no TypeScript errors. Fix any issues before proceeding.
-
-### 2. Update Goals & Tasks
-
-Update `~/Documents/Vaults/Claude Brain/Foundry VTT/Foundry Tabletop Helpers/Goals & Tasks.md`:
-- Mark completed tasks as `[x]`
-- Add brief completion notes if the task involved notable decisions
-- Move newly identified work into the Backlog section
-
-### 3. Update architecture/design docs (if warranted)
-
-If the task introduced new patterns, changed project structure, added new conventions, or modified visual design:
-- Update `Architecture & Code Patterns.md` for structural/code changes
-- Update `Design & Style Guide.md` for visual/CSS changes
-
-Skip this step if the task was a straightforward implementation within existing patterns.
-
-### 4. Deploy to Foundry server
-
-```bash
-rsync -avz --delete "dist/" root@foundry.digitalframeworks.org:/var/foundrydata/Data/modules/foundry-tabletop-helpers/
-```
-
-- SSH host: `root@foundry.digitalframeworks.org`
-- Module path on server: `/var/foundrydata/Data/modules/foundry-tabletop-helpers`
-- The `--delete` flag ensures removed files are cleaned up on the server
+1. **Build:** `npm run build` — fix TypeScript errors before proceeding
+2. **Deploy:** `rsync -avz --delete "dist/" deploy@foundry.digitalframeworks.org:/var/foundrydata/Data/modules/foundry-tabletop-helpers/`
+3. **Update status:** Update `.claude/status.md` with what was done
