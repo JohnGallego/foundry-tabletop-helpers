@@ -19,6 +19,7 @@ export interface ServerCapabilities {
   audio: boolean;
   video: boolean;
   thumbnail: boolean;
+  portrait: boolean;
 }
 
 export interface OptimizeImageOptions {

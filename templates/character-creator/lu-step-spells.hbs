@@ -1,0 +1,99 @@
+{{!-- Level-Up — Spells Step --}}
+<div class="cc-spells-step" data-step="spells">
+
+  <p class="cc-card-select__description">
+    Add new spells for your {{className}} at Level {{targetLevel}}.
+    {{#unless hasSpells}}{{#unless hasCantrips}}No spell changes at this level.{{/unless}}{{/unless}}
+  </p>
+
+  {{!-- Search Bar --}}
+  {{#if hasSpells}}
+  <div class="cc-spells-search">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text"
+           class="cc-spells-search__input"
+           data-spell-search
+           placeholder="Search spells..."
+           autocomplete="off">
+  </div>
+  {{/if}}
+
+  {{!-- New Cantrips --}}
+  {{#if hasCantrips}}
+  <div class="cc-spell-section">
+    <div class="cc-spell-section__header">
+      <h3 class="cc-spell-section__title">
+        <i class="fa-solid fa-fire"></i>
+        New Cantrips
+      </h3>
+      <span class="cc-spell-section__count">{{newCantripCount}} selected</span>
+    </div>
+    <div class="cc-spell-grid">
+      {{#each cantrips}}
+      <div class="cc-spell-card{{#if selected}} cc-spell-card--selected{{/if}}"
+           data-cantrip-uuid="{{uuid}}"
+           data-spell-name="{{name}}"
+           role="button"
+           tabindex="0">
+        <div class="cc-spell-card__img-wrap">
+          <img class="cc-spell-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+        </div>
+        <div class="cc-spell-card__info">
+          <div class="cc-spell-card__name">{{name}}</div>
+          <div class="cc-spell-card__school">{{schoolLabel}}</div>
+        </div>
+        {{#if selected}}
+        <div class="cc-spell-card__check">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+  {{!-- New Leveled Spells --}}
+  {{#if hasSpells}}
+  <div class="cc-spell-section">
+    <div class="cc-spell-section__header">
+      <h3 class="cc-spell-section__title">
+        <i class="fa-solid fa-book-open"></i>
+        Learn New Spells
+      </h3>
+      <span class="cc-spell-section__count">{{newSpellCount}} selected</span>
+    </div>
+    <div class="cc-spell-grid">
+      {{#each spells}}
+      <div class="cc-spell-card{{#if selected}} cc-spell-card--selected{{/if}}"
+           data-spell-uuid="{{uuid}}"
+           data-spell-name="{{name}}"
+           role="button"
+           tabindex="0">
+        <div class="cc-spell-card__img-wrap">
+          <img class="cc-spell-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+        </div>
+        <div class="cc-spell-card__info">
+          <div class="cc-spell-card__name">{{name}}</div>
+          <div class="cc-spell-card__school">{{schoolLabel}}</div>
+        </div>
+        {{#if selected}}
+        <div class="cc-spell-card__check">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+  {{!-- Summary --}}
+  {{#if hasSpells}}
+  <div class="cc-spells-summary">
+    <span class="cc-spells-summary__label">New spells:</span>
+    <span class="cc-spells-summary__value">{{newCantripCount}} cantrips, {{newSpellCount}} spells</span>
+  </div>
+  {{/if}}
+
+</div>

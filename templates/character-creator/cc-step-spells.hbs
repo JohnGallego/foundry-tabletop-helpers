@@ -1,0 +1,102 @@
+{{!-- Character Creator — Spells Step --}}
+<div class="cc-spells-step" data-step="spells">
+
+  {{!-- Search Bar --}}
+  <div class="cc-spells-search">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text"
+           class="cc-spells-search__input"
+           data-spell-search
+           placeholder="Search spells..."
+           autocomplete="off">
+  </div>
+
+  {{!-- Cantrips Section --}}
+  {{#if hasCantrips}}
+  <div class="cc-spell-section">
+    <div class="cc-spell-section__header">
+      <h3 class="cc-spell-section__title">
+        <i class="fa-solid fa-fire"></i>
+        Cantrips
+      </h3>
+      <span class="cc-spell-section__count">{{cantripCount}} selected</span>
+    </div>
+    <div class="cc-spell-grid">
+      {{#each cantrips}}
+      <div class="cc-spell-card{{#if selected}} cc-spell-card--selected{{/if}}"
+           data-cantrip-uuid="{{uuid}}"
+           data-spell-name="{{name}}"
+           role="button"
+           tabindex="0"
+           aria-selected="{{selected}}">
+        <div class="cc-spell-card__img-wrap">
+          <img class="cc-spell-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+        </div>
+        <div class="cc-spell-card__info">
+          <div class="cc-spell-card__name">{{name}}</div>
+          <div class="cc-spell-card__school">{{schoolLabel}}</div>
+        </div>
+        {{#if selected}}
+        <div class="cc-spell-card__check">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+  {{!-- Leveled Spells by Level --}}
+  {{#if hasSpells}}
+  {{#each spellsByLevel}}
+  <div class="cc-spell-section">
+    <div class="cc-spell-section__header">
+      <h3 class="cc-spell-section__title">
+        <i class="fa-solid fa-book-open"></i>
+        {{label}}
+      </h3>
+    </div>
+    <div class="cc-spell-grid">
+      {{#each spells}}
+      <div class="cc-spell-card{{#if selected}} cc-spell-card--selected{{/if}}"
+           data-spell-uuid="{{uuid}}"
+           data-spell-name="{{name}}"
+           role="button"
+           tabindex="0"
+           aria-selected="{{selected}}">
+        <div class="cc-spell-card__img-wrap">
+          <img class="cc-spell-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+        </div>
+        <div class="cc-spell-card__info">
+          <div class="cc-spell-card__name">{{name}}</div>
+          <div class="cc-spell-card__school">{{schoolLabel}}</div>
+        </div>
+        {{#if selected}}
+        <div class="cc-spell-card__check">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/each}}
+  {{/if}}
+
+  {{!-- Empty State --}}
+  {{#unless hasCantrips}}
+  {{#unless hasSpells}}
+  <div class="cc-empty-state">
+    <i class="fa-solid fa-wand-sparkles"></i>
+    <p>No spells available for {{className}}. This class may not be a spellcaster, or check your GM configuration.</p>
+  </div>
+  {{/unless}}
+  {{/unless}}
+
+  <div class="cc-spells-summary">
+    <span class="cc-spells-summary__label">Selected:</span>
+    <span class="cc-spells-summary__value">{{cantripCount}} cantrips, {{spellCount}} spells</span>
+  </div>
+
+</div>

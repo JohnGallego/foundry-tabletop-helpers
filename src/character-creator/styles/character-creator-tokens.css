@@ -1,0 +1,76 @@
+/* ── Character Creator — Design Tokens ────────────────────── */
+/* Scoped to .fth-character-creator, reuses LPCS palette values */
+
+.fth-character-creator {
+  /* Foundation */
+  --cc-bg-base: #0f1115;
+  --cc-bg-surface: #1a1d24;
+  --cc-bg-elevated: #22262f;
+
+  /* Glass */
+  --cc-bg-glass: rgba(255, 255, 255, 0.04);
+  --cc-bg-glass-hover: rgba(255, 255, 255, 0.08);
+  --cc-bg-glass-active: rgba(255, 255, 255, 0.12);
+
+  /* Accents */
+  --cc-accent-bronze: #c8a75d;
+  --cc-accent-gold: #d4af37;
+  --cc-accent-crimson: #8b1e2d;
+  --cc-accent-emerald: #2d6b4f;
+
+  /* Text */
+  --cc-text-primary: #e8e2d6;
+  --cc-text-secondary: #9a9488;
+  --cc-text-accent: var(--cc-accent-bronze);
+
+  /* Borders */
+  --cc-border-subtle: rgba(255, 255, 255, 0.06);
+  --cc-border-accent: rgba(200, 167, 93, 0.25);
+  --cc-border-glow: rgba(200, 167, 93, 0.4);
+
+  /* Type Scale */
+  --cc-text-2xs: 0.6rem;
+  --cc-text-xs: 0.65rem;
+  --cc-text-sm: 0.75rem;
+  --cc-text-base: 0.85rem;
+  --cc-text-md: 1rem;
+  --cc-text-lg: 1.1rem;
+  --cc-text-xl: 1.25rem;
+  --cc-text-2xl: 1.75rem;
+
+  /* Spacing */
+  --cc-space-2xs: 2px;
+  --cc-space-xs: 4px;
+  --cc-space-sm: 6px;
+  --cc-space-md: 10px;
+  --cc-space-lg: 16px;
+  --cc-space-xl: 24px;
+  --cc-space-2xl: 32px;
+
+  /* Touch */
+  --cc-touch-min: 44px;
+
+  /* Motion */
+  --cc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --cc-duration-fast: 100ms;
+  --cc-duration-normal: 200ms;
+  --cc-duration-slow: 350ms;
+
+  /* Container Query */
+  container-type: inline-size;
+  container-name: character-creator;
+
+  /* Base styling */
+  background: var(--cc-bg-base);
+  color: var(--cc-text-primary);
+  font-size: var(--cc-text-base);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fth-character-creator *,
+  .fth-character-creator *::before,
+  .fth-character-creator *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

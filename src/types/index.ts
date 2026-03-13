@@ -17,6 +17,7 @@ export type {
   FoundryCompendiumCollection,
   FoundryDocumentClass,
   FoundryDocument,
+  FoundryIndexEntry,
   FoundrySocket,
   FoundryNotifications,
   NotificationOptions,
@@ -44,6 +45,9 @@ export {
   getAllUsers,
   getSetting,
   setSetting,
+  fromUuid,
+  loadTemplates,
+  renderTemplate,
   hasProperty,
   isObject,
 } from "./guards";

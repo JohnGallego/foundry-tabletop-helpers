@@ -1,0 +1,69 @@
+{{!-- Character Creator — Wizard Shell --}}
+<div class="cc-wizard-shell {{atmosphereClass}}">
+
+  {{!-- Step Indicator Bar --}}
+  <nav class="cc-step-indicator" aria-label="Wizard Steps">
+    {{#each steps}}
+    <div class="cc-step-indicator__step cc-step-indicator__step--{{status}}{{#if active}} cc-step-indicator__step--active{{/if}}"
+         data-step-id="{{id}}"
+         title="{{label}}">
+      <span class="cc-step-indicator__number">{{math index "+" 1}}</span>
+      <i class="cc-step-indicator__icon {{icon}}"></i>
+    </div>
+    {{#unless @last}}
+    <div class="cc-step-indicator__connector{{#if (eq status 'complete')}} cc-step-indicator__connector--completed{{/if}}"></div>
+    {{/unless}}
+    {{/each}}
+  </nav>
+
+  {{!-- Step Header --}}
+  <header class="cc-step-header">
+    <i class="cc-step-header__icon {{currentStepIcon}}"></i>
+    <h2 class="cc-step-header__title">{{currentStepLabel}}</h2>
+  </header>
+
+  {{!-- Step Content Area --}}
+  <section class="cc-step-content">
+    {{{stepContentHtml}}}
+  </section>
+
+  {{!-- Navigation Bar --}}
+  <footer class="cc-navigation">
+    <button class="cc-nav-btn cc-nav-btn--back"
+            type="button"
+            data-action="goBack"
+            {{#unless canGoBack}}disabled{{/unless}}>
+      <i class="fa-solid fa-chevron-left"></i>
+      <span>Back</span>
+    </button>
+
+    <div class="cc-navigation__spacer"></div>
+
+    {{#if isReviewStep}}
+    {{#if isLevelUp}}
+    <button class="cc-nav-btn cc-nav-btn--create"
+            type="button"
+            data-action="applyLevelUp">
+      <i class="fa-solid fa-arrow-up"></i>
+      <span>Apply Level Up</span>
+    </button>
+    {{else}}
+    <button class="cc-nav-btn cc-nav-btn--create"
+            type="button"
+            data-action="createCharacter">
+      <i class="fa-solid fa-sparkles"></i>
+      <span>Create Character</span>
+    </button>
+    {{/if}}
+    {{else}}
+    <button class="cc-nav-btn cc-nav-btn--next"
+            type="button"
+            data-action="goNext"
+            {{#unless canGoNext}}disabled{{/unless}}>
+      <span>Next</span>
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+    {{/if}}
+  </footer>
+
+</div>

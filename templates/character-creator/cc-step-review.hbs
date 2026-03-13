@@ -1,0 +1,81 @@
+{{!-- Character Creator — Review & Create Step --}}
+<div class="cc-review-step" data-step="review">
+
+  {{!-- Character Name Input --}}
+  <div class="cc-review-name">
+    <label class="cc-review-name__label" for="cc-character-name">
+      <i class="fa-solid fa-feather-pointed"></i>
+      Character Name
+    </label>
+    <input type="text"
+           id="cc-character-name"
+           class="cc-review-name__input"
+           data-character-name
+           value="{{characterName}}"
+           placeholder="Enter your character's name..."
+           autocomplete="off"
+           autofocus>
+  </div>
+
+  {{!-- Level Badge --}}
+  <div class="cc-review-level">
+    <span class="cc-review-level__label">Level</span>
+    <span class="cc-review-level__value">{{startingLevel}}</span>
+  </div>
+
+  {{!-- Section Summaries --}}
+  <div class="cc-review-sections">
+    {{#each sections}}
+    <div class="cc-review-section{{#unless complete}} cc-review-section--incomplete{{/unless}}">
+      <div class="cc-review-section__header">
+        <i class="cc-review-section__icon {{icon}}"></i>
+        <span class="cc-review-section__label">{{label}}</span>
+        <div class="cc-review-section__status">
+          {{#if complete}}
+          <i class="fa-solid fa-check cc-review-section__check"></i>
+          {{else}}
+          <i class="fa-solid fa-exclamation cc-review-section__warn"></i>
+          {{/if}}
+        </div>
+        <button class="cc-review-section__edit"
+                type="button"
+                data-action="jumpToStep"
+                data-step-id="{{id}}"
+                title="Edit {{label}}">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+      </div>
+
+      <div class="cc-review-section__body">
+        {{#if isAbilities}}
+        <div class="cc-review-abilities">
+          {{#each summary}}
+          <div class="cc-review-ability">
+            <span class="cc-review-ability__key">{{key}}</span>
+            <span class="cc-review-ability__score">{{score}}</span>
+            <span class="cc-review-ability__mod{{#if isPositive}} cc-review-ability__mod--positive{{/if}}">{{modifier}}</span>
+          </div>
+          {{/each}}
+        </div>
+        {{else if isSimple}}
+        <div class="cc-review-simple">
+          {{#if img}}
+          <img class="cc-review-simple__img" src="{{img}}" alt="{{summary}}">
+          {{/if}}
+          <span class="cc-review-simple__text">{{summary}}</span>
+        </div>
+        {{/if}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  {{!-- Readiness Indicator --}}
+  {{#unless allComplete}}
+  <div class="cc-review-warning">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <span>Some sections are incomplete. Go back to fill them in before creating your character.</span>
+  </div>
+  {{/unless}}
+
+</div>

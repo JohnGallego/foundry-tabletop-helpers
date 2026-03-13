@@ -1,0 +1,116 @@
+{{!-- Character Creator — Ability Scores Step --}}
+<div class="cc-abilities">
+
+  {{!-- Method Tabs --}}
+  <div class="cc-method-tabs">
+    {{#each methodTabs}}
+    <button class="cc-method-tab{{#if active}} cc-method-tab--active{{/if}}"
+            type="button"
+            data-method="{{id}}">
+      <i class="{{icon}}"></i>
+      <span>{{label}}</span>
+    </button>
+    {{/each}}
+  </div>
+
+  {{!-- Point Buy Budget --}}
+  {{#if isPointBuy}}
+  <div class="cc-point-budget cc-point-budget--{{budgetClass}}">
+    <span class="cc-point-budget__label">Points:</span>
+    <span class="cc-point-budget__value">{{pointsRemaining}}</span>
+    <span class="cc-point-budget__of">/ {{pointsBudget}}</span>
+  </div>
+  {{/if}}
+
+  {{!-- Roll Button (4d6) --}}
+  {{#if isRoll}}
+  <div class="cc-roll-controls">
+    <button class="cc-roll-btn" type="button" data-roll="true">
+      <i class="fa-solid fa-dice"></i>
+      <span>{{#if hasRolled}}Reroll All{{else}}Roll Abilities{{/if}}</span>
+    </button>
+    {{#if hasRolled}}
+    <div class="cc-rolled-values">
+      {{#each rolledValues}}
+      <span class="cc-rolled-value">{{this}}</span>
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{!-- Ability Score Grid --}}
+  <div class="cc-ability-grid">
+    {{#each abilities}}
+    <div class="cc-ability-card">
+      <div class="cc-ability-card__abbrev">{{abbrev}}</div>
+      <div class="cc-ability-card__value">{{value}}</div>
+      <div class="cc-ability-card__modifier">{{modifierStr}}</div>
+      <div class="cc-ability-card__label">{{label}}</div>
+
+      {{!-- Point Buy Controls --}}
+      {{#if ../isPointBuy}}
+      <div class="cc-ability-card__controls">
+        <button class="cc-adjust-btn" type="button"
+                data-ability="{{key}}" data-adjust="-1"
+                {{#unless canDecrement}}disabled{{/unless}}>
+          <i class="fa-solid fa-minus"></i>
+        </button>
+        <button class="cc-adjust-btn" type="button"
+                data-ability="{{key}}" data-adjust="1"
+                {{#unless canIncrement}}disabled{{/unless}}>
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+      {{/if}}
+    </div>
+    {{/each}}
+  </div>
+
+  {{!-- Assignment Dropdowns (4d6 and Standard Array) --}}
+  {{#if isAssignment}}
+  <div class="cc-assignments">
+    <p class="cc-assignments__hint">
+      {{#if isRoll}}
+        {{#if hasRolled}}Assign each rolled value to an ability score.
+        {{else}}Roll your ability scores, then assign them below.{{/if}}
+      {{else}}
+        Assign each value from the standard array (15, 14, 13, 12, 10, 8) to an ability score.
+      {{/if}}
+    </p>
+    {{#if (or hasRolled isStandardArray)}}
+    <div class="cc-assignment-grid">
+      {{#each assignmentOptions}}
+      <div class="cc-assignment-row">
+        <label class="cc-assignment-row__label">{{label}}</label>
+        <select class="cc-assignment-row__select" data-assign-ability="{{key}}">
+          <option value="">—</option>
+          {{#each options}}
+          <option value="{{index}}" {{#if selected}}selected{{/if}} {{#if disabled}}disabled{{/if}}>
+            {{value}}
+          </option>
+          {{/each}}
+        </select>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{!-- Point Buy Cost Reference --}}
+  {{#if isPointBuy}}
+  <div class="cc-cost-table">
+    <div class="cc-cost-table__title">Point Cost Reference</div>
+    <div class="cc-cost-table__grid">
+      {{#each pointBuyCosts}}
+      <div class="cc-cost-table__entry">
+        <span class="cc-cost-table__score">{{score}}</span>
+        <span class="cc-cost-table__cost">{{cost}}pt</span>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+</div>

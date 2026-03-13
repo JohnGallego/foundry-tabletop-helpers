@@ -1,0 +1,42 @@
+{{!-- Level-Up — Review Step --}}
+<div class="cc-lu-review" data-step="review">
+
+  <div class="cc-lu-review__header">
+    <h3 class="cc-lu-review__title">
+      {{actorName}} — Level {{currentLevel}} → {{targetLevel}}
+    </h3>
+    <span class="cc-lu-review__class">{{className}}</span>
+  </div>
+
+  {{#if hasChanges}}
+  <div class="cc-lu-review__changes">
+    {{#each changes}}
+    <div class="cc-review-section">
+      <div class="cc-review-section__header">
+        <i class="cc-review-section__icon {{icon}}"></i>
+        <span class="cc-review-section__label">{{label}}</span>
+        <i class="fa-solid fa-check cc-review-section__check"></i>
+      </div>
+      <div class="cc-review-section__body">
+        <div class="cc-review-simple">
+          <span class="cc-review-simple__text">{{detail}}</span>
+        </div>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  {{else}}
+  <div class="cc-empty-state">
+    <i class="fa-solid fa-clipboard-check"></i>
+    <p>No changes to apply. Complete the previous steps first.</p>
+  </div>
+  {{/if}}
+
+  <div class="cc-lu-review__action">
+    <button class="cc-nav-btn cc-nav-btn--create" type="button" data-action="applyLevelUp">
+      <i class="fa-solid fa-arrow-up"></i>
+      <span>Apply Level Up</span>
+    </button>
+  </div>
+
+</div>

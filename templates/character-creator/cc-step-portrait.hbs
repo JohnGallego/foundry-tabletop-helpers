@@ -1,0 +1,94 @@
+{{!-- Character Creator — Portrait Step --}}
+<div class="cc-step-portrait" data-step="portrait">
+
+  {{!-- Header --}}
+  <div class="cc-step-portrait__header">
+    <h2 class="cc-step-portrait__title">Character Portrait</h2>
+    <p class="cc-step-portrait__subtitle">
+      {{#if serverAvailable}}
+        Generate an AI portrait or upload your own image.
+      {{else}}
+        Upload a portrait image for your character.
+      {{/if}}
+    </p>
+  </div>
+
+  <div class="cc-step-portrait__layout">
+
+    {{!-- Left: Controls --}}
+    <div class="cc-step-portrait__controls">
+
+      {{#if serverAvailable}}
+      {{!-- AI Generation Panel --}}
+      <div class="cc-portrait-gen-panel">
+        <h3 class="cc-portrait-gen-panel__title">
+          <i class="fa-solid fa-wand-sparkles"></i> AI Portrait Generator
+        </h3>
+
+        <div class="cc-portrait-gen-panel__auto-prompt">
+          <span class="cc-portrait-gen-panel__label">Character:</span>
+          <span class="cc-portrait-gen-panel__value">{{autoPrompt}}</span>
+        </div>
+
+        <label class="cc-portrait-gen-panel__field">
+          <span class="cc-portrait-gen-panel__label">Physical Description (optional)</span>
+          <textarea
+            data-portrait-description
+            class="cc-portrait-gen-panel__textarea"
+            placeholder="e.g., scarred face, silver hair, piercing blue eyes, wearing plate armor..."
+            rows="3"
+          ></textarea>
+        </label>
+
+        <label class="cc-portrait-gen-panel__field">
+          <span class="cc-portrait-gen-panel__label">Art Style</span>
+          <select data-portrait-style class="cc-portrait-gen-panel__select">
+            <option value="fantasy" selected>Dark Fantasy</option>
+            <option value="painterly">Painterly / Oil</option>
+            <option value="realistic">Realistic</option>
+          </select>
+        </label>
+
+        <button type="button" data-action="generatePortrait" class="cc-portrait-gen-panel__btn">
+          <i class="fa-solid fa-wand-sparkles"></i> Generate Portraits
+        </button>
+      </div>
+      {{/if}}
+
+      {{!-- Upload Panel --}}
+      <div class="cc-portrait-upload-panel">
+        <button type="button" data-action="uploadPortrait" class="cc-portrait-upload-panel__btn">
+          <i class="fa-solid fa-upload"></i> Upload Custom Image
+        </button>
+      </div>
+
+      {{#if hasPortrait}}
+      <div class="cc-portrait-clear-panel">
+        <button type="button" data-action="clearPortrait" class="cc-portrait-clear-panel__btn">
+          <i class="fa-solid fa-xmark"></i> Clear Portrait
+        </button>
+      </div>
+      {{/if}}
+
+      <p class="cc-step-portrait__hint">
+        <i class="fa-solid fa-circle-info"></i>
+        Portrait is optional — you can always add one later from the character sheet.
+      </p>
+    </div>
+
+    {{!-- Right: Preview + Gallery --}}
+    <div class="cc-step-portrait__results">
+
+      {{!-- Current selection preview --}}
+      <div class="cc-portrait-preview {{#if hasPortrait}}cc-portrait-preview--active{{/if}}">
+        {{#if hasPortrait}}
+          <img src="{{portraitDataUrl}}" alt="Selected portrait" class="cc-portrait-preview__img" />
+        {{/if}}
+      </div>
+
+      {{!-- Generated images gallery --}}
+      <div class="cc-portrait-gallery"></div>
+
+    </div>
+  </div>
+</div>

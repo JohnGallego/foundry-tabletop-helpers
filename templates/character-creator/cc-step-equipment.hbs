@@ -1,0 +1,70 @@
+{{!-- Character Creator — Equipment Step --}}
+<div class="cc-equipment-step" data-step="equipment">
+
+  {{!-- Method Tabs --}}
+  <div class="cc-method-tabs">
+    {{#if allowEquipment}}
+    <button class="cc-method-tab{{#if isEquipment}} cc-method-tab--active{{/if}}"
+            type="button"
+            data-equip-method="equipment">
+      <i class="fa-solid fa-sack"></i>
+      <span>Equipment Packs</span>
+    </button>
+    {{/if}}
+    {{#if allowGold}}
+    <button class="cc-method-tab{{#if isGold}} cc-method-tab--active{{/if}}"
+            type="button"
+            data-equip-method="gold">
+      <i class="fa-solid fa-coins"></i>
+      <span>Starting Gold</span>
+    </button>
+    {{/if}}
+  </div>
+
+  {{!-- Equipment Packs View --}}
+  {{#if isEquipment}}
+  <div class="cc-equipment-packs">
+    <p class="cc-equipment-packs__hint">
+      Your {{className}} will receive standard starting equipment. Specific equipment selection will be available in a future update.
+    </p>
+
+    <div class="cc-equipment-summary">
+      <div class="cc-equipment-summary__icon">
+        <i class="fa-solid fa-box-open"></i>
+      </div>
+      <div class="cc-equipment-summary__text">
+        <h4>Standard Equipment</h4>
+        <p>Class-specific starting equipment will be added to your character automatically.</p>
+      </div>
+    </div>
+  </div>
+  {{/if}}
+
+  {{!-- Starting Gold View --}}
+  {{#if isGold}}
+  <div class="cc-gold-panel">
+    <p class="cc-gold-panel__hint">
+      Instead of equipment packs, your {{className}} starts with gold to purchase gear.
+    </p>
+
+    <div class="cc-gold-input-wrap">
+      <label class="cc-gold-input-wrap__label" for="cc-gold-amount">
+        <i class="fa-solid fa-coins"></i>
+        Starting Gold
+      </label>
+      <div class="cc-gold-input-wrap__field">
+        <input type="number"
+               id="cc-gold-amount"
+               class="cc-gold-input"
+               data-gold-amount
+               value="{{goldAmount}}"
+               min="0"
+               step="1">
+        <span class="cc-gold-input-wrap__suffix">gp</span>
+      </div>
+      <span class="cc-gold-input-wrap__default">Suggested: {{startingGold}} gp</span>
+    </div>
+  </div>
+  {{/if}}
+
+</div>

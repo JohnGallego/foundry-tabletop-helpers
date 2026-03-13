@@ -1,0 +1,84 @@
+{{!-- GM Config — Rules Configuration Tab --}}
+{{#if active}}
+<div class="cc-rules-form" role="tabpanel">
+  {{!-- Ability Score Methods --}}
+  <fieldset class="cc-gm-fieldset">
+    <legend class="cc-gm-legend">Ability Score Methods</legend>
+    <p class="cc-gm-hint">Select which methods players can use to generate ability scores.</p>
+    <div class="cc-gm-checkbox-group">
+      <label class="cc-gm-checkbox-label">
+        <input type="checkbox" name="method-4d6" {{#if allowedAbilityMethods.4d6}}checked{{/if}} />
+        <span>4d6 Drop Lowest</span>
+      </label>
+      <label class="cc-gm-checkbox-label">
+        <input type="checkbox" name="method-pointBuy" {{#if allowedAbilityMethods.pointBuy}}checked{{/if}} />
+        <span>Point Buy</span>
+      </label>
+      <label class="cc-gm-checkbox-label">
+        <input type="checkbox" name="method-standardArray" {{#if allowedAbilityMethods.standardArray}}checked{{/if}} />
+        <span>Standard Array</span>
+      </label>
+    </div>
+  </fieldset>
+
+  {{!-- Starting Level --}}
+  <fieldset class="cc-gm-fieldset">
+    <legend class="cc-gm-legend">Starting Level</legend>
+    <div class="cc-gm-input-row">
+      <input type="number" name="startingLevel" min="1" max="20" value="{{startingLevel}}" class="cc-gm-number-input" />
+    </div>
+  </fieldset>
+
+  {{!-- Multiclass --}}
+  <fieldset class="cc-gm-fieldset">
+    <legend class="cc-gm-legend">Multiclass</legend>
+    <label class="cc-gm-checkbox-label">
+      <input type="checkbox" name="allowMulticlass" {{#if allowMulticlass}}checked{{/if}} />
+      <span>Allow multiclass during character creation</span>
+    </label>
+    <p class="cc-gm-hint">Only relevant when starting level is above 1.</p>
+  </fieldset>
+
+  {{!-- Equipment Method --}}
+  <fieldset class="cc-gm-fieldset">
+    <legend class="cc-gm-legend">Starting Equipment</legend>
+    <div class="cc-gm-radio-group">
+      <label class="cc-gm-radio-label">
+        <input type="radio" name="equipmentMethod" value="equipment" {{#if (eq equipmentMethod "equipment")}}checked{{/if}} />
+        <span>Equipment Packs Only</span>
+      </label>
+      <label class="cc-gm-radio-label">
+        <input type="radio" name="equipmentMethod" value="gold" {{#if (eq equipmentMethod "gold")}}checked{{/if}} />
+        <span>Starting Gold Only</span>
+      </label>
+      <label class="cc-gm-radio-label">
+        <input type="radio" name="equipmentMethod" value="both" {{#if (eq equipmentMethod "both")}}checked{{/if}} />
+        <span>Player's Choice</span>
+      </label>
+    </div>
+  </fieldset>
+
+  {{!-- HP Method --}}
+  <fieldset class="cc-gm-fieldset">
+    <legend class="cc-gm-legend">Level 1 Hit Points</legend>
+    <div class="cc-gm-radio-group">
+      <label class="cc-gm-radio-label">
+        <input type="radio" name="level1HpMethod" value="max" {{#if (eq level1HpMethod "max")}}checked{{/if}} />
+        <span>Maximum Hit Die</span>
+      </label>
+      <label class="cc-gm-radio-label">
+        <input type="radio" name="level1HpMethod" value="roll" {{#if (eq level1HpMethod "roll")}}checked{{/if}} />
+        <span>Roll Hit Die</span>
+      </label>
+    </div>
+  </fieldset>
+
+  {{!-- Save Button --}}
+  <div class="cc-gm-actions">
+    <button type="button" class="cc-gm-save-btn" data-action="saveRules">
+      <i class="fa-solid fa-floppy-disk"></i>
+      Save Configuration
+    </button>
+  </div>
+</div>
+{{/if}}

@@ -24,6 +24,7 @@ async function detectFfmpeg(ffmpegPath?: string): Promise<string | null> {
 export async function registerHealthRoute(
   app: FastifyInstance,
   ffmpegPath?: string,
+  geminiApiKey?: string,
 ): Promise<void> {
   const startTime = Date.now();
 
@@ -41,6 +42,7 @@ export async function registerHealthRoute(
         audio: ffmpeg !== null,
         video: ffmpeg !== null,
         thumbnail: true,
+        portrait: !!geminiApiKey,
       },
       ffmpeg,
     };

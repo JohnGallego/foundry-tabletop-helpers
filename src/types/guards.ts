@@ -200,6 +200,49 @@ export async function setSetting(module: string, key: string, value: unknown): P
   }
 }
 
+/* ── Document Helpers ────────────────────────────────────── */
+
+/**
+ * Safely call the global fromUuid() function.
+ * Returns null if unavailable or the UUID is invalid.
+ */
+export async function fromUuid(uuid: string): Promise<import("./foundry").FoundryDocument | null> {
+  const g = globalThis as Record<string, unknown>;
+  const fn = g.fromUuid as ((uuid: string) => Promise<unknown>) | undefined;
+  if (typeof fn !== "function") return null;
+  try {
+    return (await fn(uuid)) as import("./foundry").FoundryDocument | null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Safely call the global loadTemplates() function.
+ */
+export function loadTemplates(paths: string[]): void {
+  const g = globalThis as Record<string, unknown>;
+  const fn = g.loadTemplates as ((paths: string[]) => Promise<unknown>) | undefined;
+  if (typeof fn === "function") void fn(paths);
+}
+
+/* ── Template Helpers ────────────────────────────────────── */
+
+/**
+ * Safely call the global renderTemplate() function.
+ * Returns rendered HTML string, or empty string if unavailable.
+ */
+export async function renderTemplate(path: string, data: Record<string, unknown>): Promise<string> {
+  const g = globalThis as Record<string, unknown>;
+  const fn = g.renderTemplate as ((path: string, data: unknown) => Promise<string>) | undefined;
+  if (typeof fn !== "function") return "";
+  try {
+    return await fn(path, data);
+  } catch {
+    return "";
+  }
+}
+
 /* ── Object Type Guards ───────────────────────────────────── */
 
 /**

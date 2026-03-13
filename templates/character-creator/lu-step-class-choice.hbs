@@ -1,0 +1,81 @@
+{{!-- Level-Up — Class Choice Step --}}
+<div class="cc-lu-class-choice" data-step="classChoice">
+
+  <p class="cc-card-select__description">
+    Choose which class to advance to Level {{targetLevel}}.
+  </p>
+
+  {{!-- Existing Classes --}}
+  <div class="cc-lu-section">
+    <h3 class="cc-lu-section__title">
+      <i class="fa-solid fa-shield-halved"></i>
+      {{#if isSingleClass}}Continue Leveling{{else}}Choose Class to Level{{/if}}
+    </h3>
+    <div class="cc-lu-class-grid">
+      {{#each existingClasses}}
+      <div class="cc-lu-class-card{{#if selected}} cc-lu-class-card--selected{{/if}}"
+           data-existing-class="{{itemId}}"
+           role="button"
+           tabindex="0"
+           aria-selected="{{selected}}">
+        <div class="cc-lu-class-card__info">
+          <span class="cc-lu-class-card__name">{{name}}</span>
+          <span class="cc-lu-class-card__level">Level {{levels}}</span>
+          {{#if subclassName}}
+          <span class="cc-lu-class-card__subclass">{{subclassName}}</span>
+          {{/if}}
+        </div>
+        <div class="cc-lu-class-card__die">{{hitDie}}</div>
+        {{#if selected}}
+        <div class="cc-select-card__check">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+
+  {{!-- Multiclass Options --}}
+  {{#if hasMulticlassOptions}}
+  <div class="cc-lu-section">
+    <h3 class="cc-lu-section__title">
+      <i class="fa-solid fa-plus"></i>
+      Multiclass Into...
+    </h3>
+    <div class="cc-card-grid">
+      {{#each multiclassOptions}}
+      <div class="cc-select-card{{#if selected}} cc-select-card--selected{{/if}}{{#unless prereqMet}} cc-select-card--disabled{{/unless}}"
+           data-multiclass-uuid="{{uuid}}"
+           data-multiclass-name="{{name}}"
+           data-multiclass-id="{{identifier}}"
+           data-prereq-met="{{prereqMet}}"
+           role="button"
+           tabindex="0"
+           aria-selected="{{selected}}"
+           aria-disabled="{{#unless prereqMet}}true{{/unless}}">
+        <div class="cc-select-card__img-wrap">
+          <img class="cc-select-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+        </div>
+        <div class="cc-select-card__info">
+          <div class="cc-select-card__name">{{name}}</div>
+          {{#unless prereqMet}}
+          <div class="cc-lu-prereq-warn">
+            {{#each prereqReasons}}
+            <span>{{this}}</span>
+            {{/each}}
+          </div>
+          {{/unless}}
+        </div>
+        {{#if selected}}
+        <div class="cc-select-card__check">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+</div>

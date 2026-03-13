@@ -1,0 +1,335 @@
+/* ── Character Creator — Portrait Step Styles ────────────── */
+
+/* ── Layout ──────────────────────────────────────────────── */
+
+.cc-step-portrait {
+  container-type: inline-size;
+  container-name: cc-portrait;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-lg);
+}
+
+.cc-step-portrait__header {
+  text-align: center;
+}
+
+.cc-step-portrait__title {
+  font-size: var(--cc-text-xl);
+  font-weight: 600;
+  color: var(--cc-text-accent);
+  margin: 0 0 var(--cc-space-xs);
+}
+
+.cc-step-portrait__subtitle {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  margin: 0;
+}
+
+.cc-step-portrait__layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--cc-space-xl);
+  align-items: start;
+}
+
+@container cc-portrait (max-width: 500px) {
+  .cc-step-portrait__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Controls Panel ──────────────────────────────────────── */
+
+.cc-step-portrait__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-md);
+}
+
+.cc-step-portrait__hint {
+  font-size: var(--cc-text-xs);
+  color: var(--cc-text-secondary);
+  margin: 0;
+  padding: var(--cc-space-sm);
+  background: var(--cc-bg-glass);
+  border-radius: 6px;
+  border: 1px solid var(--cc-border-subtle);
+}
+
+.cc-step-portrait__hint i {
+  color: var(--cc-accent-frost);
+  margin-right: var(--cc-space-xs);
+}
+
+/* ── AI Generation Panel ─────────────────────────────────── */
+
+.cc-portrait-gen-panel {
+  background: var(--cc-bg-glass);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 8px;
+  padding: var(--cc-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-md);
+}
+
+.cc-portrait-gen-panel__title {
+  font-size: var(--cc-text-md);
+  font-weight: 600;
+  color: var(--cc-accent-arcane);
+  margin: 0;
+}
+
+.cc-portrait-gen-panel__title i {
+  margin-right: var(--cc-space-xs);
+}
+
+.cc-portrait-gen-panel__auto-prompt {
+  font-size: var(--cc-text-sm);
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  background: rgba(107, 79, 160, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(107, 79, 160, 0.15);
+}
+
+.cc-portrait-gen-panel__auto-prompt .cc-portrait-gen-panel__label {
+  color: var(--cc-text-secondary);
+  margin-right: var(--cc-space-xs);
+}
+
+.cc-portrait-gen-panel__auto-prompt .cc-portrait-gen-panel__value {
+  color: var(--cc-text-primary);
+  font-style: italic;
+}
+
+.cc-portrait-gen-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-2xs);
+}
+
+.cc-portrait-gen-panel__label {
+  font-size: var(--cc-text-xs);
+  font-weight: 600;
+  color: var(--cc-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cc-portrait-gen-panel__textarea {
+  width: 100%;
+  padding: var(--cc-space-sm);
+  background: var(--cc-bg-surface);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 6px;
+  color: var(--cc-text-primary);
+  font-size: var(--cc-text-sm);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.15s ease;
+}
+
+.cc-portrait-gen-panel__textarea:focus {
+  outline: none;
+  border-color: var(--cc-accent-arcane);
+  box-shadow: 0 0 8px rgba(107, 79, 160, 0.2);
+}
+
+.cc-portrait-gen-panel__textarea::placeholder {
+  color: var(--cc-text-secondary);
+  opacity: 0.6;
+}
+
+.cc-portrait-gen-panel__select {
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  background: var(--cc-bg-surface);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 6px;
+  color: var(--cc-text-primary);
+  font-size: var(--cc-text-sm);
+  font-family: inherit;
+  cursor: pointer;
+  min-height: var(--cc-touch-min);
+}
+
+.cc-portrait-gen-panel__select:focus {
+  outline: none;
+  border-color: var(--cc-accent-arcane);
+}
+
+.cc-portrait-gen-panel__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cc-space-sm);
+  padding: var(--cc-space-sm) var(--cc-space-lg);
+  min-height: var(--cc-touch-min);
+  background: linear-gradient(135deg, rgba(107, 79, 160, 0.3) 0%, rgba(107, 79, 160, 0.15) 100%);
+  border: 1px solid rgba(107, 79, 160, 0.4);
+  border-radius: 8px;
+  color: var(--cc-text-primary);
+  font-size: var(--cc-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
+}
+
+.cc-portrait-gen-panel__btn:hover {
+  background: linear-gradient(135deg, rgba(107, 79, 160, 0.4) 0%, rgba(107, 79, 160, 0.25) 100%);
+  box-shadow: 0 0 16px rgba(107, 79, 160, 0.3);
+}
+
+.cc-portrait-gen-panel__btn:active {
+  transform: scale(0.97);
+}
+
+.cc-portrait-gen-panel__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.cc-portrait-gen-panel__btn i {
+  font-size: var(--cc-text-md);
+}
+
+/* ── Upload Panel ────────────────────────────────────────── */
+
+.cc-portrait-upload-panel__btn,
+.cc-portrait-clear-panel__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cc-space-sm);
+  width: 100%;
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  min-height: var(--cc-touch-min);
+  background: var(--cc-bg-glass);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 8px;
+  color: var(--cc-text-secondary);
+  font-size: var(--cc-text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.cc-portrait-upload-panel__btn:hover {
+  background: var(--cc-bg-glass-hover);
+  color: var(--cc-text-primary);
+  border-color: var(--cc-border-accent);
+}
+
+.cc-portrait-clear-panel__btn:hover {
+  background: rgba(139, 30, 45, 0.15);
+  color: var(--cc-accent-crimson);
+  border-color: rgba(139, 30, 45, 0.3);
+}
+
+/* ── Results Panel ───────────────────────────────────────── */
+
+.cc-step-portrait__results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-md);
+}
+
+/* ── Preview ─────────────────────────────────────────────── */
+
+.cc-portrait-preview {
+  aspect-ratio: 3 / 4;
+  max-height: 400px;
+  background: var(--cc-bg-glass);
+  border: 2px dashed var(--cc-border-subtle);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cc-portrait-preview--active {
+  border-style: solid;
+  border-color: var(--cc-border-glow);
+  box-shadow:
+    0 0 16px rgba(200, 167, 93, 0.15),
+    inset 0 0 12px rgba(200, 167, 93, 0.05);
+}
+
+.cc-portrait-preview__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* ── Gallery ─────────────────────────────────────────────── */
+
+.cc-portrait-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--cc-space-sm);
+}
+
+.cc-portrait-card {
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--cc-border-subtle);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.cc-portrait-card:hover {
+  border-color: var(--cc-border-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.cc-portrait-card:active {
+  transform: scale(0.97);
+}
+
+.cc-portrait-card--selected {
+  border-color: var(--cc-border-glow);
+  box-shadow:
+    0 0 12px rgba(200, 167, 93, 0.25),
+    0 0 24px rgba(200, 167, 93, 0.1);
+}
+
+.cc-portrait-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cc-portrait-empty {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  text-align: center;
+  padding: var(--cc-space-lg);
+  grid-column: 1 / -1;
+}
+
+@container cc-portrait (max-width: 500px) {
+  .cc-portrait-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cc-portrait-preview {
+    max-height: 280px;
+  }
+}

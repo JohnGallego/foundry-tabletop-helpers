@@ -1,0 +1,319 @@
+/* ── Level-Up Manager — Styles ───────────────────────────── */
+
+/* ── Level-Up Button (injected into sheet headers) ──────── */
+
+.fth-level-up-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cc-space-xs, 4px);
+  padding: 2px 8px;
+  border: 1px solid var(--cc-border-accent, rgba(200, 167, 93, 0.25));
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(200, 167, 93, 0.15) 0%, rgba(200, 167, 93, 0.05) 100%);
+  color: var(--cc-accent-gold, #d4af37);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  animation: fth-lu-pulse 2s ease-in-out infinite;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.fth-level-up-btn:hover {
+  box-shadow: 0 0 12px rgba(200, 167, 93, 0.3);
+  transform: scale(1.05);
+}
+
+.fth-level-up-btn:active {
+  transform: scale(0.97);
+}
+
+@keyframes fth-lu-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(200, 167, 93, 0.1); }
+  50% { box-shadow: 0 0 12px rgba(200, 167, 93, 0.3); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fth-level-up-btn {
+    animation: none;
+  }
+}
+
+/* ── Level-Up Sections ──────────────────────────────────── */
+
+.cc-lu-section {
+  margin-bottom: var(--cc-space-lg);
+}
+
+.cc-lu-section__title {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-sm);
+  font-size: var(--cc-text-md);
+  font-weight: 600;
+  color: var(--cc-accent-bronze);
+  margin: 0 0 var(--cc-space-md) 0;
+}
+
+.cc-lu-section__title i {
+  font-size: var(--cc-text-sm);
+}
+
+/* ── Class Choice Grid ──────────────────────────────────── */
+
+.cc-lu-class-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-sm);
+}
+
+.cc-lu-class-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cc-space-md);
+  padding: var(--cc-space-md) var(--cc-space-lg);
+  background: var(--cc-bg-glass);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color var(--cc-duration-fast) var(--cc-ease-out),
+    box-shadow var(--cc-duration-fast) var(--cc-ease-out),
+    transform var(--cc-duration-fast) var(--cc-ease-out);
+}
+
+.cc-lu-class-card:active {
+  transform: scale(0.98);
+}
+
+.cc-lu-class-card--selected {
+  border-color: var(--cc-border-glow);
+  background: linear-gradient(135deg, rgba(200, 167, 93, 0.08) 0%, rgba(200, 167, 93, 0.02) 100%);
+  box-shadow:
+    0 0 12px rgba(200, 167, 93, 0.15),
+    inset 0 0 8px rgba(200, 167, 93, 0.05);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cc-lu-class-card:not(.cc-lu-class-card--selected):hover {
+    border-color: var(--cc-border-accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.cc-lu-class-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-2xs);
+}
+
+.cc-lu-class-card__name {
+  font-size: var(--cc-text-md);
+  font-weight: 600;
+  color: var(--cc-text-primary);
+}
+
+.cc-lu-class-card__level {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+}
+
+.cc-lu-class-card__subclass {
+  font-size: var(--cc-text-xs);
+  color: var(--cc-accent-arcane);
+}
+
+.cc-lu-class-card__die {
+  font-size: var(--cc-text-lg);
+  font-weight: 700;
+  color: var(--cc-accent-bronze);
+  opacity: 0.6;
+}
+
+/* ── Multiclass Disabled Card ───────────────────────────── */
+
+.cc-select-card--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cc-lu-prereq-warn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-2xs);
+  font-size: var(--cc-text-2xs);
+  color: var(--cc-accent-crimson);
+}
+
+/* ── HP Step ────────────────────────────────────────────── */
+
+.cc-lu-hp-options {
+  display: flex;
+  gap: var(--cc-space-lg);
+  margin-bottom: var(--cc-space-lg);
+}
+
+@container cc-wizard (max-width: 500px) {
+  .cc-lu-hp-options {
+    flex-direction: column;
+  }
+}
+
+.cc-lu-hp-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-sm);
+  padding: var(--cc-space-md);
+  background: var(--cc-bg-glass);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 8px;
+  transition: border-color var(--cc-duration-fast) var(--cc-ease-out);
+}
+
+.cc-lu-hp-option--selected {
+  border-color: var(--cc-border-glow);
+  background: linear-gradient(135deg, rgba(200, 167, 93, 0.06) 0%, rgba(200, 167, 93, 0.02) 100%);
+}
+
+.cc-lu-hp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cc-space-sm);
+  min-height: var(--cc-touch-min);
+  padding: var(--cc-space-sm) var(--cc-space-lg);
+  border-radius: 6px;
+  border: 1px solid var(--cc-border-accent);
+  background: linear-gradient(135deg, rgba(200, 167, 93, 0.12) 0%, rgba(200, 167, 93, 0.04) 100%);
+  color: var(--cc-accent-bronze);
+  font-size: var(--cc-text-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    box-shadow var(--cc-duration-fast) var(--cc-ease-out),
+    transform var(--cc-duration-fast) var(--cc-ease-out);
+}
+
+.cc-lu-hp-btn:active {
+  transform: scale(0.97);
+}
+
+.cc-lu-hp-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-2xs);
+  padding: var(--cc-space-sm);
+  background: var(--cc-bg-elevated);
+  border-radius: 4px;
+}
+
+.cc-lu-hp-result__roll,
+.cc-lu-hp-result__con {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+}
+
+.cc-lu-hp-result__total {
+  font-size: var(--cc-text-md);
+  font-weight: 700;
+  color: var(--cc-accent-emerald);
+}
+
+.cc-lu-hp-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-sm);
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  background: rgba(45, 107, 79, 0.1);
+  border: 1px solid rgba(45, 107, 79, 0.3);
+  border-radius: 6px;
+}
+
+.cc-lu-hp-summary i {
+  color: var(--cc-accent-emerald);
+}
+
+.cc-lu-hp-summary span {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-primary);
+}
+
+.cc-lu-hp-summary strong {
+  color: var(--cc-accent-emerald);
+}
+
+/* ── Features Step ──────────────────────────────────────── */
+
+.cc-lu-feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-xs);
+}
+
+.cc-lu-feature-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-sm);
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  background: var(--cc-bg-glass);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 6px;
+  min-height: 40px;
+}
+
+.cc-lu-feature-row__icon {
+  color: var(--cc-accent-emerald);
+  font-size: var(--cc-text-sm);
+}
+
+.cc-lu-feature-row__name {
+  flex: 1;
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-primary);
+}
+
+.cc-lu-feature-row__tag {
+  font-size: var(--cc-text-2xs);
+  color: var(--cc-text-secondary);
+  padding: 1px 6px;
+  background: var(--cc-bg-elevated);
+  border-radius: 3px;
+}
+
+/* ── Review Step ────────────────────────────────────────── */
+
+.cc-lu-review__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cc-space-md);
+  margin-bottom: var(--cc-space-xl);
+}
+
+.cc-lu-review__title {
+  font-size: var(--cc-text-xl);
+  font-weight: 700;
+  color: var(--cc-text-primary);
+  margin: 0;
+}
+
+.cc-lu-review__class {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-accent-bronze);
+}
+
+.cc-lu-review__changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-sm);
+  margin-bottom: var(--cc-space-xl);
+}
+
+.cc-lu-review__action {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--cc-space-lg);
+}

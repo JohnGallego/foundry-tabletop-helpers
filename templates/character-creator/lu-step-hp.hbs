@@ -1,0 +1,49 @@
+{{!-- Level-Up — Hit Points Step --}}
+<div class="cc-lu-hp" data-step="hp">
+
+  <p class="cc-card-select__description">
+    Gain hit points for your {{className}}. Choose to roll your {{hitDie}} or take the average.
+  </p>
+
+  <div class="cc-lu-hp-options">
+
+    {{!-- Roll Option --}}
+    <div class="cc-lu-hp-option{{#if (eq method 'roll')}} cc-lu-hp-option--selected{{/if}}">
+      <button class="cc-lu-hp-btn" type="button" data-hp-roll>
+        <i class="fa-solid fa-dice-d20"></i>
+        <span>Roll {{hitDie}}</span>
+      </button>
+      {{#if (eq method 'roll')}}
+      <div class="cc-lu-hp-result">
+        <span class="cc-lu-hp-result__roll">Rolled: {{rollResult}}</span>
+        <span class="cc-lu-hp-result__con">CON: {{conModFormatted}}</span>
+        <span class="cc-lu-hp-result__total">Total: +{{hpGained}} HP</span>
+      </div>
+      {{/if}}
+    </div>
+
+    {{!-- Average Option --}}
+    <div class="cc-lu-hp-option{{#if (eq method 'average')}} cc-lu-hp-option--selected{{/if}}">
+      <button class="cc-lu-hp-btn" type="button" data-hp-average>
+        <i class="fa-solid fa-calculator"></i>
+        <span>Take Average ({{average}})</span>
+      </button>
+      {{#if (eq method 'average')}}
+      <div class="cc-lu-hp-result">
+        <span class="cc-lu-hp-result__roll">Average: {{average}}</span>
+        <span class="cc-lu-hp-result__con">CON: {{conModFormatted}}</span>
+        <span class="cc-lu-hp-result__total">Total: +{{hpGained}} HP</span>
+      </div>
+      {{/if}}
+    </div>
+
+  </div>
+
+  {{#if hasChosen}}
+  <div class="cc-lu-hp-summary">
+    <i class="fa-solid fa-heart"></i>
+    <span>You will gain <strong>{{hpGained}}</strong> hit points.</span>
+  </div>
+  {{/if}}
+
+</div>

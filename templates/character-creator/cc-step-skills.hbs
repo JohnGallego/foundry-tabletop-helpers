@@ -1,0 +1,34 @@
+{{!-- Character Creator — Skills & Proficiencies Step --}}
+<div class="cc-skills">
+
+  <div class="cc-skills__header">
+    <p class="cc-skills__description">
+      Choose skill proficiencies for your character.
+      {{#if hasClass}}Your class ({{className}}) determines which skills are available.{{/if}}
+    </p>
+    <div class="cc-skills__counter">
+      <span class="cc-skills__count">{{chosenCount}}</span> selected
+    </div>
+  </div>
+
+  <div class="cc-skills__grid">
+    {{#each groups}}
+    <div class="cc-skill-group">
+      <div class="cc-skill-group__header">
+        <span class="cc-skill-group__ability">{{abilityLabel}}</span>
+      </div>
+      {{#each skills}}
+      <label class="cc-skill-row">
+        <input type="checkbox"
+               class="cc-skill-row__checkbox"
+               data-skill="{{key}}"
+               {{#if checked}}checked{{/if}}>
+        <span class="cc-skill-row__name">{{label}}</span>
+        <span class="cc-skill-row__ability">({{abilityAbbrev}})</span>
+      </label>
+      {{/each}}
+    </div>
+    {{/each}}
+  </div>
+
+</div>

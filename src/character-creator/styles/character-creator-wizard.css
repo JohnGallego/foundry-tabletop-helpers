@@ -1,0 +1,403 @@
+/* ── Character Creator — Wizard Shell ─────────────────────── */
+
+/* ── Shell Layout ────────────────────────────────────────── */
+
+.fth-cc-wizard {
+  container-type: inline-size;
+  container-name: cc-wizard;
+}
+
+.fth-cc-wizard .window-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.cc-wizard-shell {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  transition: background var(--cc-duration-normal) var(--cc-ease-out);
+}
+
+/* ── Atmospheric Backgrounds ─────────────────────────────── */
+
+.cc-atmosphere--arcane {
+  background:
+    radial-gradient(ellipse at 30% 80%, rgba(107, 79, 160, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 20%, rgba(200, 167, 93, 0.03) 0%, transparent 50%),
+    var(--cc-bg-base);
+}
+
+.cc-atmosphere--nature {
+  background:
+    radial-gradient(ellipse at 20% 70%, rgba(45, 107, 79, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 30%, rgba(200, 167, 93, 0.03) 0%, transparent 50%),
+    var(--cc-bg-base);
+}
+
+.cc-atmosphere--shadow {
+  background:
+    radial-gradient(ellipse at 50% 90%, rgba(139, 30, 45, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 30% 20%, rgba(107, 79, 160, 0.03) 0%, transparent 50%),
+    var(--cc-bg-base);
+}
+
+.cc-atmosphere--forge {
+  background:
+    radial-gradient(ellipse at 60% 80%, rgba(200, 167, 93, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 20% 30%, rgba(139, 30, 45, 0.04) 0%, transparent 50%),
+    var(--cc-bg-base);
+}
+
+.cc-atmosphere--crimson {
+  background:
+    radial-gradient(ellipse at 40% 70%, rgba(139, 30, 45, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 20%, rgba(200, 167, 93, 0.03) 0%, transparent 50%),
+    var(--cc-bg-base);
+}
+
+.cc-atmosphere--gold {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(212, 175, 55, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 80%, rgba(200, 167, 93, 0.04) 0%, transparent 50%),
+    var(--cc-bg-base);
+}
+
+/* ── Step Indicator ──────────────────────────────────────── */
+
+.cc-step-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-2xs);
+  padding: var(--cc-space-md) var(--cc-space-lg);
+  background: var(--cc-bg-glass);
+  border-bottom: 1px solid var(--cc-border-subtle);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cc-step-indicator::-webkit-scrollbar {
+  display: none;
+}
+
+.cc-step-indicator__step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--cc-border-subtle);
+  color: var(--cc-text-secondary);
+  font-size: var(--cc-text-xs);
+  font-weight: 600;
+  transition:
+    border-color var(--cc-duration-normal) var(--cc-ease-out),
+    color var(--cc-duration-normal) var(--cc-ease-out),
+    box-shadow var(--cc-duration-normal) var(--cc-ease-out),
+    background var(--cc-duration-normal) var(--cc-ease-out);
+  cursor: default;
+  position: relative;
+}
+
+.cc-step-indicator__number {
+  position: absolute;
+  font-size: var(--cc-text-2xs);
+  opacity: 0;
+  transition: opacity var(--cc-duration-fast) var(--cc-ease-out);
+}
+
+.cc-step-indicator__icon {
+  font-size: var(--cc-text-xs);
+}
+
+/* Completed step */
+.cc-step-indicator__step--complete {
+  border-color: var(--cc-accent-gold);
+  color: var(--cc-accent-gold);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+/* Active step */
+.cc-step-indicator__step--active {
+  border-color: var(--cc-accent-bronze);
+  color: var(--cc-text-primary);
+  background: rgba(200, 167, 93, 0.12);
+  box-shadow:
+    0 0 12px rgba(200, 167, 93, 0.25),
+    0 0 24px rgba(200, 167, 93, 0.1);
+}
+
+/* Invalid step */
+.cc-step-indicator__step--invalid {
+  border-color: var(--cc-accent-crimson);
+  color: rgba(139, 30, 45, 0.7);
+}
+
+/* Connector line between steps */
+.cc-step-indicator__connector {
+  flex: 1;
+  height: 2px;
+  min-width: 12px;
+  max-width: 40px;
+  background: var(--cc-border-subtle);
+  transition: background var(--cc-duration-normal) var(--cc-ease-out);
+}
+
+.cc-step-indicator__connector--completed {
+  background: linear-gradient(90deg, var(--cc-accent-gold), var(--cc-accent-bronze));
+}
+
+/* Compact step indicator for narrow windows */
+@container cc-wizard (max-width: 500px) {
+  .cc-step-indicator__step {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+  }
+
+  .cc-step-indicator__icon {
+    font-size: 0.55rem;
+  }
+
+  .cc-step-indicator__connector {
+    min-width: 6px;
+    max-width: 20px;
+  }
+}
+
+/* ── Step Header ─────────────────────────────────────────── */
+
+.cc-step-header {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-md);
+  padding: var(--cc-space-md) var(--cc-space-lg);
+}
+
+.cc-step-header__icon {
+  font-size: var(--cc-text-lg);
+  color: var(--cc-accent-bronze);
+}
+
+.cc-step-header__title {
+  font-size: var(--cc-text-lg);
+  font-weight: 600;
+  color: var(--cc-text-primary);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* ── Step Content ────────────────────────────────────────── */
+
+.cc-step-content {
+  overflow-y: auto;
+  padding: var(--cc-space-lg);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
+  animation: cc-step-fade-in var(--cc-duration-slow) var(--cc-ease-out) both;
+}
+
+.cc-step-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cc-step-content::-webkit-scrollbar-thumb {
+  background: rgba(200, 167, 93, 0.2);
+  border-radius: 3px;
+}
+
+/* ── Navigation Bar ──────────────────────────────────────── */
+
+.cc-navigation {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-md);
+  padding: var(--cc-space-md) var(--cc-space-lg);
+  background: var(--cc-bg-glass);
+  border-top: 1px solid var(--cc-border-subtle);
+}
+
+.cc-navigation__spacer {
+  flex: 1;
+}
+
+.cc-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cc-space-sm);
+  min-height: var(--cc-touch-min);
+  padding: var(--cc-space-sm) var(--cc-space-lg);
+  border-radius: 6px;
+  border: 1px solid var(--cc-border-subtle);
+  background: var(--cc-bg-glass);
+  color: var(--cc-text-primary);
+  font-size: var(--cc-text-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color var(--cc-duration-fast) var(--cc-ease-out),
+    background var(--cc-duration-fast) var(--cc-ease-out),
+    box-shadow var(--cc-duration-fast) var(--cc-ease-out),
+    transform var(--cc-duration-fast) var(--cc-ease-out);
+}
+
+.cc-nav-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.cc-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Back button — subtle */
+.cc-nav-btn--back {
+  color: var(--cc-text-secondary);
+}
+
+/* Next button — prominent */
+.cc-nav-btn--next {
+  border-color: var(--cc-border-accent);
+  background: linear-gradient(
+    135deg,
+    rgba(200, 167, 93, 0.12) 0%,
+    rgba(200, 167, 93, 0.04) 100%
+  );
+  color: var(--cc-accent-bronze);
+}
+
+.cc-nav-btn--next:not(:disabled) {
+  box-shadow: 0 0 8px rgba(200, 167, 93, 0.1);
+}
+
+/* Create Character button — gold accent */
+.cc-nav-btn--create {
+  border-color: var(--cc-accent-gold);
+  background: linear-gradient(
+    135deg,
+    rgba(212, 175, 55, 0.15) 0%,
+    rgba(200, 167, 93, 0.06) 100%
+  );
+  color: var(--cc-accent-gold);
+  font-weight: 600;
+}
+
+.cc-nav-btn--create:not(:disabled) {
+  box-shadow:
+    0 0 12px rgba(212, 175, 55, 0.15),
+    inset 0 0 8px rgba(212, 175, 55, 0.05);
+}
+
+/* Hover — fine pointer only */
+@media (hover: hover) and (pointer: fine) {
+  .cc-nav-btn:not(:disabled):hover {
+    background: var(--cc-bg-glass-hover);
+    border-color: var(--cc-border-accent);
+  }
+
+  .cc-nav-btn--next:not(:disabled):hover {
+    background: linear-gradient(
+      135deg,
+      rgba(200, 167, 93, 0.18) 0%,
+      rgba(200, 167, 93, 0.08) 100%
+    );
+    box-shadow: 0 0 12px rgba(200, 167, 93, 0.2);
+  }
+
+  .cc-nav-btn--create:not(:disabled):hover {
+    box-shadow:
+      0 0 16px rgba(212, 175, 55, 0.25),
+      inset 0 0 12px rgba(212, 175, 55, 0.08);
+  }
+}
+
+/* Focus visible */
+.cc-nav-btn:focus-visible {
+  outline: 2px solid var(--cc-accent-bronze);
+  outline-offset: 2px;
+}
+
+/* ── Step Transition Animation ──────────────────────────── */
+
+@keyframes cc-step-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-step-content {
+    animation: none;
+  }
+}
+
+/* ── Kiosk Mode — Full-Screen Wizard ─────────────────────── */
+
+.fth-kiosk .fth-cc-wizard {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none;
+  max-height: none;
+}
+
+.fth-kiosk .fth-cc-wizard .window-content {
+  border-radius: 0;
+}
+
+/* Kiosk wide layout: step indicator becomes a vertical sidebar */
+.fth-kiosk .cc-wizard-shell {
+  grid-template-rows: 1fr auto;
+  grid-template-columns: auto 1fr;
+}
+
+.fth-kiosk .cc-step-indicator {
+  flex-direction: column;
+  border-bottom: none;
+  border-right: 1px solid var(--cc-border-subtle);
+  padding: var(--cc-space-lg) var(--cc-space-md);
+  justify-content: center;
+  grid-row: 1 / -1;
+}
+
+.fth-kiosk .cc-step-indicator__connector {
+  width: 2px;
+  height: auto;
+  min-width: unset;
+  min-height: 12px;
+  max-width: unset;
+  max-height: 40px;
+  flex: 1;
+}
+
+.fth-kiosk .cc-step-header {
+  padding: var(--cc-space-lg) var(--cc-space-xl);
+}
+
+.fth-kiosk .cc-step-content {
+  padding: var(--cc-space-xl);
+}
+
+.fth-kiosk .cc-navigation {
+  padding: var(--cc-space-lg) var(--cc-space-xl);
+  grid-column: 2;
+}
+
+/* In kiosk, step indicator icons are larger */
+.fth-kiosk .cc-step-indicator__step {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+}
+
+.fth-kiosk .cc-step-indicator__icon {
+  font-size: var(--cc-text-md);
+}

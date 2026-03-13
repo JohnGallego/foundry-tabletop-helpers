@@ -28,6 +28,8 @@ export interface FoundryGame {
   packs?: FoundryCollection<FoundryCompendiumCollection>;
   /** Settings manager */
   settings?: FoundrySettings;
+  /** Current user ID (shortcut for user.id) */
+  userId?: string;
   /** Socket.io socket for module communication */
   socket?: FoundrySocket;
   /** Collection of installed modules */
@@ -46,6 +48,8 @@ export interface FoundryUser {
   name: string;
   isGM: boolean;
   active: boolean;
+  /** The user's assigned character (if any) */
+  character?: FoundryDocument;
 }
 
 /** Minimal Module interface */
@@ -110,12 +114,26 @@ export interface FoundryCompendiumCollection {
     name?: string;
     label?: string;
     package?: string;
+    packageName?: string;
     type?: string;
   };
   documentName?: string;
   documentClass?: FoundryDocumentClass;
+  /** Number of entries in the pack */
+  size?: number;
   getDocuments(): Promise<FoundryDocument[]>;
-  getIndex(): Promise<Array<{ name?: string; _id?: string }>>;
+  /** Get the pack index, optionally with extra system fields. */
+  getIndex(options?: { fields?: string[] }): Promise<Array<FoundryIndexEntry>>;
+}
+
+/** A single entry from a compendium pack index. */
+export interface FoundryIndexEntry {
+  _id: string;
+  name?: string;
+  img?: string;
+  type?: string;
+  uuid?: string;
+  [key: string]: unknown;
 }
 
 /* ── Documents ────────────────────────────────────────────── */
@@ -130,7 +148,15 @@ export interface FoundryDocument {
   id: string;
   name?: string;
   uuid?: string;
+  img?: string;
+  type?: string;
+  system?: Record<string, unknown>;
+  ownership?: Record<string, number>;
+  sheet?: { render(opts?: { force?: boolean }): void };
   update(data: Record<string, unknown>, options?: Record<string, unknown>): Promise<FoundryDocument>;
+  createEmbeddedDocuments(type: string, data: Record<string, unknown>[], options?: Record<string, unknown>): Promise<FoundryDocument[]>;
+  toObject(): Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /* ── Socket ───────────────────────────────────────────────── */

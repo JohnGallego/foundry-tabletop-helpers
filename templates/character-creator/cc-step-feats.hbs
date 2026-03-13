@@ -1,0 +1,105 @@
+{{!-- Character Creator — Feats & ASI Step --}}
+<div class="cc-feats-step" data-step="feats">
+
+  {{!-- Choice Tabs: ASI vs Feat --}}
+  <div class="cc-method-tabs">
+    <button class="cc-method-tab{{#if isAsi}} cc-method-tab--active{{/if}}"
+            type="button"
+            data-feat-choice="asi">
+      <i class="fa-solid fa-arrow-up"></i>
+      <span>Ability Score Improvement</span>
+    </button>
+    <button class="cc-method-tab{{#if isFeat}} cc-method-tab--active{{/if}}"
+            type="button"
+            data-feat-choice="feat">
+      <i class="fa-solid fa-star"></i>
+      <span>Choose a Feat</span>
+    </button>
+  </div>
+
+  {{!-- ASI Panel --}}
+  {{#if isAsi}}
+  <div class="cc-asi-panel">
+    <p class="cc-asi-panel__hint">
+      Choose up to 2 abilities to increase by +1 each, or 1 ability to increase by +2.
+    </p>
+    <div class="cc-asi-panel__counter">
+      <span class="cc-asi-panel__count">{{asiCount}}</span>
+      <span class="cc-asi-panel__of">/ {{maxAsiPicks}} selected</span>
+    </div>
+
+    <div class="cc-ability-grid">
+      {{#each abilities}}
+      <div class="cc-ability-card{{#if selected}} cc-ability-card--selected{{/if}}{{#if atMax}} cc-ability-card--maxed{{/if}}"
+           data-asi-ability="{{key}}"
+           role="button"
+           tabindex="0"
+           aria-selected="{{selected}}">
+        <span class="cc-ability-card__abbrev">{{key}}</span>
+        <span class="cc-ability-card__value">{{score}}</span>
+        <span class="cc-ability-card__modifier">{{modifier}}</span>
+        <span class="cc-ability-card__label">{{label}}</span>
+        {{#if selected}}
+        <div class="cc-ability-card__badge">
+          <i class="fa-solid fa-plus"></i>
+        </div>
+        {{/if}}
+        {{#if atMax}}
+        <span class="cc-ability-card__max-tag">MAX</span>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+  {{!-- Feat Selection Panel --}}
+  {{#if isFeat}}
+  <div class="cc-feat-select">
+    {{#if hasFeats}}
+    <div class="cc-card-grid">
+      {{#each feats}}
+      <div class="cc-select-card{{#if selected}} cc-select-card--selected{{/if}}"
+           data-card-uuid="{{uuid}}"
+           role="button"
+           tabindex="0"
+           aria-selected="{{selected}}">
+        <div class="cc-select-card__img-wrap">
+          <img class="cc-select-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+        </div>
+        <div class="cc-select-card__info">
+          <div class="cc-select-card__name">{{name}}</div>
+          <div class="cc-select-card__source">{{packLabel}}</div>
+        </div>
+        {{#if selected}}
+        <div class="cc-select-card__check">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+
+    {{#if selectedFeat}}
+    <div class="cc-card-detail">
+      <div class="cc-card-detail__header">
+        <img class="cc-card-detail__img" src="{{selectedFeat.img}}" alt="{{selectedFeat.name}}">
+        <div class="cc-card-detail__title">
+          <h3>{{selectedFeat.name}}</h3>
+          <span class="cc-card-detail__source">{{selectedFeat.packLabel}}</span>
+        </div>
+      </div>
+      <p class="cc-card-detail__hint">Full description will be available in a future update.</p>
+    </div>
+    {{/if}}
+
+    {{else}}
+    <div class="cc-empty-state">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <p>{{emptyMessage}}</p>
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+</div>

@@ -1,0 +1,12 @@
+{{!-- GM Config — Tab Navigation --}}
+<nav class="cc-gm-tabs" role="tablist">
+  {{#each tabs}}
+  <button class="cc-gm-tab {{#if active}}cc-gm-tab--active{{/if}}"
+          role="tab"
+          aria-selected="{{active}}"
+          data-tab="{{id}}">
+    <i class="{{icon}}"></i>
+    <span>{{label}}</span>
+  </button>
+  {{/each}}
+</nav>

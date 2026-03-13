@@ -1,0 +1,66 @@
+{{!-- GM Config — Content Curation Tab --}}
+{{#if active}}
+<div class="cc-gm-curation-panel" role="tabpanel">
+  {{#if loaded}}
+  {{!-- Search Bar --}}
+  <div class="cc-gm-curation-toolbar">
+    <input type="search"
+           class="cc-gm-search"
+           placeholder="Search content..."
+           data-action="searchContent" />
+  </div>
+
+  {{!-- Content Groups --}}
+  <div class="cc-gm-curation-list">
+    {{#each groups}}
+    <section class="cc-gm-curation-group">
+      <div class="cc-gm-curation-group-header">
+        <h3 class="cc-gm-group-heading">
+          <span>{{label}}</span>
+          <span class="cc-gm-group-count">{{enabledCount}} / {{totalCount}}</span>
+        </h3>
+        <div class="cc-gm-bulk-controls">
+          <button type="button" class="cc-gm-bulk-btn" data-action="enableAll" data-type="{{type}}">
+            Enable All
+          </button>
+          <button type="button" class="cc-gm-bulk-btn" data-action="disableAll" data-type="{{type}}">
+            Disable All
+          </button>
+        </div>
+      </div>
+
+      <ul class="cc-gm-content-list">
+        {{#each entries}}
+        <li class="cc-gm-content-row {{#unless enabled}}cc-gm-content-row--disabled{{/unless}}">
+          <label class="cc-gm-content-label">
+            <img class="cc-gm-content-thumb" src="{{img}}" alt="" loading="lazy" />
+            <span class="cc-gm-content-info">
+              <span class="cc-gm-content-name">{{name}}</span>
+              <span class="cc-gm-content-source">{{packLabel}}</span>
+            </span>
+            <input type="checkbox"
+                   class="cc-gm-content-toggle"
+                   data-action="toggleContent"
+                   data-uuid="{{uuid}}"
+                   {{#if enabled}}checked{{/if}} />
+          </label>
+        </li>
+        {{/each}}
+      </ul>
+    </section>
+    {{/each}}
+
+    {{#unless groups.length}}
+    <p class="cc-gm-empty">No content matches your search.</p>
+    {{/unless}}
+  </div>
+
+  {{else}}
+  {{!-- Loading State --}}
+  <div class="cc-gm-loading">
+    <i class="fa-solid fa-spinner fa-spin"></i>
+    <span>Loading compendium data...</span>
+  </div>
+  {{/if}}
+</div>
+{{/if}}

@@ -13,6 +13,8 @@ export interface Config {
   ffmpegPath: string | undefined;
   ffprobePath: string | undefined;
   foundryDataPath: string | undefined;
+  geminiApiKey: string | undefined;
+  geminiModel: string;
 }
 
 export function loadConfig(): Config {
@@ -48,6 +50,9 @@ export function loadConfig(): Config {
   const ffprobePath = process.env.FTH_FFPROBE_PATH || undefined;
   const foundryDataPath = process.env.FTH_FOUNDRY_DATA_PATH || undefined;
 
+  const geminiApiKey = process.env.FTH_GEMINI_API_KEY || undefined;
+  const geminiModel = process.env.FTH_GEMINI_MODEL || "gemini-2.0-flash-exp";
+
   return {
     authToken,
     port,
@@ -59,5 +64,7 @@ export function loadConfig(): Config {
     ffmpegPath,
     ffprobePath,
     foundryDataPath,
+    geminiApiKey,
+    geminiModel,
   };
 }

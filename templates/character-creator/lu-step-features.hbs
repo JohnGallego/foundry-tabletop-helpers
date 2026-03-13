@@ -1,0 +1,61 @@
+{{!-- Level-Up — Features Step --}}
+<div class="cc-lu-features" data-step="features">
+
+  <p class="cc-card-select__description">
+    Features gained at {{className}} Level {{newClassLevel}}.
+  </p>
+
+  {{#if hasAnyContent}}
+
+  {{!-- Granted Features --}}
+  {{#if hasFeatures}}
+  <div class="cc-lu-section">
+    <h3 class="cc-lu-section__title">
+      <i class="fa-solid fa-gift"></i>
+      New Features
+    </h3>
+    <div class="cc-lu-feature-list">
+      {{#each features}}
+      <div class="cc-lu-feature-row">
+        <input type="checkbox"
+               class="cc-skill-row__checkbox"
+               data-feature-uuid="{{uuid}}"
+               data-feature-name="{{name}}"
+               {{#if accepted}}checked{{/if}}>
+        <span class="cc-lu-feature-row__name">{{name}}</span>
+        {{#if fromAdvancement}}
+        <span class="cc-lu-feature-row__tag">Class Feature</span>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+  {{!-- Scale Value Changes --}}
+  {{#if hasScaleValues}}
+  <div class="cc-lu-section">
+    <h3 class="cc-lu-section__title">
+      <i class="fa-solid fa-chart-line"></i>
+      Scaling Improvements
+    </h3>
+    <div class="cc-lu-feature-list">
+      {{#each scaleValues}}
+      <div class="cc-lu-feature-row">
+        <i class="fa-solid fa-arrow-up cc-lu-feature-row__icon"></i>
+        <span class="cc-lu-feature-row__name">{{title}}</span>
+        <span class="cc-lu-feature-row__tag">Scales Up</span>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+  {{else}}
+  <div class="cc-empty-state">
+    <i class="fa-solid fa-scroll"></i>
+    <p>No new features at this level. You can proceed to the next step.</p>
+  </div>
+  {{/if}}
+
+</div>

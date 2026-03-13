@@ -30,6 +30,7 @@ export interface HealthResponse {
     audio: boolean;
     video: boolean;
     thumbnail: boolean;
+    portrait: boolean;
   };
   ffmpeg: string | null;
 }

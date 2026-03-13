@@ -1,0 +1,36 @@
+{{!-- GM Config — Content Sources Tab --}}
+{{#if active}}
+<div class="cc-gm-sources-list" role="tabpanel">
+  {{#each groups}}
+  <section class="cc-gm-source-group">
+    <h3 class="cc-gm-group-heading">
+      <span>{{label}}</span>
+      <span class="cc-gm-group-count">{{packs.length}} packs</span>
+    </h3>
+    <ul class="cc-gm-pack-list">
+      {{#each packs}}
+      <li class="cc-gm-pack-row">
+        <label class="cc-gm-pack-label">
+          <input type="checkbox"
+                 class="cc-gm-pack-toggle"
+                 data-action="togglePack"
+                 data-pack-id="{{collection}}"
+                 data-type-key="{{../type}}s"
+                 {{#if enabled}}checked{{/if}} />
+          <span class="cc-gm-pack-name">{{label}}</span>
+          {{#if packageName}}
+          <span class="cc-gm-pack-source">{{packageName}}</span>
+          {{/if}}
+          <span class="cc-gm-pack-count">{{itemCount}} items</span>
+        </label>
+      </li>
+      {{/each}}
+    </ul>
+  </section>
+  {{/each}}
+
+  {{#unless groups.length}}
+  <p class="cc-gm-empty">No Item compendium packs found in this world.</p>
+  {{/unless}}
+</div>
+{{/if}}

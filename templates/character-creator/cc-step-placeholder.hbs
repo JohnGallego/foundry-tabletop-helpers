@@ -1,0 +1,17 @@
+{{!-- Character Creator — Placeholder Step --}}
+<div class="cc-placeholder">
+  <div class="cc-placeholder__icon-ring">
+    <i class="{{stepIcon}}"></i>
+  </div>
+  <h3 class="cc-placeholder__title">{{stepLabel}}</h3>
+  <p class="cc-placeholder__description">
+    {{#if isReview}}
+    Review your character and finalize creation.
+    {{else}}
+    This step will be implemented in a future phase.
+    {{/if}}
+  </p>
+  <div class="cc-placeholder__step-count">
+    Step {{stepNumber}} of {{totalSteps}}
+  </div>
+</div>

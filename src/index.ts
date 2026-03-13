@@ -7,6 +7,7 @@ import "./combat/styles/combat-monster-preview.css";
 import "./combat/styles/combat-party-summary.css";
 import "./combat/styles/combat-rules-reference.css";
 import "./asset-manager/styles/asset-manager.css";
+import "./character-creator/styles/character-creator-styles.css";
 import { Log, MOD, type Level } from "./logger";
 import { registerSettings } from "./settings";
 import { registerPrintSheetHooks } from "./print-sheet/print-sheet";
@@ -21,6 +22,14 @@ import { registerCombatSettings } from "./combat/combat-settings";
 import { registerCombatHooks, initCombatReady, buildCombatApi } from "./combat/combat-init";
 import { registerAssetManagerSettings, isAssetManagerEnabled } from "./asset-manager/asset-manager-settings";
 import { registerAssetManagerPicker, openAssetManager } from "./asset-manager/asset-manager-picker";
+import {
+  registerCharacterCreatorSettings,
+  registerCharacterCreatorHooks,
+  initCharacterCreatorReady,
+  openGMConfigApp,
+  openCharacterCreatorWizard,
+  openLevelUpWizard,
+} from "./character-creator/character-creator-init";
 
 /* ── Hook Registration ─────────────────────────────────────── */
 
@@ -45,6 +54,10 @@ getHooks()?.on?.("init", () => {
 
   // Asset Manager — settings registered at init, picker override deferred to setup
   if (settings) registerAssetManagerSettings(settings);
+
+  // Character Creator & Level-Up Manager
+  if (settings) registerCharacterCreatorSettings(settings);
+  registerCharacterCreatorHooks();
 
   // Asset Manager — Scene Control button (token controls layer)
   // V13: controls is an object keyed by name, tools is also an object
@@ -95,6 +108,9 @@ getHooks()?.on?.("ready", () => {
   // Combat Command Center — ready-phase initialization
   initCombatReady();
 
+  // Character Creator — ready-phase initialization
+  initCharacterCreatorReady();
+
   // Expose unified API to window for macro and console use
   (globalThis as unknown as Record<string, unknown>).fth = {
     setLevel: (lvl: Level) => Log.setLevel(lvl),
@@ -102,6 +118,9 @@ getHooks()?.on?.("ready", () => {
     ...buildRotationApi(),
     ...buildCombatApi(),
     assetManager: () => openAssetManager(),
+    characterCreator: () => openCharacterCreatorWizard(),
+    characterCreatorConfig: () => openGMConfigApp(),
+    levelUp: (actorId: string) => openLevelUpWizard(actorId),
   };
 
   Log.debug("window.fth API attached");

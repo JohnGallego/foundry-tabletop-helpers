@@ -10,6 +10,7 @@ import { registerVideoRoute } from "./routes/optimize-video.js";
 import { registerThumbnailRoute } from "./routes/thumbnail.js";
 import { registerDeleteRoute } from "./routes/delete-file.js";
 import { registerThumbCacheRoute } from "./routes/thumb-cache.js";
+import { registerPortraitRoute } from "./routes/generate-portrait.js";
 
 export async function createServer(config: Config) {
   const app = Fastify({
@@ -33,7 +34,7 @@ export async function createServer(config: Config) {
   });
 
   // Health endpoint — no auth required
-  await registerHealthRoute(app, config.ffmpegPath);
+  await registerHealthRoute(app, config.ffmpegPath, config.geminiApiKey);
 
   // Auth-protected routes
   const authHook = createAuthHook(config);
@@ -51,6 +52,7 @@ export async function createServer(config: Config) {
   await registerThumbnailRoute(app);
   await registerDeleteRoute(app, config.foundryDataPath);
   await registerThumbCacheRoute(app, config.foundryDataPath);
+  await registerPortraitRoute(app, config);
 
   // Video routes get a longer timeout
   app.addHook("onRequest", async (request) => {
