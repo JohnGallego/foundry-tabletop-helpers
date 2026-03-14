@@ -1,50 +1,65 @@
 {{!-- Character Creator — Shared Card Selection Step --}}
-{{!-- Used by Race, Background, and Class steps --}}
+{{!-- Used by Species, Background, and Class steps --}}
 <div class="cc-card-select" data-step="{{stepId}}">
 
-  <p class="cc-card-select__description">{{stepDescription}}</p>
-
   {{#if hasEntries}}
-  <div class="cc-card-grid">
-    {{#each entries}}
-    <div class="cc-select-card{{#if selected}} cc-select-card--selected{{/if}}"
-         data-card-uuid="{{uuid}}"
-         role="button"
-         tabindex="0"
-         aria-selected="{{selected}}"
-         style="--cc-card-index: {{@index}}">
-      <div class="cc-select-card__img-wrap">
-        <img class="cc-select-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+  <div class="cc-card-select__layout">
+
+    {{!-- Left: Card Grid --}}
+    <div class="cc-card-select__grid-pane">
+      <div class="cc-card-grid">
+        {{#each entries}}
+        <div class="cc-select-card{{#if selected}} cc-select-card--selected{{/if}}"
+             data-card-uuid="{{uuid}}"
+             role="button"
+             tabindex="0"
+             aria-selected="{{selected}}"
+             style="--cc-card-index: {{@index}}">
+          <div class="cc-select-card__img-wrap">
+            <img class="cc-select-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+          </div>
+          <div class="cc-select-card__info">
+            <div class="cc-select-card__name">{{name}}</div>
+            <div class="cc-select-card__source">{{packLabel}}</div>
+          </div>
+          {{#if selected}}
+          <div class="cc-select-card__check">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          {{/if}}
+        </div>
+        {{/each}}
       </div>
-      <div class="cc-select-card__info">
-        <div class="cc-select-card__name">{{name}}</div>
-        <div class="cc-select-card__source">{{packLabel}}</div>
+    </div>
+
+    {{!-- Right: Detail Panel (always visible) --}}
+    <div class="cc-card-detail-pane">
+      {{#if selectedEntry}}
+      <div class="cc-card-detail cc-card-detail--active">
+        <div class="cc-card-detail__header">
+          <img class="cc-card-detail__img" src="{{selectedEntry.img}}" alt="{{selectedEntry.name}}">
+          <div class="cc-card-detail__title">
+            <h3>{{selectedEntry.name}}</h3>
+            <span class="cc-card-detail__source">{{selectedEntry.packLabel}}</span>
+          </div>
+        </div>
+        {{#if selectedEntry.description}}
+        <div class="cc-card-detail__description">{{{selectedEntry.description}}}</div>
+        {{else}}
+        <p class="cc-card-detail__hint">No description available.</p>
+        {{/if}}
       </div>
-      {{#if selected}}
-      <div class="cc-select-card__check">
-        <i class="fa-solid fa-check"></i>
+      {{else}}
+      <div class="cc-card-detail cc-card-detail--empty">
+        <div class="cc-card-detail__empty-icon">
+          <i class="fa-solid fa-arrow-left"></i>
+        </div>
+        <p class="cc-card-detail__empty-text">Select a {{stepLabel}} to view details</p>
       </div>
       {{/if}}
     </div>
-    {{/each}}
-  </div>
 
-  {{#if selectedEntry}}
-  <div class="cc-card-detail">
-    <div class="cc-card-detail__header">
-      <img class="cc-card-detail__img" src="{{selectedEntry.img}}" alt="{{selectedEntry.name}}">
-      <div class="cc-card-detail__title">
-        <h3>{{selectedEntry.name}}</h3>
-        <span class="cc-card-detail__source">{{selectedEntry.packLabel}}</span>
-      </div>
-    </div>
-    {{#if selectedEntry.description}}
-    <div class="cc-card-detail__description">{{{selectedEntry.description}}}</div>
-    {{else}}
-    <p class="cc-card-detail__hint">No description available.</p>
-    {{/if}}
   </div>
-  {{/if}}
 
   {{else}}
   <div class="cc-empty-state">

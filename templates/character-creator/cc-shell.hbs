@@ -26,15 +26,6 @@
       </h2>
       <p class="cc-step-header__description">{{headerDescription}}</p>
     </div>
-    <div class="cc-selection-preview{{#unless selectedEntry}} cc-selection-preview--empty{{/unless}}" data-selection-preview>
-      <img class="cc-selection-preview__img"
-           src="{{#if selectedEntry}}{{selectedEntry.img}}{{else}}icons/svg/mystery-man.svg{{/if}}"
-           alt="" data-preview-img>
-      <div class="cc-selection-preview__info" data-preview-info>
-        <div class="cc-selection-preview__name" data-preview-name>{{#if selectedEntry}}{{selectedEntry.name}}{{/if}}</div>
-        <div class="cc-selection-preview__source" data-preview-source>{{#if selectedEntry}}{{selectedEntry.packLabel}}{{/if}}</div>
-      </div>
-    </div>
   </header>
   {{else}}
   <header class="cc-step-header">

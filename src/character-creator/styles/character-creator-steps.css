@@ -395,20 +395,57 @@
    CARD SELECTION STEPS (Race, Background, Class)
    ============================================================ */
 
-.cc-card-select__description {
-  font-size: var(--cc-text-sm);
-  color: var(--cc-text-secondary);
-  margin: 0 0 var(--cc-space-lg) 0;
-  line-height: 1.5;
+/* ── Two-Column Layout (grid + detail) ───────────────────── */
+
+.cc-card-select__layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--cc-space-lg);
+  height: 100%;
+}
+
+.cc-card-select__grid-pane {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
+}
+
+.cc-card-select__grid-pane::-webkit-scrollbar {
+  width: 5px;
+}
+
+.cc-card-select__grid-pane::-webkit-scrollbar-thumb {
+  background: rgba(200, 167, 93, 0.2);
+  border-radius: 3px;
+}
+
+.cc-card-detail-pane {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
+}
+
+/* Compact: stack vertically on narrow windows */
+@container cc-wizard (max-width: 550px) {
+  .cc-card-select__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cc-card-detail-pane {
+    position: static;
+  }
 }
 
 /* ── Card Grid ───────────────────────────────────────────── */
 
 .cc-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: var(--cc-space-md);
-  margin-bottom: var(--cc-space-lg);
 }
 
 @container cc-wizard (max-width: 400px) {
@@ -573,6 +610,49 @@
   color: var(--cc-text-secondary);
   font-style: italic;
   margin: 0;
+}
+
+/* ── Empty Detail State ──────────────────────────────────── */
+
+.cc-card-detail--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  text-align: center;
+  gap: var(--cc-space-lg);
+}
+
+.cc-card-detail__empty-icon {
+  font-size: 2rem;
+  color: var(--cc-accent-bronze);
+  opacity: 0.3;
+  filter: drop-shadow(0 0 12px rgba(200, 167, 93, 0.3));
+  animation: cc-detail-pulse 3s ease-in-out infinite;
+}
+
+@keyframes cc-detail-pulse {
+  0%, 100% { opacity: 0.3; filter: drop-shadow(0 0 12px rgba(200, 167, 93, 0.3)); }
+  50%      { opacity: 0.5; filter: drop-shadow(0 0 20px rgba(200, 167, 93, 0.5)); }
+}
+
+.cc-card-detail__empty-text {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  margin: 0;
+  max-width: 160px;
+  line-height: 1.5;
+}
+
+/* Active detail transitions in smoothly */
+.cc-card-detail--active {
+  animation: cc-detail-appear var(--cc-duration-normal) var(--cc-ease-out);
+}
+
+@keyframes cc-detail-appear {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .cc-card-detail__description {
