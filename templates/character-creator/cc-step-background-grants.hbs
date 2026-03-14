@@ -1,0 +1,89 @@
+{{!-- Character Creator — Background Grants Configuration --}}
+<div class="cc-bg-grants-step" data-step="backgroundGrants">
+
+  {{#if hasGrants}}
+  <div class="cc-bg-grants-step__header">
+    <img class="cc-bg-grants-step__img" src="{{backgroundImg}}" alt="{{backgroundName}}">
+    <div class="cc-bg-grants-step__title">
+      <h3>{{backgroundName}}</h3>
+      <p>Configure the grants from your background.</p>
+    </div>
+  </div>
+
+  {{!-- Proficiency Chips --}}
+  <div class="cc-bg-grants__section">
+    <div class="cc-bg-grants__label">Proficiencies</div>
+    <div class="cc-bg-grants__chips">
+      {{#each grantedSkills}}
+      <span class="cc-chip cc-chip--locked">{{this}}</span>
+      {{/each}}
+      {{#if toolProficiency}}
+      <span class="cc-chip cc-chip--tool">{{toolProficiency}}</span>
+      {{/if}}
+    </div>
+  </div>
+
+  {{!-- Origin Feat --}}
+  {{#if originFeatName}}
+  <div class="cc-bg-grants__section">
+    <div class="cc-bg-grants__label">Origin Feat</div>
+    <span class="cc-chip cc-chip--feat">{{originFeatName}}</span>
+  </div>
+  {{/if}}
+
+  {{!-- ASI Picker --}}
+  {{#if hasASI}}
+  <div class="cc-bg-grants__section">
+    <div class="cc-bg-grants__label">
+      Ability Score Increases
+      <span class="cc-bg-grants__asi-counter{{#if asiComplete}} cc-bg-grants__asi-counter--complete{{/if}}" data-asi-counter>{{asiPointsUsed}} / {{asiPoints}}</span>
+    </div>
+    <div class="cc-bg-grants__asi-grid">
+      {{#each asiAbilities}}
+      <div class="cc-bg-grants__asi-row{{#if suggested}} cc-bg-grants__asi-row--suggested{{/if}}">
+        <label>{{label}}</label>
+        <select data-asi-ability="{{key}}">
+          {{#each options}}
+          <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
+  {{!-- Language Picker --}}
+  {{#if hasLanguages}}
+  <div class="cc-bg-grants__section">
+    <div class="cc-bg-grants__label">Languages</div>
+    {{#if fixedLanguages.length}}
+    <div class="cc-bg-grants__lang-chips">
+      {{#each fixedLanguages}}
+      <span class="cc-chip cc-chip--locked">{{this}}</span>
+      {{/each}}
+    </div>
+    {{/if}}
+    {{#if languageSlots}}
+    <div class="cc-bg-grants__lang-picks">
+      {{#each languageSlots}}
+      <select class="cc-bg-grants__lang-select" data-lang-slot="{{index}}">
+        <option value="">— Choose —</option>
+        {{#each options}}
+        <option value="{{id}}" {{#if selected}}selected{{/if}} {{#if disabled}}disabled{{/if}}>{{label}}</option>
+        {{/each}}
+      </select>
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{else}}
+  <div class="cc-empty-state">
+    <i class="fa-solid fa-arrow-left"></i>
+    <p>Go back and select a background first.</p>
+  </div>
+  {{/if}}
+
+</div>

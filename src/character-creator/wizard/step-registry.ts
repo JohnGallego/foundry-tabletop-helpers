@@ -12,6 +12,7 @@ import { createAbilitiesStep } from "../steps/step-abilities";
 import { createSpeciesStep } from "../steps/step-species";
 import { createOriginFeatStep } from "../steps/step-origin-feat";
 import { createBackgroundStep } from "../steps/step-background";
+import { createBackgroundGrantsStep } from "../steps/step-background-grants";
 import { createClassStep } from "../steps/step-class";
 import { createSkillsStep } from "../steps/step-skills";
 import { createSubclassStep } from "../steps/step-subclass";
@@ -27,6 +28,7 @@ import { createReviewStep } from "../steps/step-review";
 const STEP_ORDER = [
   "species",
   "background",
+  "backgroundGrants",
   "originFeat",
   "class",
   "subclass",
@@ -82,6 +84,7 @@ export function getStep(id: string): WizardStepDefinition | undefined {
 const STEP_ATMOSPHERES: Record<string, string> = {
   species: "cc-atmosphere--nature",
   background: "cc-atmosphere--shadow",
+  backgroundGrants: "cc-atmosphere--shadow",
   originFeat: "cc-atmosphere--crimson",
   class: "cc-atmosphere--forge",
   subclass: "cc-atmosphere--forge",
@@ -141,6 +144,7 @@ export function registerAllSteps(): void {
 
   // Core steps
   registerStep(createBackgroundStep());
+  registerStep(createBackgroundGrantsStep());
 
   registerStep(createOriginFeatStep());
 

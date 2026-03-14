@@ -21,7 +21,8 @@ import type {
  */
 const DEPENDENCY_CASCADE: Record<string, string[]> = {
   species: [],
-  background: ["originFeat", "skills", "abilities"],
+  background: ["backgroundGrants", "originFeat", "skills", "abilities"],
+  backgroundGrants: [],
   class: ["subclass", "skills", "feats", "spells", "equipment"],
   subclass: ["spells"],
   abilities: ["feats"],

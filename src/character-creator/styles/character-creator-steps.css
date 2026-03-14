@@ -687,6 +687,38 @@
    BACKGROUND GRANTS PANEL
    ============================================================ */
 
+.cc-bg-grants-step__header {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-md);
+  margin-bottom: var(--cc-space-lg);
+}
+
+.cc-bg-grants-step__img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--cc-border-accent);
+}
+
+.cc-bg-grants-step__title h3 {
+  margin: 0;
+  font-size: var(--cc-text-lg, 1.15rem);
+  font-weight: 600;
+  color: var(--cc-text-primary);
+}
+
+.cc-bg-grants-step__title p {
+  margin: var(--cc-space-2xs) 0 0 0;
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+}
+
+.cc-bg-grants__asi-counter--complete {
+  color: var(--cc-accent-gold);
+}
+
 .cc-bg-grants {
   padding: var(--cc-space-lg);
   background: var(--cc-bg-glass);
