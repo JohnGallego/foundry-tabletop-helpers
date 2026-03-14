@@ -395,17 +395,32 @@
    CARD SELECTION STEPS (Race, Background, Class)
    ============================================================ */
 
+/* ── Card Select Container ───────────────────────────────── */
+
+/* Fill the step content area — the two-column layout handles its own scrolling */
+.cc-step-content:has(.cc-card-select__layout) {
+  overflow-y: hidden;
+}
+
+.cc-card-select {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── Two-Column Layout (grid + detail) ───────────────────── */
 
 .cc-card-select__layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: var(--cc-space-lg);
-  height: 100%;
+  flex: 1;
+  min-height: 0; /* allow children to shrink below content size */
 }
 
 .cc-card-select__grid-pane {
   overflow-y: auto;
+  min-height: 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
 }
@@ -420,14 +435,12 @@
 }
 
 .cc-card-detail-pane {
-  position: sticky;
-  top: 0;
-  align-self: stretch;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
 }
 
 .cc-card-detail-pane > .cc-card-detail {
@@ -439,6 +452,8 @@
 .cc-card-detail-pane > .cc-card-detail .cc-card-detail__description {
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
 }
 
 /* Compact: stack vertically on narrow windows */
@@ -630,10 +645,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 200px;
+  justify-content: flex-start;
+  padding-top: var(--cc-space-xl);
   text-align: center;
   gap: var(--cc-space-lg);
+  position: sticky;
+  top: 0;
 }
 
 .cc-card-detail__empty-icon {
