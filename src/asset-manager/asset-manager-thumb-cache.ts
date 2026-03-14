@@ -25,7 +25,7 @@ const MAX_CONCURRENT = 4;
 const MAX_OBJECT_URLS = 500;
 
 /** Thumbnail WebP quality (0-1). */
-const THUMB_QUALITY = 0.75;
+const THUMB_QUALITY = 0.40;
 
 /* ── Inline Worker Source ─────────────────────────────────── */
 

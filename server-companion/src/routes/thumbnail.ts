@@ -12,8 +12,8 @@ export async function registerThumbnailRoute(app: FastifyInstance): Promise<void
     const buffer = await data.toBuffer();
     const fields = data.fields;
 
-    const width = parseInt(getFieldValue(fields, "width") ?? "120", 10);
-    const height = parseInt(getFieldValue(fields, "height") ?? "120", 10);
+    const width = parseInt(getFieldValue(fields, "width") ?? "256", 10);
+    const height = parseInt(getFieldValue(fields, "height") ?? "256", 10);
     const fitField = getFieldValue(fields, "fit");
     const fit = (fitField === "contain" || fitField === "fill" ? fitField : "cover") as "cover" | "contain" | "fill";
 

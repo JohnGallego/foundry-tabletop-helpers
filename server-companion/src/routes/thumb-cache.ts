@@ -5,7 +5,7 @@ import sharp from "sharp";
 
 const THUMB_DIR = ".fth-thumbs";
 const THUMB_MAX = 256;
-const THUMB_QUALITY = 50;
+const THUMB_QUALITY = 40;
 const IMAGE_EXTS = new Set([
   "webp", "png", "jpg", "jpeg", "gif", "bmp", "avif", "tiff", "tif",
 ]);

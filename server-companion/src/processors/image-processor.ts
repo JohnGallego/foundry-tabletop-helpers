@@ -75,7 +75,7 @@ export async function generateThumbnail(
   const { data: buffer, info } = await sharp(input, { failOn: "none" })
     .rotate()
     .resize({ width, height, fit })
-    .webp({ quality: 80 })
+    .webp({ quality: 40 })
     .toBuffer({ resolveWithObject: true });
 
   return {
