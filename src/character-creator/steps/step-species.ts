@@ -26,6 +26,13 @@ function getAvailableSpecies(state: WizardState): CreatorIndexEntry[] {
   return entries.filter((e) => !state.config.disabledUUIDs.has(e.uuid));
 }
 
+/** Split "Tiefling, Abyssal" into ["Tiefling", "Abyssal"]. Single names return ["Name", ""] */
+function splitSpeciesName(name: string): [string, string] {
+  const commaIdx = name.indexOf(",");
+  if (commaIdx < 0) return [name.trim(), ""];
+  return [name.slice(0, commaIdx).trim(), name.slice(commaIdx + 1).trim()];
+}
+
 /* ── Step Definition ─────────────────────────────────────── */
 
 export function createSpeciesStep(): WizardStepDefinition {
@@ -46,13 +53,23 @@ export function createSpeciesStep(): WizardStepDefinition {
       const entries = getAvailableSpecies(state);
       const selected = state.selections.species;
 
+      // Sort entries so species with comma-separated names (e.g., "Tiefling, Abyssal")
+      // are grouped by their base name, then sorted by subname within the group.
+      const sorted = [...entries].sort((a, b) => {
+        const [aBase, aSub] = splitSpeciesName(a.name);
+        const [bBase, bSub] = splitSpeciesName(b.name);
+        const baseCompare = aBase.localeCompare(bBase);
+        if (baseCompare !== 0) return baseCompare;
+        return aSub.localeCompare(bSub);
+      });
+
       return {
         stepId: "species",
         stepTitle: "Character Origins:",
         stepLabel: "Species",
         stepIcon: "fa-solid fa-dna",
         stepDescription: "Choose your character's species.",
-        entries: entries.map((e) => ({
+        entries: sorted.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,
         })),
