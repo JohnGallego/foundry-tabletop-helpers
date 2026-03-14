@@ -694,10 +694,6 @@
   font-size: var(--cc-text-base);
   color: rgba(232, 226, 214, 0.9);
   line-height: 1.7;
-  max-height: 200px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
 }
 
 .cc-card-detail__description p {
