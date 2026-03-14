@@ -49,3 +49,6 @@ coverage/
 tmp/
 temp/
 .worktrees/
+
+# Claude Code project config
+.claude/
