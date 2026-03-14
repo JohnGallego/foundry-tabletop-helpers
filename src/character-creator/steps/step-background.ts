@@ -92,9 +92,9 @@ export function createBackgroundStep(): WizardStepDefinition {
               },
             };
 
-            // Visual feedback first, then update state
+            // Patch DOM directly instead of full re-render
             patchCardSelection(el, uuid, entry);
-            callbacks.setData(selection);
+            callbacks.setDataSilent(selection);
           } catch (err) {
             Log.warn("Failed to parse background grants", err);
           }

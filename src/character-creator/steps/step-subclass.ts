@@ -6,6 +6,7 @@
  */
 
 import { MOD } from "../../logger";
+import { patchCardSelection } from "./card-select-utils";
 import type {
   WizardStepDefinition,
   WizardState,
@@ -79,7 +80,9 @@ export function createSubclassStep(): WizardStepDefinition {
             img: entry.img,
             classIdentifier: entry.classIdentifier,
           };
-          callbacks.setData(selection);
+          // Patch DOM directly instead of full re-render
+          patchCardSelection(el, uuid, entry);
+          callbacks.setDataSilent(selection);
         });
       });
     },

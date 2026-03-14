@@ -16,6 +16,7 @@ import type {
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
 import { parseClassSkillAdvancement, parseClassSpellcasting } from "../data/advancement-parser";
+import { patchCardSelection } from "./card-select-utils";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -101,7 +102,9 @@ export function createClassStep(): WizardStepDefinition {
             Log.warn("Failed to parse class advancement data", err);
           }
 
-          callbacks.setData(selection);
+          // Patch DOM directly instead of full re-render
+          patchCardSelection(el, uuid, entry);
+          callbacks.setDataSilent(selection);
         });
       });
     },
