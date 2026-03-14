@@ -3,6 +3,8 @@
  *
  * All TypeScript interfaces for the character creation wizard,
  * GM configuration, and data layer.
+ *
+ * Updated for the 2024 D&D PHB character creation workflow.
  */
 
 /* ── Content Types ───────────────────────────────────────── */
@@ -84,6 +86,8 @@ export interface GMConfig {
   allowMulticlass: boolean;
   equipmentMethod: EquipmentMethod;
   level1HpMethod: HpMethod;
+  /** Whether custom/homebrew backgrounds are permitted. Added for 2024 rules. */
+  allowCustomBackgrounds?: boolean;
 }
 
 /* ── GM Config App ViewModels ────────────────────────────── */
@@ -188,26 +192,92 @@ export interface AbilityScoreState {
   rolledValues?: number[];
 }
 
-/** Race selection state. */
-export interface RaceSelection {
+/** Species selection state (2024 PHB — replaces "Race" in the wizard). */
+export interface SpeciesSelection {
   uuid: string;
   name: string;
   img: string;
+  /** Display-only summaries parsed from advancement (e.g., "Darkvision", "Fey Ancestry"). */
+  traits?: string[];
 }
 
-/** Background selection state. */
+/** What a background grants — parsed from advancement data. */
+export interface BackgroundGrants {
+  /** Skill proficiency keys granted by this background. */
+  skillProficiencies: string[];
+  /** Tool proficiency key (e.g., "art:calligrapher") or null. */
+  toolProficiency: string | null;
+  /** UUID of the origin feat, or null if none (homebrew/legacy). */
+  originFeatUuid: string | null;
+  /** Display name of the origin feat. */
+  originFeatName: string | null;
+  /** Image path of the origin feat. */
+  originFeatImg: string | null;
+  /** Total ASI points to distribute (typically 3; 0 if no ASI advancement). */
+  asiPoints: number;
+  /** Max points in a single ability (typically 2; 0 if no ASI advancement). */
+  asiCap: number;
+  /** Abilities the PHB suggests — UI hint only, NOT enforced. */
+  asiSuggested: string[];
+  /** Languages auto-granted by this background (e.g., ["common"]). */
+  languageGrants: string[];
+  /** Number of additional language choices (typically 2; 0 if none). */
+  languageChoiceCount: number;
+  /** Pool of choosable languages (e.g., ["languages:standard:*"]). */
+  languageChoicePool: string[];
+}
+
+/** Player's ability score increase assignments from their background. */
+export interface BackgroundASI {
+  /**
+   * Maps ability keys to point values.
+   * Must sum to grants.asiPoints, each value <= grants.asiCap.
+   * e.g., { wis: 2, cha: 1 }
+   */
+  assignments: Partial<Record<AbilityKey, number>>;
+}
+
+/** Player's language selections (fixed + chosen). */
+export interface LanguageSelection {
+  /** Auto-granted from advancement (e.g., ["common"]). */
+  fixed: string[];
+  /** Player-chosen languages. */
+  chosen: string[];
+}
+
+/** Player's origin feat selection from their background. */
+export interface OriginFeatSelection {
+  uuid: string;
+  name: string;
+  img: string;
+  /** True if the GM allowed the player to swap to a different origin feat. */
+  isCustom: boolean;
+}
+
+/** Background selection state (2024 PHB — enriched with grants and sub-selections). */
 export interface BackgroundSelection {
   uuid: string;
   name: string;
   img: string;
+  /** Parsed grants from the background's advancement data. */
+  grants: BackgroundGrants;
+  /** Player's ASI distribution. */
+  asi: BackgroundASI;
+  /** Player's language selections. */
+  languages: LanguageSelection;
 }
 
-/** Class selection state. */
+/** Class selection state (2024 PHB — includes skill pool from advancement). */
 export interface ClassSelection {
   uuid: string;
   name: string;
   img: string;
-  identifier?: string;
+  /** System identifier (e.g., "fighter", "wizard"). */
+  identifier: string;
+  /** Available skill keys from class advancement. */
+  skillPool: string[];
+  /** How many skills to pick (fallback 2). */
+  skillCount: number;
 }
 
 /** Subclass selection state. */
@@ -246,7 +316,7 @@ export interface EquipmentSelection {
   goldAmount?: number;
 }
 
-/** Skills selection state. */
+/** Skills selection state (class-chosen only). */
 export interface SkillSelection {
   /** Player-chosen skill proficiency keys. */
   chosen: string[];
@@ -273,11 +343,12 @@ export interface StepCallbacks {
 /** All wizard selections, keyed by step ID. */
 export interface WizardSelections {
   abilities?: AbilityScoreState;
-  race?: RaceSelection;
+  species?: SpeciesSelection;
   background?: BackgroundSelection;
   class?: ClassSelection;
   subclass?: SubclassSelection;
   skills?: SkillSelection;
+  originFeat?: OriginFeatSelection;
   feats?: FeatSelection;
   spells?: SpellSelection;
   equipment?: EquipmentSelection;
