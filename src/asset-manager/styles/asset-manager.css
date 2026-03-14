@@ -1906,6 +1906,13 @@
    UPLOAD CONFIRMATION DIALOG
    ═══════════════════════════════════════════════════════════ */
 
+.am-upload-dialog-window {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 .am-upload-dialog-window .dialog-content {
   padding: 0;
 }
@@ -1922,9 +1929,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.2);
+  padding: 12px 14px;
+  border-bottom: 2px solid rgba(200, 167, 93, 0.25);
+  background: linear-gradient(135deg, rgba(200, 167, 93, 0.08) 0%, rgba(0, 0, 0, 0.3) 100%);
+}
+
+.am-ud-header::before {
+  content: "\f093";
+  font-family: "Font Awesome 6 Free", "Font Awesome 5 Free";
+  font-weight: 900;
+  font-size: 0.8rem;
+  color: #c8a75d;
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .am-ud-header strong {
@@ -1954,6 +1971,7 @@
   padding: 8px 14px;
   background: rgba(255, 255, 255, 0.02);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .am-ud-global {
@@ -1967,7 +1985,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: background 0.1s, border-color 0.1s, color 0.1s;
-  min-height: 32px;
+  min-height: 36px;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1981,6 +1999,101 @@
   background: rgba(200, 167, 93, 0.12);
   border-color: rgba(200, 167, 93, 0.3);
   color: #c8a75d;
+}
+
+/* ── Tags Section ──────────────────────────────────────── */
+
+.am-ud-tags {
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.am-ud-tags__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c8a75d;
+  margin-bottom: 6px;
+}
+
+.am-ud-tags__hint {
+  font-weight: 400;
+  color: #7a756c;
+  font-size: 0.65rem;
+}
+
+.am-ud-tags__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+  min-height: 0;
+}
+
+.am-ud-tags__list:empty {
+  display: none;
+}
+
+.am-ud-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(200, 167, 93, 0.12);
+  border: 1px solid rgba(200, 167, 93, 0.25);
+  color: #c8a75d;
+  font-size: 0.7rem;
+  font-weight: 500;
+  animation: am-ud-expand 0.15s ease-out;
+}
+
+.am-ud-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: none;
+  background: transparent;
+  color: #9a9488;
+  font-size: 0.55rem;
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.am-ud-tag-remove:hover {
+  color: #e8e2d6;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.am-ud-tags__input-wrap {
+  display: flex;
+}
+
+.am-ud-tags__input {
+  flex: 1;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: #e8e2d6;
+  font-size: 0.75rem;
+  min-height: 28px;
+}
+
+.am-ud-tags__input:focus {
+  outline: none;
+  border-color: #c8a75d;
+  box-shadow: 0 0 0 2px rgba(200, 167, 93, 0.15);
+}
+
+.am-ud-tags__input::placeholder {
+  color: #6a655e;
 }
 
 /* ── File List ──────────────────────────────────────────── */
@@ -2009,13 +2122,19 @@
   gap: 8px;
   padding: 6px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  transition: background 0.1s;
-  min-height: 36px;
+  border-left: 2px solid transparent;
+  transition: background 0.1s, border-left-color 0.15s;
+  min-height: 44px;
+}
+
+.am-ud-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .am-ud-row:hover {
     background: rgba(255, 255, 255, 0.03);
+    border-left-color: rgba(200, 167, 93, 0.4);
   }
 }
 
@@ -2048,7 +2167,7 @@
 /* ── Preset Badges ──────────────────────────────────────── */
 
 .am-ud-preset {
-  padding: 2px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
@@ -2057,11 +2176,11 @@
   font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  transition: background 0.1s, border-color 0.1s, color 0.1s, box-shadow 0.1s;
   text-transform: capitalize;
   min-width: 50px;
   text-align: center;
-  min-height: 24px;
+  min-height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2070,6 +2189,7 @@
 @media (hover: hover) and (pointer: fine) {
   .am-ud-preset:hover {
     background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -2118,6 +2238,8 @@
   padding: 8px 14px 8px 32px;
   background: rgba(200, 167, 93, 0.03);
   border-bottom: 1px solid rgba(200, 167, 93, 0.1);
+  border-left: 2px solid rgba(200, 167, 93, 0.3);
+  backdrop-filter: blur(4px);
   animation: am-ud-expand 0.15s ease-out;
 }
 

@@ -144,6 +144,18 @@ function buildDialogHTML(entries: DialogFileEntry[], targetPath: string): string
   }
   html += `</div>`;
 
+  // Tags input
+  html += `<div class="am-ud-tags">`;
+  html += `<div class="am-ud-tags__label">`;
+  html += `<i class="fa-solid fa-tags"></i> Tags`;
+  html += `<span class="am-ud-tags__hint">Applied to all uploaded files</span>`;
+  html += `</div>`;
+  html += `<div class="am-ud-tags__list" data-ud-tag-list></div>`;
+  html += `<div class="am-ud-tags__input-wrap">`;
+  html += `<input type="text" class="am-ud-tags__input" data-ud-tag-input placeholder="Add tag..." autocomplete="off" />`;
+  html += `</div>`;
+  html += `</div>`;
+
   // File list
   html += `<div class="am-ud-list">`;
   for (let i = 0; i < entries.length; i++) {
@@ -492,27 +504,80 @@ async function loadImageDimensions(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Tag Input Listeners                                               */
+/* ------------------------------------------------------------------ */
+
+function attachTagListeners(el: HTMLElement, tags: string[]): void {
+  const input = el.querySelector<HTMLInputElement>("[data-ud-tag-input]");
+  const list = el.querySelector<HTMLElement>("[data-ud-tag-list]");
+  if (!input || !list) return;
+
+  function addTag(raw: string): void {
+    const tag = raw.trim().toLowerCase();
+    if (!tag || tags.includes(tag)) return;
+    tags.push(tag);
+
+    const chip = document.createElement("span");
+    chip.className = "am-ud-tag-chip";
+    chip.dataset.udTag = tag;
+
+    const labelNode = document.createTextNode(tag + " ");
+    chip.appendChild(labelNode);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "am-ud-tag-remove";
+    removeBtn.dataset.udRemoveTag = tag;
+    const icon = document.createElement("i");
+    icon.className = "fa-solid fa-xmark";
+    removeBtn.appendChild(icon);
+    chip.appendChild(removeBtn);
+
+    list!.appendChild(chip);
+  }
+
+  input.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (ev.key === "Enter" || ev.key === ",") {
+      ev.preventDefault();
+      addTag(input.value);
+      input.value = "";
+    }
+  });
+
+  list.addEventListener("click", (ev) => {
+    const btn = (ev.target as HTMLElement).closest<HTMLElement>("[data-ud-remove-tag]");
+    if (!btn) return;
+    const tag = btn.dataset.udRemoveTag;
+    if (!tag) return;
+    const idx = tags.indexOf(tag);
+    if (idx !== -1) tags.splice(idx, 1);
+    const chip = list!.querySelector(`[data-ud-tag="${tag}"]`);
+    if (chip) chip.remove();
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /*  5. showUploadConfirmDialog (main export)                          */
 /* ------------------------------------------------------------------ */
 
 export async function showUploadConfirmDialog(
   files: File[],
   targetPath: string,
-): Promise<UploadDialogResult[] | null> {
+): Promise<{ files: UploadDialogResult[]; tags: string[] } | null> {
   const g = getGame();
   const optimizeEnabled = g?.settings
     ? (g.settings.get(MOD, AM_SETTINGS.OPTIMIZE_ON_UPLOAD) as boolean)
     : false;
 
   const entries = buildInitialEntries(files, !optimizeEnabled);
+  const tags: string[] = [];
   const dialogBody = buildDialogHTML(entries, targetPath);
 
   Log.info(`Upload dialog: ${files.length} files → ${targetPath}`);
 
-  return new Promise<UploadDialogResult[] | null>((resolve) => {
+  return new Promise<{ files: UploadDialogResult[]; tags: string[] } | null>((resolve) => {
     let resolved = false;
 
-    function finish(result: UploadDialogResult[] | null) {
+    function finish(result: { files: UploadDialogResult[]; tags: string[] } | null) {
       if (resolved) return;
       resolved = true;
       resolve(result);
@@ -535,7 +600,7 @@ export async function showUploadConfirmDialog(
               preset: e.preset,
               ...(e.custom ? { custom: e.custom } : {}),
             }));
-            finish(results);
+            finish({ files: results, tags: [...tags] });
           },
         },
         cancel: {
@@ -552,6 +617,7 @@ export async function showUploadConfirmDialog(
             : // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (html as any)[0];
         attachDialogListeners(el, entries);
+        attachTagListeners(el, tags);
         updateGlobalBarHighlight(el, entries);
         void loadImageDimensions(el, entries);
       },

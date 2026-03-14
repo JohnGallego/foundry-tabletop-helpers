@@ -1918,8 +1918,20 @@ export function registerAssetManagerPicker(): void {
       const target = self.request || self.target || "";
 
       // Show confirmation dialog — returns null if cancelled
-      const result = await showUploadConfirmDialog(files, target);
-      if (!result) return;
+      const dialogResult = await showUploadConfirmDialog(files, target);
+      if (!dialogResult) return;
+
+      // Apply tags to the expected file paths immediately (IndexedDB-backed, path-based)
+      if (dialogResult.tags.length > 0) {
+        const meta = getMetadataStore();
+        for (const item of dialogResult.files) {
+          const fullPath = target ? `${target}/${item.outputName}` : item.outputName;
+          for (const tag of dialogResult.tags) {
+            meta.addTag(fullPath, tag).catch(() => { /* ignore */ });
+          }
+        }
+        Log.info(`Upload: Applied ${dialogResult.tags.length} tag(s) to ${dialogResult.files.length} file(s)`);
+      }
 
       // Create UploadManager if needed — note: the uploadFn and onComplete
       // callbacks read source/target FRESH from `this` on each call, not from
@@ -1968,7 +1980,7 @@ export function registerAssetManagerPicker(): void {
         );
       }
 
-      this._amUploader.enqueueWithOptions(result);
+      this._amUploader.enqueueWithOptions(dialogResult.files);
     }
 
     /** Batch optimize all images in the current directory. */
