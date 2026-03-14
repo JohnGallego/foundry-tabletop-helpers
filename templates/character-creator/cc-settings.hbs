@@ -1,0 +1,83 @@
+<form>
+  <h3><i class="fa-solid fa-hat-wizard"></i> Character Creator</h3>
+
+  <div class="form-group">
+    <label>Enable Character Creator</label>
+    <input type="checkbox" name="ccEnabled" {{#if ccEnabled}}checked{{/if}} />
+    <p class="notes">Enable the Character Creator & Level-Up Manager for this world.</p>
+  </div>
+
+  <div class="form-group">
+    <label>Auto-Open for New Players</label>
+    <input type="checkbox" name="ccAutoOpen" {{#if ccAutoOpen}}checked{{/if}} />
+    <p class="notes">Automatically open the wizard when a player logs in without a character.</p>
+  </div>
+
+  <div class="form-group">
+    <label>Level-Up Manager</label>
+    <input type="checkbox" name="ccLevelUpEnabled" {{#if ccLevelUpEnabled}}checked{{/if}} />
+    <p class="notes">Show a level-up button when characters have enough XP to advance.</p>
+  </div>
+
+  <hr />
+  <h3><i class="fa-solid fa-dice-d20"></i> Ability Score Methods</h3>
+  <p class="notes">Choose which methods players can use. At least one must be enabled.</p>
+
+  <div class="form-group">
+    <label>Roll 4d6 (Drop Lowest)</label>
+    <input type="checkbox" name="method_4d6" {{#if method_4d6}}checked{{/if}} />
+  </div>
+
+  <div class="form-group">
+    <label>Point Buy</label>
+    <input type="checkbox" name="method_pointBuy" {{#if method_pointBuy}}checked{{/if}} />
+  </div>
+
+  <div class="form-group">
+    <label>Standard Array</label>
+    <input type="checkbox" name="method_standardArray" {{#if method_standardArray}}checked{{/if}} />
+  </div>
+
+  <div class="form-group">
+    <label>Max 4d6 Rerolls</label>
+    <input type="number" name="maxRerolls" value="{{maxRerolls}}" min="0" max="99" step="1" />
+    <p class="notes">Maximum times a player can reroll all 4d6 scores. 0 = unlimited.</p>
+  </div>
+
+  <hr />
+  <h3><i class="fa-solid fa-sliders"></i> Rules</h3>
+
+  <div class="form-group">
+    <label>Starting Level</label>
+    <input type="number" name="startingLevel" value="{{startingLevel}}" min="1" max="20" step="1" />
+  </div>
+
+  <div class="form-group">
+    <label>Allow Multiclass at Creation</label>
+    <input type="checkbox" name="allowMulticlass" {{#if allowMulticlass}}checked{{/if}} />
+    <p class="notes">Only relevant when starting above level 1.</p>
+  </div>
+
+  <div class="form-group">
+    <label>Starting Equipment</label>
+    <select name="equipmentMethod">
+      <option value="both" {{#if (eq equipmentMethod "both")}}selected{{/if}}>Player's Choice</option>
+      <option value="equipment" {{#if (eq equipmentMethod "equipment")}}selected{{/if}}>Equipment Packs Only</option>
+      <option value="gold" {{#if (eq equipmentMethod "gold")}}selected{{/if}}>Starting Gold Only</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Level 1 Hit Points</label>
+    <select name="level1HpMethod">
+      <option value="max" {{#if (eq level1HpMethod "max")}}selected{{/if}}>Maximum Hit Die</option>
+      <option value="roll" {{#if (eq level1HpMethod "roll")}}selected{{/if}}>Roll Hit Die</option>
+    </select>
+  </div>
+
+  <footer class="sheet-footer flexrow">
+    <button type="submit" class="dialog-button default">
+      <i class="fa-solid fa-save"></i> Save
+    </button>
+  </footer>
+</form>

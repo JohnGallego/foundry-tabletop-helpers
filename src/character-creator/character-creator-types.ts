@@ -82,6 +82,8 @@ export interface GMConfig {
   packSources: PackSourceConfig;
   disabledUUIDs: Set<string>;
   allowedAbilityMethods: AbilityScoreMethod[];
+  /** Max 4d6 rerolls. 0 = unlimited. */
+  maxRerolls: number;
   startingLevel: number;
   allowMulticlass: boolean;
   equipmentMethod: EquipmentMethod;

@@ -28,6 +28,8 @@ export { shouldShowLevelUp } from "./level-up/level-up-detection";
 
 export function registerCharacterCreatorSettings(settings: {
   register(module: string, key: string, data: Record<string, unknown>): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registerMenu(module: string, key: string, data: any): void;
 }): void {
   registerSettings(settings);
 }

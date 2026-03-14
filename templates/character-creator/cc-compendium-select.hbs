@@ -1,0 +1,31 @@
+<form>
+  <p class="notes" style="margin-bottom: 12px;">
+    Select which compendium packs provide content for the character creator.
+    Packs are auto-detected by the item types they contain.
+  </p>
+
+  {{#each groups}}
+  <fieldset style="margin-bottom: 12px; border: 1px solid var(--color-border-light-1, #555); border-radius: 4px; padding: 8px 12px;">
+    <legend style="font-weight: 600;">{{label}}</legend>
+    {{#if packs.length}}
+    <div class="form-fields" style="display:flex; flex-direction: column; gap: 4px;">
+      {{#each packs}}
+      <label class="checkbox" style="display: flex; align-items: center; gap: 6px;">
+        <input type="checkbox" name="pack__{{../type}}__{{collection}}" {{#if enabled}}checked{{/if}} />
+        <span>{{label}}</span>
+        <span style="opacity: 0.5; font-size: 0.85em;">({{packageName}}, {{count}} items)</span>
+      </label>
+      {{/each}}
+    </div>
+    {{else}}
+    <p class="notes" style="opacity: 0.6;">No packs detected with {{label}} content.</p>
+    {{/if}}
+  </fieldset>
+  {{/each}}
+
+  <footer class="sheet-footer flexrow">
+    <button type="submit" class="dialog-button default">
+      <i class="fa-solid fa-save"></i> Save
+    </button>
+  </footer>
+</form>

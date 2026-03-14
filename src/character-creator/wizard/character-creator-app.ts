@@ -22,6 +22,7 @@ import {
   getEquipmentMethod,
   getLevel1HpMethod,
   allowCustomBackgrounds,
+  getMaxRerolls,
 } from "../character-creator-settings";
 
 /* ── Runtime Foundry Class Resolution ────────────────────── */
@@ -118,6 +119,7 @@ export function buildCharacterCreatorAppClass(): void {
         packSources: getPackSources(),
         disabledUUIDs: new Set(disabledArr),
         allowedAbilityMethods: getAllowedAbilityMethods(),
+        maxRerolls: getMaxRerolls(),
         startingLevel: getStartingLevel(),
         allowMulticlass: allowMulticlass(),
         equipmentMethod: getEquipmentMethod(),
