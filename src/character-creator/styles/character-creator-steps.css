@@ -136,14 +136,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  background: var(--cc-bg-glass);
-  border: 1px solid var(--cc-border-subtle);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, var(--cc-bg-elevated), var(--cc-bg-surface));
+  border: 1px solid var(--cc-border-accent);
   font-size: var(--cc-text-md);
-  font-weight: 600;
-  color: var(--cc-text-primary);
+  font-weight: 700;
+  color: var(--cc-accent-gold);
+  user-select: none;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  animation: cc-dice-land var(--cc-duration-normal) var(--cc-ease-out) both;
+}
+
+@keyframes cc-dice-land {
+  from { transform: scale(1.3) rotate(-8deg); opacity: 0.6; }
+  to   { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 /* ── Ability Grid ────────────────────────────────────────── */
@@ -167,32 +179,50 @@
   align-items: center;
   gap: var(--cc-space-2xs);
   padding: var(--cc-space-md);
-  background: var(--cc-bg-glass);
+  background: linear-gradient(160deg, var(--cc-bg-surface) 0%, var(--cc-bg-glass) 100%);
   border: 1px solid var(--cc-border-subtle);
-  border-radius: 8px;
+  border-radius: 10px;
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.3);
   transition:
     border-color var(--cc-duration-fast) var(--cc-ease-out),
     box-shadow var(--cc-duration-fast) var(--cc-ease-out);
 }
 
+/* Thin accent line at top of each card */
+.cc-ability-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200, 167, 93, 0.3), transparent);
+}
+
 .cc-ability-card__abbrev {
   font-size: var(--cc-text-xs);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cc-accent-bronze);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
 .cc-ability-card__value {
-  font-size: var(--cc-text-2xl);
-  font-weight: 700;
+  font-size: var(--cc-text-3xl);
+  font-weight: 800;
   line-height: 1;
   color: var(--cc-text-primary);
+  text-shadow: 0 0 20px rgba(232, 226, 214, 0.15);
+  letter-spacing: -0.02em;
 }
 
 .cc-ability-card__modifier {
-  font-size: var(--cc-text-sm);
-  color: var(--cc-text-secondary);
+  font-size: var(--cc-text-md);
+  font-weight: 700;
+  color: var(--cc-accent-bronze);
+  letter-spacing: 0.02em;
 }
 
 .cc-ability-card__bonus {
@@ -206,7 +236,7 @@
 }
 
 .cc-ability-card__bonus-plus {
-  color: var(--cc-accent, #7ec8e3);
+  color: var(--cc-accent-frost);
 }
 
 .cc-ability-card__bonus-total {
@@ -230,8 +260,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--cc-touch-min);
+  height: var(--cc-touch-min);
   border-radius: 50%;
   border: 1px solid var(--cc-border-subtle);
   background: var(--cc-bg-glass);
@@ -415,11 +445,13 @@
 }
 
 .cc-select-card--selected {
-  border-color: var(--cc-border-glow);
+  border-color: var(--cc-accent-gold);
   background: linear-gradient(135deg, rgba(200, 167, 93, 0.08) 0%, rgba(200, 167, 93, 0.02) 100%);
   box-shadow:
-    0 0 12px rgba(200, 167, 93, 0.15),
-    inset 0 0 8px rgba(200, 167, 93, 0.05);
+    0 0 0 1px rgba(212, 175, 55, 0.3),
+    0 0 16px rgba(212, 175, 55, 0.25),
+    0 0 32px rgba(212, 175, 55, 0.08),
+    inset 0 0 12px rgba(200, 167, 93, 0.06);
 }
 
 .cc-select-card:focus-visible {
@@ -439,6 +471,16 @@
   aspect-ratio: 1;
   overflow: hidden;
   background: var(--cc-bg-surface);
+  position: relative;
+}
+
+/* Bottom vignette on card images — cinematic depth */
+.cc-select-card__img-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.15) 40%, transparent 65%);
+  pointer-events: none;
 }
 
 .cc-select-card__img {
@@ -448,7 +490,9 @@
 }
 
 .cc-select-card__info {
-  padding: var(--cc-space-sm);
+  padding: var(--cc-space-xs) var(--cc-space-sm);
+  background: linear-gradient(to bottom, rgba(10, 12, 18, 0.8) 0%, rgba(10, 12, 18, 0.95) 100%);
+  border-top: 1px solid var(--cc-border-subtle);
 }
 
 .cc-select-card__name {
@@ -483,33 +527,40 @@
 /* ── Card Detail Panel ───────────────────────────────────── */
 
 .cc-card-detail {
-  padding: var(--cc-space-md);
-  background: var(--cc-bg-glass);
+  padding: var(--cc-space-lg);
+  background: linear-gradient(160deg, rgba(200, 167, 93, 0.05) 0%, var(--cc-bg-glass) 40%);
   border: 1px solid var(--cc-border-accent);
-  border-radius: 8px;
-  box-shadow: inset 0 0 12px rgba(200, 167, 93, 0.03);
+  border-radius: 10px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow:
+    0 0 0 1px rgba(200, 167, 93, 0.08),
+    inset 0 0 24px rgba(200, 167, 93, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .cc-card-detail__header {
   display: flex;
   align-items: center;
   gap: var(--cc-space-md);
-  margin-bottom: var(--cc-space-sm);
+  margin-bottom: var(--cc-space-md);
 }
 
 .cc-card-detail__img {
-  width: 48px;
-  height: 48px;
-  border-radius: 6px;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
   object-fit: cover;
-  border: 1px solid var(--cc-border-subtle);
+  border: 1px solid var(--cc-border-accent);
+  box-shadow: 0 0 12px rgba(200, 167, 93, 0.2), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .cc-card-detail__title h3 {
   margin: 0;
-  font-size: var(--cc-text-md);
-  font-weight: 600;
-  color: var(--cc-text-primary);
+  font-size: var(--cc-text-lg);
+  font-weight: 700;
+  color: var(--cc-accent-bronze);
+  letter-spacing: 0.03em;
 }
 
 .cc-card-detail__source {
@@ -524,6 +575,35 @@
   margin: 0;
 }
 
+.cc-card-detail__description {
+  font-size: var(--cc-text-base);
+  color: rgba(232, 226, 214, 0.9);
+  line-height: 1.7;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
+}
+
+.cc-card-detail__description p {
+  margin: 0 0 var(--cc-space-sm) 0;
+}
+
+.cc-card-detail__description p:last-child {
+  margin-bottom: 0;
+}
+
+.cc-card-detail__description ul,
+.cc-card-detail__description ol {
+  margin: 0 0 var(--cc-space-sm) 0;
+  padding-left: var(--cc-space-lg);
+}
+
+.cc-card-detail__description strong {
+  color: var(--cc-accent-gold);
+  font-weight: 700;
+}
+
 /* ── Empty State ─────────────────────────────────────────── */
 
 .cc-empty-state {
@@ -531,15 +611,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--cc-space-md);
+  gap: var(--cc-space-lg);
   padding: var(--cc-space-2xl);
   text-align: center;
   color: var(--cc-text-secondary);
+  min-height: 200px;
 }
 
 .cc-empty-state i {
-  font-size: 2rem;
-  opacity: 0.5;
+  font-size: 2.5rem;
+  opacity: 0.3;
+  color: var(--cc-accent-bronze);
+  filter: drop-shadow(0 0 12px rgba(200, 167, 93, 0.2));
+}
+
+.cc-empty-state p {
+  font-size: var(--cc-text-base);
+  line-height: 1.6;
+  max-width: 280px;
 }
 
 /* ============================================================
@@ -610,8 +699,8 @@
   display: flex;
   align-items: center;
   gap: var(--cc-space-sm);
-  padding: var(--cc-space-xs) var(--cc-space-sm);
-  min-height: 36px;
+  padding: var(--cc-space-xs) var(--cc-space-md);
+  min-height: var(--cc-touch-min);
   cursor: pointer;
   transition: background var(--cc-duration-fast) var(--cc-ease-out);
 }
@@ -686,6 +775,11 @@
 /* ============================================================
    BACKGROUND GRANTS PANEL
    ============================================================ */
+
+.cc-bg-grants-step {
+  container-type: inline-size;
+  container-name: cc-bg-grants;
+}
 
 .cc-bg-grants-step__header {
   display: flex;
@@ -808,7 +902,7 @@
   gap: var(--cc-space-sm);
 }
 
-@container cc-wizard (max-width: 500px) {
+@container cc-bg-grants (max-width: 400px) {
   .cc-bg-grants__asi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -839,12 +933,25 @@
 
 .cc-bg-grants__asi-row select {
   min-height: 32px;
-  padding: var(--cc-space-2xs) var(--cc-space-xs);
+  padding: var(--cc-space-2xs) var(--cc-space-sm);
+  padding-right: 28px;
   background: var(--cc-bg-glass);
   border: 1px solid var(--cc-border-subtle);
   border-radius: 4px;
   color: var(--cc-text-primary);
   font-size: var(--cc-text-sm);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9488'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color var(--cc-duration-fast) var(--cc-ease-out), box-shadow var(--cc-duration-fast) var(--cc-ease-out);
+}
+
+.cc-bg-grants__asi-row select:focus {
+  outline: none;
+  border-color: var(--cc-accent-bronze);
+  box-shadow: var(--cc-focus-ring);
 }
 
 .cc-bg-grants__asi-row select option {
@@ -865,11 +972,24 @@
   min-width: 160px;
   min-height: var(--cc-touch-min);
   padding: var(--cc-space-sm) var(--cc-space-md);
+  padding-right: 32px;
   background: var(--cc-bg-surface);
   border: 1px solid var(--cc-border-subtle);
   border-radius: 6px;
   color: var(--cc-text-primary);
   font-size: var(--cc-text-sm);
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239a9488'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: border-color var(--cc-duration-fast) var(--cc-ease-out), box-shadow var(--cc-duration-fast) var(--cc-ease-out);
+}
+
+.cc-bg-grants__lang-select:focus {
+  outline: none;
+  border-color: var(--cc-accent-bronze);
+  box-shadow: var(--cc-focus-ring);
 }
 
 .cc-bg-grants__lang-select option {
@@ -1060,6 +1180,11 @@
 .cc-asi-panel__of {
   font-size: var(--cc-text-sm);
   color: var(--cc-text-secondary);
+}
+
+.cc-ability-card:focus-visible {
+  outline: 2px solid var(--cc-accent-bronze);
+  outline-offset: 2px;
 }
 
 .cc-ability-card--selected {
@@ -1260,6 +1385,25 @@
   color: var(--cc-text-primary);
   font-size: var(--cc-text-2xs);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.cc-spells-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-sm);
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  background: var(--cc-bg-glass);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 6px;
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  margin-top: var(--cc-space-md);
+  line-height: 1.5;
+}
+
+.cc-spells-notice i {
+  color: var(--cc-accent-frost);
+  flex-shrink: 0;
 }
 
 .cc-spells-summary {
@@ -1514,13 +1658,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
+  min-width: var(--cc-touch-min);
+  min-height: var(--cc-touch-min);
+  border-radius: 6px;
   border: 1px solid var(--cc-border-subtle);
   background: transparent;
   color: var(--cc-text-secondary);
-  font-size: var(--cc-text-2xs);
+  font-size: var(--cc-text-xs);
   cursor: pointer;
   transition:
     background var(--cc-duration-fast) var(--cc-ease-out),
@@ -1614,4 +1758,93 @@
   font-size: var(--cc-text-sm);
   color: var(--cc-text-secondary);
   line-height: 1.4;
+}
+
+/* ── Review — Grants & Chips ────────────────────────────── */
+
+.cc-review-grants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-xs);
+  margin-top: var(--cc-space-xs);
+}
+
+.cc-review-grant {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cc-space-sm);
+  flex-wrap: wrap;
+}
+
+.cc-review-grant__label {
+  font-size: var(--cc-text-xs);
+  font-weight: 600;
+  color: var(--cc-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cc-review-grant__value {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-primary);
+}
+
+.cc-review-grant__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cc-space-xs);
+}
+
+.cc-review-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--cc-space-sm);
+  border-radius: 4px;
+  font-size: var(--cc-text-xs);
+  font-weight: 500;
+  background: rgba(200, 167, 93, 0.08);
+  border: 1px solid var(--cc-border-accent);
+  color: var(--cc-accent-bronze);
+}
+
+.cc-review-chip--fixed {
+  background: var(--cc-bg-elevated);
+  border-color: var(--cc-border-subtle);
+  color: var(--cc-text-secondary);
+}
+
+.cc-review-skills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-xs);
+}
+
+/* ── Review — Section Depth ─────────────────────────────── */
+
+.cc-review-section {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.cc-review-section__header {
+  background: linear-gradient(to right, var(--cc-bg-elevated), rgba(34, 38, 47, 0.6));
+}
+
+/* Complete sections: left gold accent */
+.cc-review-section:has(.cc-review-section__check) {
+  border-left: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+/* ── Staggered Card Entry Animation ─────────────────────── */
+
+.cc-card-grid .cc-select-card,
+.cc-spell-grid .cc-spell-card {
+  animation: cc-card-appear var(--cc-duration-normal) var(--cc-ease-out) both;
+  animation-delay: calc(var(--cc-card-index, 0) * 30ms);
+}
+
+@keyframes cc-card-appear {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }

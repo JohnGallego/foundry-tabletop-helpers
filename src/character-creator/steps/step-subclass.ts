@@ -57,7 +57,9 @@ export function createSubclassStep(): WizardStepDefinition {
           ...e,
           selected: e.uuid === selected?.uuid,
         })),
-        selectedEntry: selected ? entries.find((e) => e.uuid === selected.uuid) : null,
+        selectedEntry: selected
+          ? { ...entries.find((e) => e.uuid === selected.uuid), description: compendiumIndexer.getCachedDescription(selected.uuid) }
+          : null,
         hasEntries: entries.length > 0,
         emptyMessage: `No subclasses available for ${className}. Check your GM configuration.`,
       };

@@ -1,18 +1,6 @@
 {{!-- Character Creator — Portrait Step --}}
 <div class="cc-step-portrait" data-step="portrait">
 
-  {{!-- Header --}}
-  <div class="cc-step-portrait__header">
-    <h2 class="cc-step-portrait__title">Character Portrait</h2>
-    <p class="cc-step-portrait__subtitle">
-      {{#if serverAvailable}}
-        Generate an AI portrait or upload your own image.
-      {{else}}
-        Upload a portrait image for your character.
-      {{/if}}
-    </p>
-  </div>
-
   <div class="cc-step-portrait__layout">
 
     {{!-- Left: Controls --}}
@@ -83,6 +71,11 @@
       <div class="cc-portrait-preview {{#if hasPortrait}}cc-portrait-preview--active{{/if}}">
         {{#if hasPortrait}}
           <img src="{{portraitDataUrl}}" alt="Selected portrait" class="cc-portrait-preview__img" />
+        {{else}}
+          <div class="cc-portrait-empty">
+            <i class="fa-regular fa-image"></i>
+            <p>No portrait selected</p>
+          </div>
         {{/if}}
       </div>
 

@@ -40,8 +40,8 @@
 
   <div class="form-group">
     <label>Max 4d6 Rerolls</label>
-    <input type="number" name="maxRerolls" value="{{maxRerolls}}" min="0" max="99" step="1" />
-    <p class="notes">Maximum times a player can reroll all 4d6 scores. 0 = unlimited.</p>
+    <input type="number" name="maxRerolls" value="{{maxRerolls}}" min="0" max="99" step="1" {{#unless method_4d6}}disabled{{/unless}} />
+    <p class="notes">Maximum times a player can reroll all 4d6 scores. 0 = unlimited.{{#unless method_4d6}} <em>(Enable Roll 4d6 above to configure.)</em>{{/unless}}</p>
   </div>
 
   <hr />

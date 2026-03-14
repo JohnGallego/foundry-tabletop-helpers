@@ -439,3 +439,73 @@
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ── Compendium Source Selector ──────────────────────────── */
+
+.cc-compendium-select__notes {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  margin: 0 0 var(--cc-space-md) 0;
+  line-height: 1.5;
+}
+
+.cc-compendium-select__group {
+  margin-bottom: var(--cc-space-md);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 6px;
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  background: var(--cc-bg-glass);
+}
+
+.cc-compendium-select__legend {
+  font-weight: 600;
+  font-size: var(--cc-text-md);
+  color: var(--cc-text-accent);
+  padding: 0 var(--cc-space-xs);
+}
+
+.cc-compendium-select__packs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-xs);
+}
+
+.cc-compendium-select__pack {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-sm);
+  min-height: var(--cc-touch-min);
+  padding: var(--cc-space-xs) var(--cc-space-sm);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background var(--cc-duration-fast) var(--cc-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cc-compendium-select__pack:hover {
+    background: var(--cc-bg-glass-hover);
+  }
+}
+
+.cc-compendium-select__pack input[type="checkbox"] {
+  accent-color: var(--cc-accent-bronze);
+}
+
+.cc-compendium-select__pack-name {
+  font-size: var(--cc-text-base);
+  color: var(--cc-text-primary);
+}
+
+.cc-compendium-select__pack-meta {
+  font-size: var(--cc-text-xs);
+  color: var(--cc-text-secondary);
+  opacity: 0.7;
+}
+
+.cc-compendium-select__empty {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  opacity: 0.6;
+  font-style: italic;
+  margin: var(--cc-space-xs) 0;
+}

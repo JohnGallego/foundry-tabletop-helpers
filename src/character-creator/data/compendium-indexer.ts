@@ -123,6 +123,18 @@ export class CompendiumIndexer {
   }
 
   /**
+   * Get a cached document's HTML description, if available.
+   * Returns empty string if the document isn't cached or has no description.
+   */
+  getCachedDescription(uuid: string): string {
+    const doc = this.docCache.get(uuid);
+    if (!doc) return "";
+    const system = doc.system as Record<string, unknown> | undefined;
+    const desc = system?.description as Record<string, unknown> | undefined;
+    return typeof desc?.value === "string" ? desc.value : "";
+  }
+
+  /**
    * Get all indexed entries of a given content type from the cache.
    * Must call loadPacks() first.
    */

@@ -18,50 +18,52 @@
   height: 100%;
   position: relative;
   overflow: hidden;
-  transition: background var(--cc-duration-normal) var(--cc-ease-out);
+  transition: background var(--cc-duration-slow) var(--cc-ease-out);
 }
 
 /* ── Atmospheric Backgrounds ─────────────────────────────── */
+/* Pushed to 18-22% opacity for real atmosphere — visible colored light pools */
 
 .cc-atmosphere--arcane {
   background:
-    radial-gradient(ellipse at 30% 80%, rgba(107, 79, 160, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse at 70% 20%, rgba(200, 167, 93, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 25% 100%, rgba(107, 79, 160, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 0%, rgba(107, 79, 160, 0.10) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(200, 167, 93, 0.05) 0%, transparent 70%),
     var(--cc-bg-base);
 }
 
 .cc-atmosphere--nature {
   background:
-    radial-gradient(ellipse at 20% 70%, rgba(45, 107, 79, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 30%, rgba(200, 167, 93, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 90%, rgba(45, 107, 79, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 10%, rgba(74, 143, 168, 0.08) 0%, transparent 40%),
     var(--cc-bg-base);
 }
 
 .cc-atmosphere--shadow {
   background:
-    radial-gradient(ellipse at 50% 90%, rgba(139, 30, 45, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 30% 20%, rgba(107, 79, 160, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(139, 30, 45, 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 20%, rgba(107, 79, 160, 0.10) 0%, transparent 45%),
     var(--cc-bg-base);
 }
 
 .cc-atmosphere--forge {
   background:
-    radial-gradient(ellipse at 60% 80%, rgba(200, 167, 93, 0.06) 0%, transparent 55%),
-    radial-gradient(ellipse at 20% 30%, rgba(139, 30, 45, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 90%, rgba(200, 167, 93, 0.20) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 30%, rgba(139, 30, 45, 0.12) 0%, transparent 45%),
     var(--cc-bg-base);
 }
 
 .cc-atmosphere--crimson {
   background:
-    radial-gradient(ellipse at 40% 70%, rgba(139, 30, 45, 0.06) 0%, transparent 55%),
-    radial-gradient(ellipse at 70% 20%, rgba(200, 167, 93, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 85%, rgba(139, 30, 45, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 15%, rgba(200, 167, 93, 0.08) 0%, transparent 45%),
     var(--cc-bg-base);
 }
 
 .cc-atmosphere--gold {
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(212, 175, 55, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse at 20% 80%, rgba(200, 167, 93, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(212, 175, 55, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(200, 167, 93, 0.10) 0%, transparent 45%),
     var(--cc-bg-base);
 }
 
@@ -72,8 +74,11 @@
   align-items: center;
   gap: var(--cc-space-2xs);
   padding: var(--cc-space-md) var(--cc-space-lg);
-  background: var(--cc-bg-glass);
+  background: rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--cc-border-subtle);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -86,9 +91,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+  width: var(--cc-touch-min);
+  height: var(--cc-touch-min);
+  min-width: var(--cc-touch-min);
   border-radius: 50%;
   border: 2px solid var(--cc-border-subtle);
   color: var(--cc-text-secondary);
@@ -112,23 +117,44 @@
 
 .cc-step-indicator__icon {
   font-size: var(--cc-text-xs);
+  transition: opacity var(--cc-duration-fast) var(--cc-ease-out);
 }
 
-/* Completed step */
+@media (hover: hover) and (pointer: fine) {
+  .cc-step-indicator__step:hover .cc-step-indicator__number {
+    opacity: 1;
+  }
+  .cc-step-indicator__step:hover .cc-step-indicator__icon {
+    opacity: 0;
+  }
+}
+
+/* Completed step — filled gold node */
 .cc-step-indicator__step--complete {
   border-color: var(--cc-accent-gold);
-  color: var(--cc-accent-gold);
-  background: rgba(212, 175, 55, 0.08);
+  color: var(--cc-bg-base);
+  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.9) 0%, rgba(200, 167, 93, 0.7) 100%);
+  box-shadow:
+    0 0 10px rgba(212, 175, 55, 0.4),
+    0 0 20px rgba(212, 175, 55, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-/* Active step */
+/* Active step — pulsing arcane ring */
 .cc-step-indicator__step--active {
   border-color: var(--cc-accent-bronze);
   color: var(--cc-text-primary);
-  background: rgba(200, 167, 93, 0.12);
+  background: rgba(200, 167, 93, 0.15);
   box-shadow:
-    0 0 12px rgba(200, 167, 93, 0.25),
-    0 0 24px rgba(200, 167, 93, 0.1);
+    0 0 16px rgba(200, 167, 93, 0.4),
+    0 0 32px rgba(200, 167, 93, 0.15),
+    inset 0 0 10px rgba(200, 167, 93, 0.08);
+  animation: cc-step-pulse 3s ease-in-out infinite;
+}
+
+@keyframes cc-step-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(200, 167, 93, 0.4), 0 0 32px rgba(200, 167, 93, 0.15); }
+  50%      { box-shadow: 0 0 20px rgba(200, 167, 93, 0.6), 0 0 40px rgba(200, 167, 93, 0.25); }
 }
 
 /* Invalid step */
@@ -143,20 +169,26 @@
   height: 2px;
   min-width: 12px;
   max-width: 40px;
-  background: var(--cc-border-subtle);
-  transition: background var(--cc-duration-normal) var(--cc-ease-out);
+  background-color: var(--cc-border-subtle);
+  transition:
+    background-color var(--cc-duration-slow) var(--cc-ease-out),
+    box-shadow var(--cc-duration-slow) var(--cc-ease-out),
+    height var(--cc-duration-slow) var(--cc-ease-out);
 }
 
 .cc-step-indicator__connector--completed {
-  background: linear-gradient(90deg, var(--cc-accent-gold), var(--cc-accent-bronze));
+  height: 3px;
+  background-color: var(--cc-accent-gold);
+  background-image: linear-gradient(90deg, var(--cc-accent-gold), var(--cc-accent-bronze));
+  box-shadow: 0 0 6px rgba(212, 175, 55, 0.4), 0 0 12px rgba(212, 175, 55, 0.2);
 }
 
 /* Compact step indicator for narrow windows */
 @container cc-wizard (max-width: 500px) {
   .cc-step-indicator__step {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
   }
 
   .cc-step-indicator__icon {
@@ -178,6 +210,24 @@
   padding: var(--cc-space-md) var(--cc-space-lg);
 }
 
+.cc-step-header--enhanced {
+  border-bottom: 1px solid var(--cc-border-subtle);
+  padding-bottom: var(--cc-space-md);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, transparent 100%);
+  position: relative;
+}
+
+/* Decorative gold accent line under enhanced headers */
+.cc-step-header--enhanced::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: var(--cc-space-lg);
+  right: var(--cc-space-lg);
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(200, 167, 93, 0.3) 30%, rgba(200, 167, 93, 0.3) 70%, transparent 100%);
+}
+
 .cc-step-header__icon {
   font-size: var(--cc-text-xl, 1.35rem);
   color: var(--cc-accent-bronze);
@@ -195,11 +245,12 @@
 }
 
 .cc-step-header__title {
-  font-size: var(--cc-text-xl, 1.35rem);
+  font-size: var(--cc-text-lg);
   font-weight: 700;
   color: var(--cc-text-primary);
   margin: 0;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .cc-step-header__subtitle {
@@ -313,8 +364,11 @@
   align-items: center;
   gap: var(--cc-space-md);
   padding: var(--cc-space-md) var(--cc-space-lg);
-  background: var(--cc-bg-glass);
-  border-top: 1px solid var(--cc-border-subtle);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, var(--cc-bg-glass) 100%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
 }
 
 .cc-navigation__status {
@@ -324,7 +378,7 @@
   color: var(--cc-text-secondary);
   font-style: italic;
   opacity: 0.85;
-  min-height: 1em;
+  min-height: 2.5em;
 }
 
 .cc-nav-btn {
@@ -376,22 +430,28 @@
   box-shadow: 0 0 8px rgba(200, 167, 93, 0.1);
 }
 
-/* Create Character button — gold accent */
+/* Create Character button — legendary gold CTA */
 .cc-nav-btn--create {
   border-color: var(--cc-accent-gold);
   background: linear-gradient(
     135deg,
-    rgba(212, 175, 55, 0.15) 0%,
-    rgba(200, 167, 93, 0.06) 100%
+    rgba(212, 175, 55, 0.30) 0%,
+    rgba(200, 167, 93, 0.18) 50%,
+    rgba(212, 175, 55, 0.12) 100%
   );
   color: var(--cc-accent-gold);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: var(--cc-text-sm);
 }
 
 .cc-nav-btn--create:not(:disabled) {
   box-shadow:
-    0 0 12px rgba(212, 175, 55, 0.15),
-    inset 0 0 8px rgba(212, 175, 55, 0.05);
+    0 0 16px rgba(212, 175, 55, 0.25),
+    0 0 32px rgba(212, 175, 55, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 12px rgba(212, 175, 55, 0.08);
 }
 
 /* Hover — fine pointer only */
@@ -411,9 +471,12 @@
   }
 
   .cc-nav-btn--create:not(:disabled):hover {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.40) 0%, rgba(200, 167, 93, 0.25) 100%);
     box-shadow:
-      0 0 16px rgba(212, 175, 55, 0.25),
-      inset 0 0 12px rgba(212, 175, 55, 0.08);
+      0 0 24px rgba(212, 175, 55, 0.4),
+      0 0 48px rgba(212, 175, 55, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 0 16px rgba(212, 175, 55, 0.10);
   }
 }
 
@@ -494,12 +557,6 @@
 }
 
 /* In kiosk, step indicator icons are larger */
-.fth-kiosk .cc-step-indicator__step {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-}
-
 .fth-kiosk .cc-step-indicator__icon {
   font-size: var(--cc-text-md);
 }

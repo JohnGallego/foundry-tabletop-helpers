@@ -17,6 +17,8 @@
   --cc-accent-gold: #d4af37;
   --cc-accent-crimson: #8b1e2d;
   --cc-accent-emerald: #2d6b4f;
+  --cc-accent-arcane: #6b4fa0;
+  --cc-accent-frost: #4a8fa8;
 
   /* Text */
   --cc-text-primary: #e8e2d6;
@@ -29,14 +31,18 @@
   --cc-border-glow: rgba(200, 167, 93, 0.4);
 
   /* Type Scale */
-  --cc-text-2xs: 0.6rem;
-  --cc-text-xs: 0.65rem;
-  --cc-text-sm: 0.75rem;
-  --cc-text-base: 0.85rem;
+  --cc-text-2xs: 0.65rem;
+  --cc-text-xs: 0.7rem;
+  --cc-text-sm: 0.8rem;
+  --cc-text-base: 0.875rem;
   --cc-text-md: 1rem;
   --cc-text-lg: 1.1rem;
   --cc-text-xl: 1.25rem;
   --cc-text-2xl: 1.75rem;
+  --cc-text-3xl: 2.4rem;
+
+  /* Effects */
+  --cc-focus-ring: 0 0 0 2px rgba(200, 167, 93, 0.15), 0 0 8px rgba(200, 167, 93, 0.2);
 
   /* Spacing */
   --cc-space-2xs: 2px;

@@ -11,7 +11,8 @@
          data-card-uuid="{{uuid}}"
          role="button"
          tabindex="0"
-         aria-selected="{{selected}}">
+         aria-selected="{{selected}}"
+         style="--cc-card-index: {{@index}}">
       <div class="cc-select-card__img-wrap">
         <img class="cc-select-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
       </div>
@@ -37,7 +38,11 @@
         <span class="cc-card-detail__source">{{selectedEntry.packLabel}}</span>
       </div>
     </div>
-    <p class="cc-card-detail__hint">Full description will be available in a future update.</p>
+    {{#if selectedEntry.description}}
+    <div class="cc-card-detail__description">{{{selectedEntry.description}}}</div>
+    {{else}}
+    <p class="cc-card-detail__hint">No description available.</p>
+    {{/if}}
   </div>
   {{/if}}
 
