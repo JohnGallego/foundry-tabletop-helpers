@@ -16,7 +16,7 @@ export function buildPortraitPrompt(state: WizardState, description?: string): s
   const parts: string[] = [];
 
   // Character identity
-  const race = sel.race?.name;
+  const race = sel.species?.name;
   const className = sel.class?.name;
   if (race && className) {
     parts.push(`A ${race} ${className}`);
