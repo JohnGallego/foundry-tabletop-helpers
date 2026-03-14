@@ -20,8 +20,9 @@ import { getThumbCache } from "./asset-manager-thumb-cache";
 import { getBrowseCache } from "./asset-manager-browse-cache";
 import { extractMetadata, buildPreviewHTML, isConvertible, formatBytes, type FileMetadata } from "./asset-manager-preview";
 import { showContextMenu, dismissContextMenu, startLongPress } from "./asset-manager-context-menu";
-import { checkOptimizerServer, isOptimizerConfigured, getServerThumbUrl, serverDeleteFile, serverDeleteFolder, getThumbCacheStats, invalidateThumbStats } from "./asset-manager-optimizer-client";
+import { checkOptimizerServer, isOptimizerConfigured, getServerThumbUrl, serverDeleteFile, serverDeleteFolder, serverCreateFolder, getThumbCacheStats, invalidateThumbStats } from "./asset-manager-optimizer-client";
 import { UploadManager, buildUploadQueueHTML, batchOptimize, type OptPreset, type UploadQueueItem } from "./asset-manager-upload";
+import { showUploadConfirmDialog } from "./asset-manager-upload-dialog";
 import { getMetadataStore, type MetadataSnapshot } from "./asset-manager-metadata";
 import {
   type AssetEntry,
@@ -150,7 +151,7 @@ export function registerAssetManagerPicker(): void {
     /** Upload manager instance. */
     _amUploader: UploadManager | null = null;
     /** Current upload preset. */
-    _amUploadPreset: OptPreset = "auto";
+    // _amUploadPreset removed — dialog handles preset selection
     /** Drag counter for nested dragenter/dragleave. */
     _amDragCounter = 0;
     /** Active smart collection (or "all" for normal browse). */
@@ -504,6 +505,9 @@ export function registerAssetManagerPicker(): void {
             <button class="am-batch-btn" type="button" title="Batch optimize images in this folder">
               <i class="fa-solid fa-wand-magic-sparkles"></i>
             </button>
+            <button class="am-create-folder-btn" type="button" title="Create folder">
+              <i class="fa-solid fa-folder-plus"></i>
+            </button>
             <button class="am-upload-btn" type="button" title="Upload files">
               <i class="fa-solid fa-plus"></i>
             </button>
@@ -632,6 +636,9 @@ export function registerAssetManagerPicker(): void {
             </button>
             <button class="am-batch-btn" type="button" title="Batch optimize images in this folder">
               <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </button>
+            <button class="am-create-folder-btn" type="button" title="Create folder">
+              <i class="fa-solid fa-folder-plus"></i>
             </button>
             <button class="am-upload-btn" type="button" title="Upload files">
               <i class="fa-solid fa-plus"></i>
@@ -961,7 +968,6 @@ export function registerAssetManagerPicker(): void {
       if (this._amImgObserver) this._amImgObserver.disconnect();
       if (this._amMutObserver) this._amMutObserver.disconnect();
 
-      const thumbSize = DENSITY_SIZES[density];
       const cache = getThumbCache();
       const useServer = isOptimizerConfigured();
 
@@ -987,7 +993,7 @@ export function registerAssetManagerPicker(): void {
             }
 
             // Fallback: client-side thumb cache via Web Worker + IndexedDB
-            cache.getThumbUrl(src, thumbSize).then((thumbUrl) => {
+            cache.getThumbUrl(src, 256).then((thumbUrl) => {
               if (thumbUrl) img.src = thumbUrl;
               else img.src = src;
               img.decode().catch(() => { /* ignore */ });
@@ -1262,6 +1268,12 @@ export function registerAssetManagerPicker(): void {
         });
       }
 
+      // Create folder button
+      const createFolderBtn = root.querySelector<HTMLElement>(".am-create-folder-btn");
+      if (createFolderBtn) {
+        createFolderBtn.addEventListener("click", () => this._amPromptCreateFolder(root));
+      }
+
       // Batch optimize button
       const batchBtn = root.querySelector<HTMLElement>(".am-batch-btn");
       if (batchBtn) {
@@ -1310,19 +1322,7 @@ export function registerAssetManagerPicker(): void {
         }
       });
 
-      // Preset selector buttons (delegated, inside upload queue)
-      root.addEventListener("click", (e) => {
-        const target = e.target as HTMLElement;
-        const presetBtn = target.closest<HTMLElement>("[data-am-preset]");
-        if (presetBtn) {
-          const preset = presetBtn.dataset.amPreset as OptPreset;
-          if (preset) {
-            this._amUploadPreset = preset;
-            root.querySelectorAll(".am-preset-btn").forEach((b) => b.classList.remove("am-active"));
-            presetBtn.classList.add("am-active");
-          }
-        }
-      });
+      // (Preset selector removed — handled by upload confirmation dialog)
 
       // Sidebar toggle
       root.querySelector(".am-sidebar-toggle")?.addEventListener("click", () => {
@@ -1912,22 +1912,19 @@ export function registerAssetManagerPicker(): void {
     /* ── Upload Handling ──────────────────────────────────────── */
 
     /** Handle file upload (from button or drag-and-drop). */
-    _amHandleUpload(files: File[], root: HTMLElement): void {
+    async _amHandleUpload(files: File[], root: HTMLElement): Promise<void> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const self = this as any;
-      const source = self.activeSource ?? "data";
       const target = self.request || self.target || "";
 
-      // Read preset from settings or use current selection
-      try {
-        const game = getGame();
-        const settingsPreset = game?.settings?.get?.(MOD, AM_SETTINGS.DEFAULT_PRESET) as OptPreset | undefined;
-        const optimizeEnabled = game?.settings?.get?.(MOD, AM_SETTINGS.OPTIMIZE_ON_UPLOAD) as boolean | undefined;
-        if (settingsPreset && this._amUploadPreset === "auto") this._amUploadPreset = settingsPreset;
-        if (optimizeEnabled === false) this._amUploadPreset = "none";
-      } catch { /* use current preset */ }
+      // Show confirmation dialog — returns null if cancelled
+      const result = await showUploadConfirmDialog(files, target);
+      if (!result) return;
 
-      // Create UploadManager if needed
+      // Create UploadManager if needed — note: the uploadFn and onComplete
+      // callbacks read source/target FRESH from `this` on each call, not from
+      // the outer closure. This prevents stale paths when the user navigates
+      // between folders while the UploadManager persists.
       if (!this._amUploader) {
         this._amUploader = new UploadManager(
           // onUpdate — re-render the queue panel
@@ -1938,29 +1935,114 @@ export function registerAssetManagerPicker(): void {
               queueEl.classList.toggle("am-uq-visible", queue.length > 0);
             }
           },
-          // uploadFn — use Foundry's FilePicker.upload() (suppress per-file notifications)
+          // uploadFn — read source/target fresh each call
           async (file: File, name: string): Promise<string> => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const s = this as any;
+            const curSource = s.activeSource ?? "data";
+            const curTarget = this._amCurrentPath || s.request || s.target || "";
             const restore = suppressInfoNotifications();
             try {
-              const response = await BaseFilePicker.upload(source, target, new File([file], name, { type: file.type }), {});
+              Log.info(`Upload: Foundry upload starting — source="${curSource}", target="${curTarget}", file="${name}" (${file.size} bytes)`);
+              const uploadStart = performance.now();
+              const response = await BaseFilePicker.upload(curSource, curTarget, new File([file], name, { type: file.type }), {});
+              Log.info(`Upload: Foundry upload complete (${Math.round(performance.now() - uploadStart)}ms)`, response);
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               return (response as any)?.path ?? "";
+            } catch (err) {
+              Log.warn(`Upload: Foundry upload THREW`, err);
+              throw err;
             } finally {
               restore();
             }
           },
-          // onComplete — invalidate browse cache and refresh
+          // onComplete — read source/target fresh
           () => {
-            getBrowseCache().invalidate(source, target);
-            this._amBrowse(target);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const s = this as any;
+            const curSource = s.activeSource ?? "data";
+            const curTarget = this._amCurrentPath || s.request || s.target || "";
+            getBrowseCache().invalidate(curSource, curTarget);
+            this._amBrowse(curTarget);
           },
         );
       }
 
-      this._amUploader.enqueue(files, this._amUploadPreset);
+      this._amUploader.enqueueWithOptions(result);
     }
 
     /** Batch optimize all images in the current directory. */
+    /** Prompt for a folder name, then create it via the optimizer server. */
+    async _amPromptCreateFolder(root: HTMLElement): Promise<void> {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const self = this as any;
+      const source = self.activeSource ?? "data";
+      const target = this._amCurrentPath || "";
+
+      // Use Foundry's Dialog API for the prompt
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const DialogClass = (globalThis as any).Dialog;
+      if (!DialogClass) return;
+
+      const content = `
+        <form class="am-create-folder-form">
+          <div style="margin-bottom: 8px;">
+            <label style="display:block; margin-bottom: 4px; font-weight: 600;">Folder Name</label>
+            <input type="text" name="folderName" placeholder="New Folder"
+                   style="width: 100%; padding: 6px 8px;" autofocus />
+          </div>
+          <p class="notes" style="opacity: 0.7; font-size: 0.85em;">
+            Will be created in: <code>${target || "/"}</code>
+          </p>
+        </form>
+      `;
+
+      new DialogClass({
+        title: "Create Folder",
+        content,
+        buttons: {
+          create: {
+            icon: '<i class="fa-solid fa-folder-plus"></i>',
+            label: "Create",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            callback: async (html: any) => {
+              const input = html[0]?.querySelector?.('input[name="folderName"]')
+                ?? html.querySelector?.('input[name="folderName"]');
+              const name = (input?.value ?? "").trim();
+              if (!name) return;
+
+              // Validate name — no slashes, no dots-only, no .fth- prefix
+              if (/[/\\]/.test(name) || name === "." || name === ".." || name.startsWith(".fth-")) {
+                Log.warn("Invalid folder name");
+                return;
+              }
+
+              const fullPath = target ? `${target}/${name}` : name;
+              const ok = await serverCreateFolder(fullPath);
+
+              if (ok) {
+                // Invalidate cache and refresh
+                getBrowseCache().invalidate(source, target);
+                this._amBrowse(target);
+
+                // Update status bar
+                const statusEl = root.querySelector<HTMLElement>(".am-status-text");
+                if (statusEl) statusEl.textContent = `Created folder: ${name}`;
+              } else {
+                const statusEl = root.querySelector<HTMLElement>(".am-status-text");
+                if (statusEl) statusEl.textContent = `Failed to create folder "${name}"`;
+              }
+            },
+          },
+          cancel: {
+            icon: '<i class="fa-solid fa-times"></i>',
+            label: "Cancel",
+          },
+        },
+        default: "create",
+      }).render(true);
+    }
+
     async _amBatchOptimize(root: HTMLElement): Promise<void> {
       if (this._amBatchRunning) return; // Already running
 

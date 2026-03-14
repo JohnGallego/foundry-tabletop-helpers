@@ -950,20 +950,21 @@
 
 /* ── Preview media ──────────────────────────────────────── */
 .am-preview-media {
-  width: 100%;
-  margin-bottom: 12px;
+  width: 256px;
+  height: 256px;
+  margin: 0 auto 12px;
   border-radius: 6px;
   overflow: hidden;
   background: #0a0c0f;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
+  flex-shrink: 0;
 }
 
 .am-preview-img {
   width: 100%;
-  max-height: 260px;
+  height: 100%;
   object-fit: contain;
   display: block;
 }
@@ -1899,4 +1900,276 @@
   .am-context-menu {
     animation: none;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   UPLOAD CONFIRMATION DIALOG
+   ═══════════════════════════════════════════════════════════ */
+
+.am-upload-dialog-window .dialog-content {
+  padding: 0;
+}
+
+.am-upload-dialog {
+  font-family: inherit;
+  color: #e8e2d6;
+  font-size: 0.85rem;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.am-ud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.am-ud-header strong {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #c8a75d;
+}
+
+.am-ud-header span {
+  font-size: 0.75rem;
+  color: #9a9488;
+}
+
+.am-ud-header small {
+  display: block;
+  font-size: 0.7rem;
+  color: #7a756c;
+  padding: 2px 14px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* ── Global Preset Bar ──────────────────────────────────── */
+
+.am-ud-global-bar {
+  display: flex;
+  gap: 4px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.am-ud-global {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  background: transparent;
+  color: #9a9488;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  min-height: 32px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .am-ud-global:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #e8e2d6;
+  }
+}
+
+.am-ud-global--active {
+  background: rgba(200, 167, 93, 0.12);
+  border-color: rgba(200, 167, 93, 0.3);
+  color: #c8a75d;
+}
+
+/* ── File List ──────────────────────────────────────────── */
+
+.am-ud-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 167, 93, 0.2) transparent;
+}
+
+.am-ud-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.am-ud-list::-webkit-scrollbar-thumb {
+  background: rgba(200, 167, 93, 0.2);
+  border-radius: 3px;
+}
+
+/* ── File Rows ──────────────────────────────────────────── */
+
+.am-ud-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.1s;
+  min-height: 36px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .am-ud-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.am-ud-name {
+  flex: 1;
+  font-size: 0.8rem;
+  color: #e8e2d6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.am-ud-size {
+  font-size: 0.7rem;
+  color: #9a9488;
+  flex-shrink: 0;
+  min-width: 50px;
+  text-align: right;
+}
+
+.am-ud-dims {
+  font-size: 0.65rem;
+  color: #7a756c;
+  flex-shrink: 0;
+  min-width: 55px;
+  text-align: right;
+}
+
+/* ── Preset Badges ──────────────────────────────────────── */
+
+.am-ud-preset {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #9a9488;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  text-transform: capitalize;
+  min-width: 50px;
+  text-align: center;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .am-ud-preset:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.am-ud-preset--token   { background: rgba(45, 107, 79, 0.15); border-color: rgba(45, 107, 79, 0.3); color: #4a9; }
+.am-ud-preset--portrait { background: rgba(74, 143, 168, 0.15); border-color: rgba(74, 143, 168, 0.3); color: #7ec8e3; }
+.am-ud-preset--map     { background: rgba(107, 79, 160, 0.15); border-color: rgba(107, 79, 160, 0.3); color: #a88fd4; }
+.am-ud-preset--icon    { background: rgba(200, 167, 93, 0.15); border-color: rgba(200, 167, 93, 0.3); color: #c8a75d; }
+.am-ud-preset--none    { background: transparent; border-color: rgba(255, 255, 255, 0.06); color: #6a655e; }
+.am-ud-preset--custom  { background: rgba(200, 140, 50, 0.15); border-color: rgba(200, 140, 50, 0.3); color: #d4a045; }
+.am-ud-preset--audio   { background: rgba(45, 107, 79, 0.12); border-color: rgba(45, 107, 79, 0.25); color: #5b9; }
+
+.am-ud-preset--disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ── Gear Icon ──────────────────────────────────────────── */
+
+.am-ud-gear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #9a9488;
+  font-size: 0.7rem;
+  cursor: pointer;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .am-ud-gear:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #c8a75d;
+  }
+}
+
+/* ── Custom Settings Panel ──────────────────────────────── */
+
+.am-ud-custom-panel {
+  padding: 8px 14px 8px 32px;
+  background: rgba(200, 167, 93, 0.03);
+  border-bottom: 1px solid rgba(200, 167, 93, 0.1);
+  animation: am-ud-expand 0.15s ease-out;
+}
+
+@keyframes am-ud-expand {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.am-ud-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.am-ud-custom-row:last-child {
+  margin-bottom: 0;
+}
+
+.am-ud-custom-row label {
+  font-size: 0.7rem;
+  color: #9a9488;
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.am-ud-custom-row input[type="range"] {
+  flex: 1;
+  accent-color: #c8a75d;
+  height: 4px;
+}
+
+.am-ud-custom-row input[type="number"] {
+  width: 80px;
+  padding: 3px 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: #e8e2d6;
+  font-size: 0.75rem;
+}
+
+.am-ud-custom-row input[type="number"]:focus {
+  outline: none;
+  border-color: #c8a75d;
+  box-shadow: 0 0 0 2px rgba(200, 167, 93, 0.15), 0 0 8px rgba(200, 167, 93, 0.2);
+}
+
+.am-ud-custom-row span {
+  font-size: 0.7rem;
+  color: #c8a75d;
+  font-weight: 600;
+  width: 35px;
+  text-align: right;
 }

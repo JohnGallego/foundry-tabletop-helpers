@@ -131,19 +131,25 @@ export async function serverOptimizeImage(
     if (options.quality) form.append("quality", String(options.quality));
     if (options.format) form.append("format", options.format);
 
+    const fetchStart = performance.now();
     const res = await fetch(`${config.url}/optimize/image`, {
       method: "POST",
       headers: { Authorization: `Bearer ${config.token}` },
       body: form,
       signal: AbortSignal.timeout(30_000),
     });
+    const fetchMs = Math.round(performance.now() - fetchStart);
 
     if (!res.ok) {
-      Log.warn(`Optimizer server image error: ${res.status}`);
+      Log.warn(`Optimizer server image error: ${res.status} (${fetchMs}ms)`);
       return null;
     }
 
+    const blobStart = performance.now();
     const blob = await res.blob();
+    const blobMs = Math.round(performance.now() - blobStart);
+    Log.info(`Optimizer: image response received — fetch ${fetchMs}ms, blob read ${blobMs}ms, size ${blob.size}`);
+
     return {
       blob,
       originalSize: parseInt(res.headers.get("X-Original-Size") ?? "0", 10),
@@ -303,6 +309,38 @@ export async function serverDeleteFolder(folderPath: string): Promise<boolean> {
     return true;
   } catch (err) {
     Log.debug("Optimizer server folder delete request failed", err);
+    return false;
+  }
+}
+
+/**
+ * Create a folder via the optimizer server.
+ * Returns true on success, false on failure (caller should show error).
+ */
+export async function serverCreateFolder(folderPath: string): Promise<boolean> {
+  const config = getConfig();
+  if (!config) return false;
+
+  try {
+    const res = await fetch(`${config.url}/mkdir`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ path: folderPath }),
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+      Log.warn(`Optimizer server mkdir error: ${res.status}`, body);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    Log.debug("Optimizer server mkdir request failed", err);
     return false;
   }
 }
