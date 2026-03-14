@@ -32,6 +32,7 @@ import {
   allowMulticlass,
   getEquipmentMethod,
   getLevel1HpMethod,
+  allowCustomBackgrounds,
   CC_SETTINGS,
 } from "../character-creator-settings";
 import { setSetting } from "../../types";
@@ -300,6 +301,7 @@ export function buildGMConfigAppClass(): void {
         allowMulticlass: allowMulticlass(),
         equipmentMethod: getEquipmentMethod(),
         level1HpMethod: getLevel1HpMethod(),
+        allowCustomBackgrounds: allowCustomBackgrounds(),
       };
     }
 
@@ -417,6 +419,9 @@ export function buildGMConfigAppClass(): void {
 
       const hpMethod = (form.querySelector('[name="level1HpMethod"]:checked') as HTMLInputElement)?.value ?? "max";
       await setSetting(MOD, CC_SETTINGS.LEVEL1_HP_METHOD, hpMethod);
+
+      const customBg = (form.querySelector('[name="allowCustomBackgrounds"]') as HTMLInputElement)?.checked ?? false;
+      await setSetting(MOD, CC_SETTINGS.ALLOW_CUSTOM_BACKGROUNDS, customBg);
 
       getUI()?.notifications?.info("Character Creator configuration saved.");
     }

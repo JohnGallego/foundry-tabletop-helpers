@@ -21,6 +21,7 @@ import {
   allowMulticlass,
   getEquipmentMethod,
   getLevel1HpMethod,
+  allowCustomBackgrounds,
 } from "../character-creator-settings";
 
 /* ── Runtime Foundry Class Resolution ────────────────────── */
@@ -121,6 +122,7 @@ export function buildCharacterCreatorAppClass(): void {
         allowMulticlass: allowMulticlass(),
         equipmentMethod: getEquipmentMethod(),
         level1HpMethod: getLevel1HpMethod(),
+        allowCustomBackgrounds: allowCustomBackgrounds(),
       };
     }
 

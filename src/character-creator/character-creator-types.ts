@@ -87,7 +87,7 @@ export interface GMConfig {
   equipmentMethod: EquipmentMethod;
   level1HpMethod: HpMethod;
   /** Whether custom/homebrew backgrounds are permitted. Added for 2024 rules. */
-  allowCustomBackgrounds?: boolean;
+  allowCustomBackgrounds: boolean;
 }
 
 /* ── GM Config App ViewModels ────────────────────────────── */
@@ -149,6 +149,7 @@ export interface RulesConfigViewModel {
   allowMulticlass: boolean;
   equipmentMethod: EquipmentMethod;
   level1HpMethod: HpMethod;
+  allowCustomBackgrounds: boolean;
 }
 
 /** Full GM Config App context. */
