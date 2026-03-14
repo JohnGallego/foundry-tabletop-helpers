@@ -10,8 +10,7 @@ import { MOD } from "../../logger";
 import type { WizardStepDefinition, WizardState } from "../character-creator-types";
 import { createAbilitiesStep } from "../steps/step-abilities";
 import { createSpeciesStep } from "../steps/step-species";
-// TODO: createOriginFeatStep will be added in Task 6
-// import { createOriginFeatStep } from "../steps/step-origin-feat";
+import { createOriginFeatStep } from "../steps/step-origin-feat";
 import { createBackgroundStep } from "../steps/step-background";
 import { createClassStep } from "../steps/step-class";
 import { createSkillsStep } from "../steps/step-skills";
@@ -143,8 +142,7 @@ export function registerAllSteps(): void {
   // Core steps
   registerStep(createBackgroundStep());
 
-  // TODO: Origin Feat step (Task 6)
-  // registerStep(createOriginFeatStep());
+  registerStep(createOriginFeatStep());
 
   registerStep(createClassStep());
   registerStep(createSubclassStep());

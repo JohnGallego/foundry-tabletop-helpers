@@ -793,6 +793,97 @@
 }
 
 /* ============================================================
+   ORIGIN FEAT STEP
+   ============================================================ */
+
+.cc-origin-feat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cc-space-lg);
+}
+
+.cc-origin-feat__card {
+  display: flex;
+  gap: var(--cc-space-lg);
+  padding: var(--cc-space-lg);
+  background: var(--cc-bg-glass);
+  border: 1px solid var(--cc-border-accent);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    inset 0 0 12px rgba(200, 167, 93, 0.03);
+  backdrop-filter: blur(8px);
+}
+
+.cc-origin-feat__img {
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--cc-border-subtle);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cc-origin-feat__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cc-origin-feat__name {
+  margin: 0 0 var(--cc-space-sm) 0;
+  font-size: var(--cc-text-lg);
+  font-weight: 600;
+  color: var(--cc-accent-bronze);
+}
+
+.cc-origin-feat__description {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  line-height: 1.6;
+}
+
+.cc-origin-feat__description p {
+  margin: 0 0 var(--cc-space-sm) 0;
+}
+
+.cc-origin-feat__description p:last-child {
+  margin-bottom: 0;
+}
+
+.cc-origin-feat__custom-note {
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-sm);
+  padding: var(--cc-space-sm) var(--cc-space-md);
+  background: var(--cc-bg-glass);
+  border: 1px solid var(--cc-border-subtle);
+  border-radius: 6px;
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cc-origin-feat__custom-note i {
+  color: var(--cc-accent-bronze);
+  flex-shrink: 0;
+}
+
+@container cc-wizard (max-width: 500px) {
+  .cc-origin-feat__card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .cc-origin-feat__img {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+/* ============================================================
    PLACEHOLDER STEP (for steps not yet implemented)
    ============================================================ */
 

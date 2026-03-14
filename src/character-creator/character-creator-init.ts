@@ -55,6 +55,7 @@ export function registerCharacterCreatorHooks(): void {
     `modules/${MOD}/templates/character-creator/cc-step-abilities.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-card-select.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-background.hbs`,
+    `modules/${MOD}/templates/character-creator/cc-step-origin-feat.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-skills.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-feats.hbs`,
     `modules/${MOD}/templates/character-creator/cc-step-spells.hbs`,

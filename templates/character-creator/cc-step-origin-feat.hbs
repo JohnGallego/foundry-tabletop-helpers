@@ -1,0 +1,19 @@
+<div class="cc-origin-feat" data-step="originFeat">
+  <div class="cc-origin-feat__card">
+    {{#if featImg}}
+    <img class="cc-origin-feat__img" src="{{featImg}}" alt="{{featName}}">
+    {{/if}}
+    <div class="cc-origin-feat__info">
+      <h3 class="cc-origin-feat__name">{{featName}}</h3>
+      {{#if featDescription}}
+      <div class="cc-origin-feat__description">{{{featDescription}}}</div>
+      {{/if}}
+    </div>
+  </div>
+  {{#if isCustomMode}}
+  <p class="cc-origin-feat__custom-note">
+    <i class="fa-solid fa-info-circle"></i>
+    Your GM allows custom backgrounds. Custom feat selection will be available in a future update.
+  </p>
+  {{/if}}
+</div>
