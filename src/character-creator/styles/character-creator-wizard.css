@@ -179,16 +179,112 @@
 }
 
 .cc-step-header__icon {
-  font-size: var(--cc-text-lg);
+  font-size: var(--cc-text-xl, 1.35rem);
   color: var(--cc-accent-bronze);
 }
 
+.cc-step-header__icon--lg {
+  font-size: 2rem;
+  opacity: 0.85;
+  align-self: center;
+}
+
+.cc-step-header__text {
+  flex: 1;
+  min-width: 0;
+}
+
 .cc-step-header__title {
-  font-size: var(--cc-text-lg);
-  font-weight: 600;
+  font-size: var(--cc-text-xl, 1.35rem);
+  font-weight: 700;
   color: var(--cc-text-primary);
   margin: 0;
   letter-spacing: 0.02em;
+}
+
+.cc-step-header__subtitle {
+  font-size: var(--cc-text-md, 1rem);
+  font-weight: 500;
+  color: var(--cc-text-secondary);
+  opacity: 0.8;
+}
+
+.cc-step-header__description {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  margin: var(--cc-space-2xs) 0 0 0;
+  line-height: 1.4;
+}
+
+/* ── Selection Preview Badge ─────────────────────────────── */
+
+.cc-selection-preview {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-sm);
+  padding: var(--cc-space-xs) var(--cc-space-sm);
+  border-radius: 10px;
+  border: 1px solid var(--cc-border-accent);
+  background: var(--cc-bg-glass);
+  cursor: pointer;
+  max-width: 280px;
+  overflow: hidden;
+  transition: box-shadow var(--cc-duration-fast) var(--cc-ease-out),
+              opacity var(--cc-duration-normal) var(--cc-ease-out),
+              transform var(--cc-duration-normal) var(--cc-ease-out);
+}
+
+.cc-selection-preview--empty {
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+
+.cc-selection-preview__img {
+  width: 48px;
+  height: 48px;
+  border-radius: 7px;
+  object-fit: cover;
+  border: 1px solid var(--cc-border-subtle);
+  flex-shrink: 0;
+}
+
+.cc-selection-preview__info {
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition: max-width var(--cc-duration-normal) var(--cc-ease-out),
+              opacity var(--cc-duration-fast) var(--cc-ease-out);
+  white-space: nowrap;
+}
+
+.cc-selection-preview:hover .cc-selection-preview__info,
+.cc-selection-preview:focus-within .cc-selection-preview__info,
+.cc-selection-preview.cc-selection-preview--expanded .cc-selection-preview__info {
+  max-width: 180px;
+  opacity: 1;
+}
+
+.cc-selection-preview:hover,
+.cc-selection-preview:focus-within,
+.cc-selection-preview.cc-selection-preview--expanded {
+  box-shadow: 0 0 16px rgba(200, 167, 93, 0.2);
+}
+
+.cc-selection-preview__name {
+  font-size: var(--cc-text-md);
+  font-weight: 600;
+  color: var(--cc-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-selection-preview__source {
+  font-size: var(--cc-text-xs);
+  color: var(--cc-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Step Content ────────────────────────────────────────── */
@@ -221,8 +317,14 @@
   border-top: 1px solid var(--cc-border-subtle);
 }
 
-.cc-navigation__spacer {
+.cc-navigation__status {
   flex: 1;
+  text-align: center;
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  font-style: italic;
+  opacity: 0.85;
+  min-height: 1em;
 }
 
 .cc-nav-btn {

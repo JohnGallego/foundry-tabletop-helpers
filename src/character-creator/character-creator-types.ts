@@ -33,6 +33,8 @@ export interface CreatorIndexEntry {
   packLabel: string;
   /** Creator content category */
   type: CreatorContentType;
+  /** The actual dnd5e item type from the compendium (e.g., "race", "class", "feat") */
+  itemType?: string;
   /** System identifier (e.g., "fighter", "elf") */
   identifier?: string;
   /** For subclasses: parent class identifier */

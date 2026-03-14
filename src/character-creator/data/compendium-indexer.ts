@@ -32,6 +32,20 @@ const SOURCE_KEY_TO_TYPE: Record<keyof PackSourceConfig, CreatorContentType> = {
   items: "item",
 };
 
+/**
+ * Maps our content types to the dnd5e item types that qualify.
+ * Used to filter out unrelated items from mixed-content packs.
+ */
+const ACCEPTED_ITEM_TYPES: Record<CreatorContentType, Set<string>> = {
+  class: new Set(["class"]),
+  subclass: new Set(["subclass"]),
+  race: new Set(["race"]),
+  background: new Set(["background"]),
+  feat: new Set(["feat"]),
+  spell: new Set(["spell"]),
+  item: new Set(["weapon", "equipment", "consumable", "tool", "loot"]),
+};
+
 export class CompendiumIndexer {
   /** Cached index entries keyed by pack collection ID. */
   private indexCache = new Map<string, CreatorIndexEntry[]>();
@@ -118,11 +132,16 @@ export class CompendiumIndexer {
     if (!sourceKey) return [];
 
     const packIds = sources[sourceKey] ?? [];
+    const accepted = ACCEPTED_ITEM_TYPES[type];
     const entries: CreatorIndexEntry[] = [];
 
     for (const packId of packIds) {
       const cached = this.indexCache.get(packId);
-      if (cached) entries.push(...cached);
+      if (!cached) continue;
+      for (const entry of cached) {
+        if (accepted && entry.itemType && !accepted.has(entry.itemType)) continue;
+        entries.push(entry);
+      }
     }
 
     return entries;
@@ -189,6 +208,9 @@ export class CompendiumIndexer {
     const name = raw.name;
     if (!name) return null;
 
+    // Store the actual dnd5e item type — filtering happens at query time
+    const itemType = (raw.type as string) ?? "";
+
     const uuid = raw.uuid ?? `Compendium.${packId}.Item.${raw._id}`;
     const img = (raw.img as string) ?? "icons/svg/mystery-man.svg";
 
@@ -207,6 +229,7 @@ export class CompendiumIndexer {
       packId,
       packLabel,
       type,
+      itemType: itemType || undefined,
       ...(sysIdentifier !== undefined && { identifier: sysIdentifier }),
       ...(sysClassIdentifier !== undefined && { classIdentifier: sysClassIdentifier }),
       ...(sysSpellLevel !== undefined && { spellLevel: sysSpellLevel }),
