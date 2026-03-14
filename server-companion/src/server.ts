@@ -9,6 +9,7 @@ import { registerAudioRoute } from "./routes/optimize-audio.js";
 import { registerVideoRoute } from "./routes/optimize-video.js";
 import { registerThumbnailRoute } from "./routes/thumbnail.js";
 import { registerDeleteRoute } from "./routes/delete-file.js";
+import { registerMkdirRoute } from "./routes/mkdir.js";
 import { registerThumbCacheRoute } from "./routes/thumb-cache.js";
 import { registerPortraitRoute } from "./routes/generate-portrait.js";
 
@@ -51,6 +52,7 @@ export async function createServer(config: Config) {
   await registerVideoRoute(app, config);
   await registerThumbnailRoute(app);
   await registerDeleteRoute(app, config.foundryDataPath);
+  await registerMkdirRoute(app, config.foundryDataPath);
   await registerThumbCacheRoute(app, config.foundryDataPath);
   await registerPortraitRoute(app, config);
 

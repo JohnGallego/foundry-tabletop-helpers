@@ -10,7 +10,10 @@ export async function registerImageRoute(app: FastifyInstance): Promise<void> {
       return;
     }
 
+    const bufferStart = Date.now();
     const buffer = await data.toBuffer();
+    const bufferMs = Date.now() - bufferStart;
+    app.log.info(`Image optimize: received ${buffer.length} bytes (buffer read ${bufferMs}ms)`);
     const fields = data.fields;
 
     // Parse preset or custom options
@@ -34,7 +37,10 @@ export async function registerImageRoute(app: FastifyInstance): Promise<void> {
     if (quality) config.quality = parseInt(quality, 10);
     if (format === "webp" || format === "avif" || format === "png") config.format = format;
 
+    const sharpStart = Date.now();
     const result = await optimizeImage(buffer, config);
+    const sharpMs = Date.now() - sharpStart;
+    app.log.info(`Image optimize: Sharp ${result.originalSize} → ${result.optimizedSize} bytes, ${result.width}x${result.height}, skipped=${result.skipped} (${sharpMs}ms)`);
 
     const mimeTypes: Record<string, string> = {
       webp: "image/webp",

@@ -20,7 +20,7 @@ import { registerInitiativeSettings, registerInitiativeHooks } from "./initiativ
 import { initKioskSetup, initKioskReady } from "./kiosk/kiosk-init";
 import { registerCombatSettings } from "./combat/combat-settings";
 import { registerCombatHooks, initCombatReady, buildCombatApi } from "./combat/combat-init";
-import { registerAssetManagerSettings, isAssetManagerEnabled } from "./asset-manager/asset-manager-settings";
+import { registerAssetManagerSettings, isAssetManagerEnabled, loadSavedPresets } from "./asset-manager/asset-manager-settings";
 import { registerAssetManagerPicker, openAssetManager } from "./asset-manager/asset-manager-picker";
 import {
   registerCharacterCreatorSettings,
@@ -107,6 +107,9 @@ getHooks()?.on?.("ready", () => {
 
   // Combat Command Center — ready-phase initialization
   initCombatReady();
+
+  // Asset Manager — load saved preset overrides
+  loadSavedPresets();
 
   // Character Creator — ready-phase initialization
   initCharacterCreatorReady();
