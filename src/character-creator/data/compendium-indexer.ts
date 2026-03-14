@@ -239,15 +239,34 @@ export class CompendiumIndexer {
     };
   }
 
+  /**
+   * Safely extract a value from an index entry using dot notation.
+   * Tries flat key first (Foundry V13 index style), then nested access.
+   */
+  private extractValue(raw: Record<string, unknown>, path: string): unknown {
+    // Flat key (Foundry index entries often use "system.level" as a literal key)
+    const flat = raw[path];
+    if (flat !== undefined) return flat;
+
+    // Nested access fallback
+    const parts = path.split(".");
+    let current: unknown = raw;
+    for (const part of parts) {
+      if (current == null || typeof current !== "object") return undefined;
+      current = (current as Record<string, unknown>)[part];
+    }
+    return current;
+  }
+
   /** Safely extract a string field from an index entry using dot notation. */
   private extractString(raw: Record<string, unknown>, path: string): string | undefined {
-    const val = raw[path];
+    const val = this.extractValue(raw, path);
     return typeof val === "string" ? val : undefined;
   }
 
   /** Safely extract a number field from an index entry using dot notation. */
   private extractNumber(raw: Record<string, unknown>, path: string): number | undefined {
-    const val = raw[path];
+    const val = this.extractValue(raw, path);
     return typeof val === "number" ? val : undefined;
   }
 }

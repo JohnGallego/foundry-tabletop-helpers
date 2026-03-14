@@ -89,9 +89,19 @@
   {{#unless hasSpells}}
   <div class="cc-empty-state">
     <i class="fa-solid fa-wand-sparkles"></i>
-    <p>No spells available for {{className}}. This class may not be a spellcaster, or check your GM configuration.</p>
+    <p>No spells found for {{className}}. Check your compendium source configuration.</p>
   </div>
   {{/unless}}
+  {{/unless}}
+
+  {{!-- Filter notice --}}
+  {{#unless usingClassFilter}}
+  {{#if hasSpells}}
+  <div class="cc-spells-notice">
+    <i class="fa-solid fa-circle-info"></i>
+    <span>Showing all available spells. Select spells appropriate for your {{className}}.</span>
+  </div>
+  {{/if}}
   {{/unless}}
 
   <div class="cc-spells-summary">

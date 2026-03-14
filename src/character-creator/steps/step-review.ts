@@ -269,12 +269,12 @@ export function createReviewStep(): WizardStepDefinition {
     },
 
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
-      // Character name input — setData without re-render on keystroke
+      // Character name input — save silently on keystroke (no re-render needed)
       const nameInput = el.querySelector("[data-character-name]") as HTMLInputElement | null;
       if (nameInput) {
         nameInput.addEventListener("input", () => {
           const current = (state.selections.review as Record<string, unknown>) ?? {};
-          callbacks.setData({ ...current, characterName: nameInput.value });
+          callbacks.setDataSilent({ ...current, characterName: nameInput.value });
         });
       }
 

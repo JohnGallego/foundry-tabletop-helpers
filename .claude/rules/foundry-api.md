@@ -4,7 +4,7 @@ paths:
   - "templates/**/*.hbs"
 ---
 
-# Foundry VTT V13 & dnd5e 4.x API Rules
+# Foundry VTT V13 & dnd5e 5.x API Rules
 
 Hard-won knowledge specific to this codebase. Each rule prevents a real debugging session.
 
@@ -40,7 +40,7 @@ Templates must be referenced as `modules/${MOD}/templates/...` at runtime. The `
 - `setup`: `game.user` IS available. Override pickers here.
 - `ready`: Everything available. Attach socket listeners, auto-open UIs, expose API.
 
-## dnd5e 4.x System
+## dnd5e 5.x System
 
 ### Activities model (dnd5e >= 4.0.0)
 

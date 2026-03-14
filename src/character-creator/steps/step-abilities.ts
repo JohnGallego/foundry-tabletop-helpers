@@ -237,7 +237,7 @@ export function createAbilitiesStep(): WizardStepDefinition {
         } as AbilityScoreState);
       });
 
-      // Point buy +/- buttons
+      // Point buy +/- buttons — patch score/modifier/budget display in-place
       el.querySelectorAll("[data-adjust]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const key = (btn as HTMLElement).dataset.ability as AbilityKey;
@@ -250,14 +250,16 @@ export function createAbilitiesStep(): WizardStepDefinition {
           // Check budget
           const newSpent = pointBuySpent(newScores);
           if (newSpent > POINT_BUY_BUDGET) return;
-          callbacks.setData({
-            ...current,
-            scores: newScores,
-          } as AbilityScoreState);
+          const newState = { ...current, scores: newScores } as AbilityScoreState;
+
+          // Patch DOM: update all ability cards (scores, modifiers, button states)
+          patchAbilitiesDOM(el, newState, state);
+
+          callbacks.setDataSilent(newState);
         });
       });
 
-      // Assignment dropdowns (4d6 and standard array)
+      // Assignment dropdowns (4d6 and standard array) — patch scores in-place
       el.querySelectorAll("[data-assign-ability]").forEach((select) => {
         select.addEventListener("change", () => {
           const key = (select as HTMLSelectElement).dataset.assignAbility as AbilityKey;
@@ -274,13 +276,118 @@ export function createAbilitiesStep(): WizardStepDefinition {
               newScores[k] = pool[assignedIdx];
             }
           }
-          callbacks.setData({
+          const newState = {
             ...current,
             assignments: newAssignments,
             scores: newScores,
-          } as AbilityScoreState);
+          } as AbilityScoreState;
+
+          // Patch DOM: update score displays and dropdown availability
+          patchAbilitiesDOM(el, newState, state);
+          patchAssignmentDropdowns(el, newAssignments, pool);
+
+          callbacks.setDataSilent(newState);
         });
       });
     },
   };
+}
+
+/* ── DOM Patching ────────────────────────────────────────── */
+
+/** Update ability score displays, modifiers, budget, and button states without re-render. */
+function patchAbilitiesDOM(
+  el: HTMLElement,
+  newState: AbilityScoreState,
+  wizardState: WizardState,
+): void {
+  const bgAsi = wizardState.selections.background?.asi?.assignments ?? {};
+
+  for (const key of ABILITY_KEYS) {
+    const value = newState.scores[key];
+    const backgroundBonus = bgAsi[key] ?? 0;
+    const total = value + backgroundBonus;
+    const mod = abilityModifier(total);
+
+    // Update score value
+    const scoreEl = el.querySelector<HTMLElement>(`[data-score="${key}"]`);
+    if (scoreEl) scoreEl.textContent = String(value);
+
+    // Update total (if background bonus shown separately)
+    const totalEl = el.querySelector<HTMLElement>(`[data-total="${key}"]`);
+    if (totalEl) totalEl.textContent = String(total);
+
+    // Update modifier
+    const modEl = el.querySelector<HTMLElement>(`[data-modifier="${key}"]`);
+    if (modEl) modEl.textContent = formatModifier(mod);
+
+    // Update +/- button states (point buy)
+    if (newState.method === "pointBuy") {
+      const spent = pointBuySpent(newState.scores);
+      const remaining = POINT_BUY_BUDGET - spent;
+
+      const incBtn = el.querySelector<HTMLButtonElement>(`[data-ability="${key}"][data-adjust="1"]`);
+      const decBtn = el.querySelector<HTMLButtonElement>(`[data-ability="${key}"][data-adjust="-1"]`);
+      if (incBtn) {
+        const nextCost = (POINT_BUY_COSTS[value + 1] ?? 99) - (POINT_BUY_COSTS[value] ?? 0);
+        incBtn.disabled = value >= POINT_BUY_MAX || nextCost > remaining;
+      }
+      if (decBtn) {
+        decBtn.disabled = value <= POINT_BUY_MIN;
+      }
+    }
+  }
+
+  // Update budget display (point buy)
+  if (newState.method === "pointBuy") {
+    const spent = pointBuySpent(newState.scores);
+    const remaining = POINT_BUY_BUDGET - spent;
+    const spentEl = el.querySelector<HTMLElement>("[data-points-spent]");
+    if (spentEl) spentEl.textContent = String(spent);
+    const remainEl = el.querySelector<HTMLElement>("[data-points-remaining]");
+    if (remainEl) remainEl.textContent = String(remaining);
+    const budgetEl = el.querySelector<HTMLElement>("[data-budget-indicator]");
+    if (budgetEl) {
+      budgetEl.classList.toggle("over", remaining < 0);
+      budgetEl.classList.toggle("low", remaining >= 0 && remaining <= 3);
+      budgetEl.classList.toggle("ok", remaining > 3);
+    }
+  }
+}
+
+/** Update assignment dropdown disabled states after an assignment change. */
+function patchAssignmentDropdowns(
+  el: HTMLElement,
+  assignments: Record<AbilityKey, number>,
+  pool: number[],
+): void {
+  const usedByAbility = new Map<string, number>();
+  for (const [key, idx] of Object.entries(assignments)) {
+    if (idx >= 0) usedByAbility.set(key, idx);
+  }
+
+  el.querySelectorAll<HTMLSelectElement>("[data-assign-ability]").forEach((select) => {
+    const key = select.dataset.assignAbility as AbilityKey;
+    const currentIdx = assignments[key];
+
+    select.querySelectorAll<HTMLOptionElement>("option").forEach((opt) => {
+      const optIdx = Number(opt.value);
+      if (isNaN(optIdx)) {
+        opt.disabled = false;
+        return;
+      }
+      // Disable if this pool index is used by another ability
+      const usedByOther = [...usedByAbility.entries()].some(
+        ([k, i]) => k !== key && i === optIdx,
+      );
+      opt.disabled = usedByOther;
+    });
+
+    // Update the displayed score for this ability
+    const scoreEl = el.querySelector<HTMLElement>(`[data-score="${key}"]`);
+    if (scoreEl) {
+      const value = currentIdx >= 0 && currentIdx < pool.length ? pool[currentIdx] : 0;
+      scoreEl.textContent = value > 0 ? String(value) : "\u2014";
+    }
+  });
 }

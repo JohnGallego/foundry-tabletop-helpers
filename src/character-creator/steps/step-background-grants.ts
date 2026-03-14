@@ -24,6 +24,20 @@ import {
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
+/** Total language choices = background choices + species choices. */
+function getTotalLanguageChoiceCount(state: WizardState): number {
+  const bgCount = state.selections.background?.grants?.languageChoiceCount ?? 0;
+  const speciesCount = state.selections.species?.languageChoiceCount ?? 0;
+  return bgCount + speciesCount;
+}
+
+/** All fixed languages from both background and species (deduplicated). */
+function getAllFixedLanguages(state: WizardState): string[] {
+  const bgFixed = state.selections.background?.grants?.languageGrants ?? [];
+  const speciesFixed = state.selections.species?.languageGrants ?? [];
+  return [...new Set([...bgFixed, ...speciesFixed])];
+}
+
 function skillLabel(key: string): string {
   return SKILLS[key]?.label ?? key;
 }
@@ -63,9 +77,10 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
         if (total !== grants.asiPoints) return false;
       }
 
-      // Languages must be fully chosen (if available)
-      if (grants.languageChoiceCount > 0) {
-        if (bg.languages.chosen.length < grants.languageChoiceCount) return false;
+      // Languages must be fully chosen (species + background combined)
+      const totalLangChoices = getTotalLanguageChoiceCount(state);
+      if (totalLangChoices > 0) {
+        if (bg.languages.chosen.length < totalLangChoices) return false;
       }
 
       return true;
@@ -87,9 +102,10 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
         }
       }
 
-      // Check languages
-      if (grants.languageChoiceCount > 0) {
-        const remaining = grants.languageChoiceCount - bg.languages.chosen.length;
+      // Check languages (species + background combined)
+      const totalLangChoices = getTotalLanguageChoiceCount(state);
+      if (totalLangChoices > 0) {
+        const remaining = totalLangChoices - bg.languages.chosen.length;
         if (remaining > 0) {
           return `Choose ${remaining} more language${remaining > 1 ? "s" : ""}`;
         }
@@ -129,13 +145,17 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
         return { key, label: ABILITY_LABELS[key], value, suggested, options };
       });
 
-      // Language slots
-      const fixedLangs = grants.languageGrants.map(langLabel);
+      // Language slots — combine species + background grants
+      const allFixed = getAllFixedLanguages(state);
+      const fixedLangs = allFixed.map(langLabel);
+      const fixedSet = new Set(allFixed);
+      const totalLangChoices = getTotalLanguageChoiceCount(state);
+
       const langSlots = [];
-      for (let i = 0; i < grants.languageChoiceCount; i++) {
+      for (let i = 0; i < totalLangChoices; i++) {
         const currentValue = bg.languages.chosen[i] ?? "";
         const options = STANDARD_LANGUAGES
-          .filter((lang) => !new Set(grants.languageGrants).has(lang.id))
+          .filter((lang) => !fixedSet.has(lang.id))
           .map((lang) => ({
             id: lang.id,
             label: lang.label,
@@ -163,7 +183,7 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
         asiComplete: totalUsed === grants.asiPoints,
 
         // Language picker
-        hasLanguages: grants.languageChoiceCount > 0 || grants.languageGrants.length > 0,
+        hasLanguages: totalLangChoices > 0 || allFixed.length > 0,
         fixedLanguages: fixedLangs,
         languageSlots: langSlots.length > 0 ? langSlots : null,
       };
@@ -173,7 +193,7 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
       const bg = state.selections.background;
       if (!bg?.grants) return;
 
-      // ASI dropdown handlers
+      // ASI dropdown handlers — patch counters and dropdown availability in-place
       el.querySelectorAll<HTMLSelectElement>("[data-asi-ability]").forEach((select) => {
         select.addEventListener("change", () => {
           if (!bg.grants) return;
@@ -201,16 +221,34 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
             bg.asi.assignments[ability] = newValue;
           }
 
-          // Update counter
+          // Patch DOM: counter
           const counter = el.querySelector("[data-asi-counter]");
           if (counter) counter.textContent = `${proposedTotal} / ${bg.grants.asiPoints}`;
 
-          // Re-render to update dropdown option availability
-          callbacks.setData(bg);
+          // Patch DOM: update +2 option availability on other dropdowns
+          const remaining = bg.grants.asiPoints - proposedTotal;
+          el.querySelectorAll<HTMLSelectElement>("[data-asi-ability]").forEach((otherSelect) => {
+            const otherAbility = otherSelect.dataset.asiAbility as AbilityKey;
+            const otherValue = bg.asi.assignments[otherAbility] ?? 0;
+            // Disable +2 option if there aren't enough remaining points
+            const opt2 = otherSelect.querySelector<HTMLOptionElement>('option[value="2"]');
+            if (opt2) {
+              const canGetTwo = otherValue === 2 || remaining >= (2 - otherValue);
+              opt2.disabled = !canGetTwo;
+            }
+          });
+
+          // Patch DOM: complete state visual
+          const completeEl = el.querySelector("[data-asi-complete]");
+          if (completeEl) {
+            completeEl.classList.toggle("cc-grants-complete", proposedTotal === bg.grants.asiPoints);
+          }
+
+          callbacks.setDataSilent(bg);
         });
       });
 
-      // Language dropdown handlers
+      // Language dropdown handlers — patch disabled states in-place
       el.querySelectorAll<HTMLSelectElement>("[data-lang-slot]").forEach((select) => {
         select.addEventListener("change", () => {
           if (!bg.grants) return;
@@ -222,7 +260,20 @@ export function createBackgroundGrantsStep(): WizardStepDefinition {
           chosen[slotIndex] = newValue;
           bg.languages.chosen = chosen.filter((v) => v !== "");
 
-          callbacks.setData(bg);
+          // Patch DOM: disable already-chosen languages in other dropdowns
+          const chosenSet = new Set(bg.languages.chosen);
+          el.querySelectorAll<HTMLSelectElement>("[data-lang-slot]").forEach((otherSelect) => {
+            const otherSlot = parseInt(otherSelect.dataset.langSlot ?? "0", 10);
+            const otherValue = otherSelect.value;
+            otherSelect.querySelectorAll<HTMLOptionElement>("option").forEach((opt) => {
+              if (!opt.value) return; // skip placeholder
+              opt.disabled = opt.value !== otherValue && chosenSet.has(opt.value);
+            });
+            // Preserve selection for this slot
+            if (otherSlot === slotIndex) otherSelect.value = newValue;
+          });
+
+          callbacks.setDataSilent(bg);
         });
       });
     },

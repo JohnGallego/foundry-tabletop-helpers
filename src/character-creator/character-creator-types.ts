@@ -204,6 +204,10 @@ export interface SpeciesSelection {
   img: string;
   /** Display-only summaries parsed from advancement (e.g., "Darkvision", "Fey Ancestry"). */
   traits?: string[];
+  /** Languages auto-granted by species (e.g., ["common"]). */
+  languageGrants?: string[];
+  /** Number of additional language choices from species. */
+  languageChoiceCount?: number;
 }
 
 /** What a background grants — parsed from advancement data. */
@@ -283,6 +287,12 @@ export interface ClassSelection {
   skillPool: string[];
   /** How many skills to pick (fallback 2). */
   skillCount: number;
+  /** Whether this class is a spellcaster. */
+  isSpellcaster: boolean;
+  /** Spellcasting ability key (e.g., "int", "wis", "cha"). Empty if not a caster. */
+  spellcastingAbility: string;
+  /** Spell slot progression: "full", "half", "third", "pact", or "". */
+  spellcastingProgression: string;
 }
 
 /** Subclass selection state. */
@@ -339,8 +349,19 @@ export interface PortraitSelection {
 
 /** Callbacks passed to step onActivate for state updates. */
 export interface StepCallbacks {
-  /** Store step data. Cascades invalidation if step was previously complete. */
+  /**
+   * Store step data and trigger a full re-render.
+   * Use when the step layout fundamentally changes (e.g., switching ability method,
+   * selecting a new card that replaces the content area).
+   */
   setData: (value: unknown) => void;
+  /**
+   * Store step data WITHOUT re-rendering. Patches only the nav bar
+   * (Next button state, status hint, step indicators).
+   * Use for in-place edits (dropdowns, toggles, text input) where the step
+   * handles its own DOM updates.
+   */
+  setDataSilent: (value: unknown) => void;
   /** Re-render the wizard shell. */
   rerender: () => void;
 }

@@ -103,7 +103,7 @@ export function createFeatsStep(): WizardStepDefinition {
         });
       });
 
-      // ASI ability toggles
+      // ASI ability toggles — patch selected state in-place
       el.querySelectorAll("[data-asi-ability]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const ability = (btn as HTMLElement).dataset.asiAbility as AbilityKey;
@@ -117,15 +117,26 @@ export function createFeatsStep(): WizardStepDefinition {
             abilities.add(ability);
           }
 
-          callbacks.setData({
+          const newData = {
             ...current,
-            choice: "asi",
+            choice: "asi" as const,
             asiAbilities: [...abilities],
-          } as FeatSelection);
+          } as FeatSelection;
+
+          // Patch DOM: toggle selected class on ability buttons
+          el.querySelectorAll<HTMLElement>("[data-asi-ability]").forEach((b) => {
+            const key = b.dataset.asiAbility as AbilityKey;
+            b.classList.toggle("cc-asi-btn--selected", abilities.has(key));
+          });
+          // Update counter
+          const countEl = el.querySelector("[data-asi-count]");
+          if (countEl) countEl.textContent = String(abilities.size);
+
+          callbacks.setDataSilent(newData);
         });
       });
 
-      // Feat card selection
+      // Feat card selection — patch selected state in-place
       el.querySelectorAll("[data-card-uuid]").forEach((card) => {
         card.addEventListener("click", () => {
           const uuid = (card as HTMLElement).dataset.cardUuid;
@@ -133,12 +144,22 @@ export function createFeatsStep(): WizardStepDefinition {
           const feats = getAvailableFeats(state);
           const entry = feats.find((e) => e.uuid === uuid);
           if (!entry) return;
-          callbacks.setData({
-            choice: "feat",
+
+          const newData = {
+            choice: "feat" as const,
             featUuid: entry.uuid,
             featName: entry.name,
             featImg: entry.img,
-          } as FeatSelection);
+          } as FeatSelection;
+
+          // Patch DOM: toggle selected class on cards
+          el.querySelectorAll<HTMLElement>("[data-card-uuid]").forEach((c) => {
+            const isSelected = c.dataset.cardUuid === uuid;
+            c.classList.toggle("cc-spell-card--selected", isSelected);
+            c.setAttribute("aria-selected", String(isSelected));
+          });
+
+          callbacks.setDataSilent(newData);
         });
       });
     },

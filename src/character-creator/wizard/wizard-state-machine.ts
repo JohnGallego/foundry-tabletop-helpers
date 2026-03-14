@@ -20,7 +20,7 @@ import type {
  * are invalidated (selections cleared, status → "pending").
  */
 const DEPENDENCY_CASCADE: Record<string, string[]> = {
-  species: [],
+  species: ["backgroundGrants"],
   background: ["backgroundGrants", "originFeat", "skills", "abilities"],
   backgroundGrants: [],
   class: ["subclass", "skills", "feats", "spells", "equipment"],
@@ -145,12 +145,14 @@ export class WizardStateMachine {
     const wasComplete = this.state.stepStatus.get(stepId) === "complete";
     this.state.selections[stepId] = value;
 
+    let invalidated = new Set<string>();
     if (wasComplete) {
-      const invalidated = this._cascadeInvalidation(stepId);
-      this._recalculateApplicableSteps();
-      return invalidated;
+      invalidated = this._cascadeInvalidation(stepId);
     }
-    return new Set();
+
+    // Always recalculate — new data may make previously-inapplicable steps applicable
+    this._recalculateApplicableSteps();
+    return invalidated;
   }
 
   /**

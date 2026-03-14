@@ -22,7 +22,7 @@ Foundry Tabletop Helpers is a Foundry VTT V13 module that enhances D&D 5.5e game
 ## Constraints
 
 - **Foundry VTT V13 only** — uses V13 APIs (object-keyed scene controls, ApplicationV2, etc.)
-- **dnd5e system 4.x+** — requires Activities model support (dnd5e >= 4.0.0)
+- **dnd5e system 5.x** — requires Activities model support
 - **Touch-first UI** — all interactive elements must be at least 44px tap targets
 - **No external runtime dependencies** — the module is a single ES module + CSS file
 - **Server companion is optional** — asset manager degrades gracefully without it

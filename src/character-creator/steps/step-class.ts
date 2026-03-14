@@ -15,7 +15,7 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
-import { parseClassSkillAdvancement } from "../data/advancement-parser";
+import { parseClassSkillAdvancement, parseClassSpellcasting } from "../data/advancement-parser";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -77,18 +77,26 @@ export function createClassStep(): WizardStepDefinition {
             identifier: entry.identifier ?? "",
             skillPool: [],
             skillCount: 2,
+            isSpellcaster: false,
+            spellcastingAbility: "",
+            spellcastingProgression: "",
           };
 
-          // Fetch full document to parse skill advancement data
+          // Fetch full document to parse advancement data
           try {
             const doc = await compendiumIndexer.fetchDocument(uuid);
             if (doc) {
               const { skillPool, skillCount } = parseClassSkillAdvancement(doc);
               selection.skillPool = skillPool;
               selection.skillCount = skillCount;
+
+              const sc = parseClassSpellcasting(doc);
+              selection.isSpellcaster = sc.isSpellcaster;
+              selection.spellcastingAbility = sc.ability;
+              selection.spellcastingProgression = sc.progression;
             }
           } catch (err) {
-            Log.warn("Failed to parse class skill advancement", err);
+            Log.warn("Failed to parse class advancement data", err);
           }
 
           callbacks.setData(selection);

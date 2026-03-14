@@ -189,6 +189,7 @@ export function buildCharacterCreatorAppClass(): void {
         },
         setDataSilent: (value: unknown) => {
           machine.setStepData(machine.currentStepId, value);
+
           // Patch nav bar: Next button state + status hint
           const nextBtn = this.element?.querySelector("[data-action='goNext']") as HTMLButtonElement | null;
           if (nextBtn) nextBtn.disabled = !machine.canGoNext;
@@ -196,6 +197,20 @@ export function buildCharacterCreatorAppClass(): void {
           if (hintEl) {
             const curDef = machine.currentStepDef;
             hintEl.textContent = curDef?.getStatusHint?.(machine.state) ?? "";
+          }
+
+          // Patch step indicators (complete/pending status)
+          const indicators = (this.element as HTMLElement | null)
+            ?.querySelectorAll(".cc-step-indicator__step") as NodeListOf<HTMLElement> | undefined;
+          if (indicators) {
+            const stepData = machine.buildStepIndicatorData();
+            for (let i = 0; i < indicators.length; i++) {
+              const sd = stepData[i];
+              if (!sd) continue;
+              indicators[i].classList.toggle("cc-step-indicator__step--complete", sd.status === "complete");
+              indicators[i].classList.toggle("cc-step-indicator__step--pending", sd.status === "pending");
+              indicators[i].classList.toggle("cc-step-indicator__step--invalid", sd.status === "invalid");
+            }
           }
         },
         rerender: () => {

@@ -1,107 +1,95 @@
 # Foundry Tabletop Helpers
 
-A Foundry VTT V13 module providing QoL tools for D&D 5.5e games: print-ready character sheets, live play character sheets, combat command center, asset manager, character creator, and window rotation controls.
+**Foundry VTT V13** module for **D&D 5.5e** (2024 rules) — QoL tools for GMs and players.
 
-**Module ID:** `foundry-tabletop-helpers` | **Foundry:** V13 | **System:** dnd5e 4.x (Activities model) | **License:** MIT
+**Module ID:** `foundry-tabletop-helpers` | **System:** dnd5e 5.x | **License:** MIT
 
-## Architecture
+## Required Skills
 
-```
-src/
-├── index.ts                  # Entry point — hook registration (init → setup → ready)
-├── settings.ts               # Global module settings registration
-├── logger.ts                 # Prefixed console logger (MOD constant lives here)
-├── types/                    # Foundry type shims & safe global accessors
-│   ├── foundry.d.ts          # Hand-written Foundry VTT type definitions
-│   ├── guards.ts             # getGame(), getHooks(), isGM(), getSetting(), etc.
-│   └── index.ts              # Re-exports all types and guards
-├── print-sheet/              # Print-ready sheets (character, NPC, encounter, party)
-│   ├── extractors/           # System data → raw data (dnd5e-extractor)
-│   ├── renderers/            # Raw data → HTML via ViewModels + Handlebars
-│   │   └── viewmodels/       # Transformer + ViewModel pairs per sheet type
-│   └── section-definitions.ts
-├── lpcs/                     # Live Play Character Sheet (auto-open, tabs, real-time)
-├── combat/                   # Combat Command Center
-│   ├── batch-initiative/     # Roll initiative for all combatants at once
-│   ├── damage-workflow/      # Apply damage/healing with resistance handling
-│   ├── monster-preview/      # Quick monster stat preview in combat tracker
-│   ├── party-summary/        # Party overview panel
-│   └── token-health/         # Token health indicator overlays
-├── rules-reference/          # Quick Rules Reference — digital DM screen
-├── asset-manager/            # FilePicker replacement with virtual scroll, thumbnails
-├── character-creator/        # Step-based character creation wizard
-│   ├── wizard/               # Wizard app + state machine
-│   ├── steps/                # Individual wizard steps (race, class, abilities, etc.)
-│   ├── level-up/             # Level-up workflow (HP, feats, spells, review)
-│   ├── data/                 # Compendium indexer, content filters, constants
-│   └── gm-config/            # GM configuration for allowed content
-├── initiative/               # Quick initiative roll dialog
-├── kiosk/                    # Full-screen kiosk mode for player tablets
-├── window-rotation/          # Rotate/flip app windows (socket-based)
-└── styles.css                # Global module styles
-templates/                    # Handlebars templates (.hbs)
-server-companion/             # Node.js sidecar — Sharp/FFmpeg image optimization
-  └── src/
-      ├── server.ts           # Fastify server
-      ├── routes/             # API endpoints (health, generate-portrait, thumbnails)
-      └── processors/         # Image processing pipelines
-```
+**Invoke these skills BEFORE writing code or making decisions.** They are finely tuned to this project and dramatically improve outcomes.
 
-### Key Patterns
+| Skill | When to invoke |
+|-------|----------------|
+| **forgewright:foundry-vtt-dev** | ALL code changes — V13 APIs, ApplicationV2, hooks, settings, sockets, dnd5e 5.x system integration |
+| **forgewright:ui-ux-engineer** | ALL CSS/styling — dark arcane theme, glass-morphism, touch-first (44px targets), container queries |
+| **loresmith:rules-sage** | ANY D&D mechanics — game data, ViewModels, spells, classes, advancement, 2024 PHB rules |
+| **dnd-art-forge:dnd-fantasy-art** | Creating artwork, icons, portraits, or rasterized UI assets |
+| **frontend-design** | Building new UI components, pages, or visual design work |
+| **superpowers:brainstorming** | BEFORE planning any new feature or implementation approach |
+| **superpowers:dispatching-parallel-agents** | When facing 2+ independent tasks that can be parallelized |
 
-- **Safe global access:** Never use `game` directly — always use `getGame()`, `getHooks()`, `isGM()` etc. from `src/types/guards.ts`. These return `undefined` before init.
-- **ViewModel pattern:** Data extraction (extractor) → transformation (transformer) → typed ViewModel → Handlebars rendering. Used in print-sheet and LPCS.
-- **Hook lifecycle:** Register settings in `init`, override pickers in `setup`, attach APIs and auto-open in `ready`. Each feature has its own `*-init.ts` or registration function.
-- **Module ID constant:** Import `MOD` from `src/logger.ts` — never hardcode the module ID string.
-
-## Build & Dev
+## Build & Deploy
 
 ```bash
 npm run build          # typecheck + vite build + manifest stamp
 npm run dev            # vite build --watch
 npm run typecheck      # tsc --noEmit
 npm run test           # vitest run
-npm run ci             # typecheck + test + build
-npm run build:server   # build server-companion
-npm run link:foundry   # symlink dist/ into local Foundry data
 ```
 
-## Deploy
-
-### Dev deploy (rsync to self-hosted Foundry)
+### Dev deploy
 
 ```bash
-rsync -avz --delete "dist/" deploy@foundry.digitalframeworks.org:/var/foundrydata/Data/modules/foundry-tabletop-helpers/
+rsync -avz --delete "dist/" root@foundry.digitalframeworks.org:/var/foundrydata/Data/modules/foundry-tabletop-helpers/
 ```
 
-### Release (GitHub Actions → Foundry Registry)
+### Release
 
-Tag a version on main: `git tag v1.2.0 && git push --tags`
-
-The `release.yml` workflow builds, stamps `module.json`, creates a GitHub Release with zip + server companion tarball, and publishes to the Foundry Package Release API.
+Tag on main: `git tag v1.2.0 && git push --tags` — GitHub Actions builds, stamps `module.json`, creates a release, and publishes to the Foundry Package Registry.
 
 ## Post-Task Workflow
 
 After completing any task:
 
-1. **Build:** `npm run build` — fix any TypeScript errors before proceeding
-2. **Deploy:** `rsync -avz --delete "dist/" deploy@foundry.digitalframeworks.org:/var/foundrydata/Data/modules/foundry-tabletop-helpers/`
-3. **Verify:** Reload Foundry in-browser and confirm the feature works
+1. **Build:** `npm run build` — fix TypeScript errors before proceeding
+2. **Deploy:** rsync to Foundry server (see above)
+3. **Update status:** Update `.claude/status.md` with what was done
 
-## Skills
+## Architecture
 
-Always invoke when working on this project:
+```
+src/
+├── index.ts                  # Entry — hook registration (init → setup → ready)
+├── settings.ts               # Global module settings
+├── logger.ts                 # Prefixed logger (MOD constant lives here)
+├── types/                    # Foundry type shims & safe global accessors
+│   ├── foundry.d.ts          # Hand-written Foundry VTT V13 type definitions
+│   ├── guards.ts             # getGame(), getHooks(), isGM(), getSetting(), etc.
+│   └── index.ts              # Re-exports
+├── print-sheet/              # Print-ready sheets (character, NPC, encounter, party)
+├── lpcs/                     # Live Play Character Sheet (auto-open, tabs, real-time)
+├── combat/                   # Combat Command Center
+├── rules-reference/          # Quick Rules Reference (digital DM screen)
+├── asset-manager/            # FilePicker replacement with virtual scroll, thumbnails
+├── character-creator/        # Step-based character creation wizard
+│   ├── wizard/               # App shell + state machine
+│   ├── steps/                # Individual wizard steps
+│   ├── level-up/             # Level-up workflow
+│   ├── data/                 # Compendium indexer, advancement parser, constants
+│   └── gm-config/            # GM content filtering
+├── initiative/               # Quick initiative roll dialog
+├── kiosk/                    # Full-screen kiosk mode for player tablets
+├── window-rotation/          # Rotate/flip app windows (socket-based)
+└── styles.css                # Global module styles
+templates/                    # Handlebars templates (.hbs)
+server-companion/             # Optional Node.js sidecar (Sharp/FFmpeg)
+```
 
-- **forgewright:foundry-vtt-dev** — Foundry VTT V13+ module dev, dnd5e system API, hooks, ApplicationV2, settings, sockets. Use for all code changes.
-- **forgewright:ui-ux-engineer** — Dark arcane themed UI, glass-morphism, touch-first design, immersive interfaces. Use for all styling/CSS work.
-- **loresmith:rules-sage** — D&D 5e/5.5e rules authority. Use when working with game data, ViewModels, or D&D mechanics.
-- **dnd-art-forge:dnd-fantasy-art** — Fantasy art generation. Use when creating artwork, icons, or rasterized UI images.
-- **superpowers:brainstorming** — Always use before planning new features or implementation details.
+### Key Patterns
 
-## Planning & Implementation
-
-Always use the **superpowers** plugin to plan new features or implementation details. Invoke `superpowers:brainstorming` before creative work and `superpowers:writing-plans` before multi-step implementations.
+- **Safe globals:** Never use `game` directly — use `getGame()`, `getHooks()`, `isGM()` from `src/types/guards.ts`
+- **Module ID:** Import `MOD` from `src/logger.ts` — never hardcode `"foundry-tabletop-helpers"`
+- **ViewModel pattern:** Extractor → Transformer → typed ViewModel → Handlebars. Never pass Foundry documents to templates.
+- **Hook lifecycle:** `init` (settings, hooks) → `setup` (user-dependent, override pickers) → `ready` (APIs, auto-open, sockets)
+- **ApplicationV2** for all new UI. V1 FormApplication only for settings submenus (Foundry limitation).
+- **Feature isolation:** Each feature has its own directory, settings registration function, and CSS file wired through `src/index.ts`.
 
 ## Session Continuity
 
-Read `.claude/status.md` at the start of every session — it tracks what was last worked on, current TODOs, and key insights. **Update it at the end of every session or when the user asks for a handoff.**
+Read `.claude/status.md` at the start of every session. Update it at the end or when the user asks for a handoff.
+
+## Additional Context
+
+- `.claude/rules/project-spec.md` — product spec, feature table, roadmap
+- `.claude/rules/code-style.md` — naming conventions, patterns, anti-patterns, build config
+- `.claude/rules/foundry-api.md` — V13 + dnd5e 5.x API gotchas (path-scoped to `src/**`)

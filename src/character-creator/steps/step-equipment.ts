@@ -112,13 +112,13 @@ export function createEquipmentStep(): WizardStepDefinition {
         });
       });
 
-      // Gold amount input
+      // Gold amount input — save silently (no layout change)
       const goldInput = el.querySelector("[data-gold-amount]") as HTMLInputElement | null;
       if (goldInput) {
         goldInput.addEventListener("change", () => {
           const amount = parseInt(goldInput.value, 10);
           if (isNaN(amount) || amount < 0) return;
-          callbacks.setData({
+          callbacks.setDataSilent({
             method: "gold",
             goldAmount: amount,
           } as EquipmentSelection);

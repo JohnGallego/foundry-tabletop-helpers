@@ -16,7 +16,7 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
-import { parseSpeciesTraits } from "../data/advancement-parser";
+import { parseSpeciesTraits, parseSpeciesLanguages } from "../data/advancement-parser";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -76,14 +76,17 @@ export function createSpeciesStep(): WizardStepDefinition {
             img: entry.img,
           };
 
-          // Fetch full document to parse species traits from advancement data
+          // Fetch full document to parse species traits and languages
           try {
             const doc = await compendiumIndexer.fetchDocument(uuid);
             if (doc) {
               selection.traits = parseSpeciesTraits(doc);
+              const langs = parseSpeciesLanguages(doc);
+              selection.languageGrants = langs.fixed;
+              selection.languageChoiceCount = langs.choiceCount;
             }
           } catch (err) {
-            Log.warn("Failed to parse species traits", err);
+            Log.warn("Failed to parse species data", err);
           }
 
           callbacks.setData(selection);

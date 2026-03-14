@@ -229,7 +229,63 @@ export function parseClassSkillAdvancement(
   return { skillPool, skillCount: count };
 }
 
-/* ── Species Traits ─────────────────────────────────────── */
+/* ── Class Spellcasting ────────────────────────────────── */
+
+/** Parsed spellcasting configuration from a class document. */
+export interface ClassSpellcasting {
+  /** Whether this class has spellcasting at all. */
+  isSpellcaster: boolean;
+  /** Spellcasting ability key (e.g., "int", "wis", "cha"). */
+  ability: string;
+  /** Spell slot progression: "full", "half", "third", "pact", "artificer", or "". */
+  progression: string;
+  /** Spellcasting type: "leveled" or "pact". */
+  type: string;
+}
+
+/**
+ * Parse a class document's spellcasting configuration.
+ *
+ * Checks both `system.spellcasting` (dnd5e data model) and the
+ * `Spellcasting` advancement entry for the fullest picture.
+ */
+export function parseClassSpellcasting(doc: FoundryDocument): ClassSpellcasting {
+  const noSpellcasting: ClassSpellcasting = {
+    isSpellcaster: false, ability: "", progression: "", type: "",
+  };
+
+  // Check system.spellcasting (dnd5e class data model)
+  const system = doc.system as Record<string, unknown> | undefined;
+  const sc = system?.spellcasting as Record<string, unknown> | undefined;
+  if (sc?.progression && sc.progression !== "none") {
+    return {
+      isSpellcaster: true,
+      ability: typeof sc.ability === "string" ? sc.ability : "",
+      progression: typeof sc.progression === "string" ? sc.progression : "",
+      type: typeof sc.type === "string" ? sc.type : "leveled",
+    };
+  }
+
+  // Fallback: check advancement array for Spellcasting entry
+  const advancements = getAdvancementArray(doc);
+  const spellAdv = findAdvancement(advancements, "Spellcasting");
+  if (spellAdv?.configuration) {
+    const config = spellAdv.configuration;
+    const progression = typeof config.progression === "string" ? config.progression : "";
+    if (progression && progression !== "none") {
+      return {
+        isSpellcaster: true,
+        ability: typeof config.ability === "string" ? config.ability : "",
+        progression,
+        type: typeof config.type === "string" ? config.type : "leveled",
+      };
+    }
+  }
+
+  return noSpellcasting;
+}
+
+/* ── Species Traits & Languages ─────────────────────────── */
 
 /**
  * Extract display-friendly trait names from a species document.
@@ -248,4 +304,54 @@ export function parseSpeciesTraits(doc: FoundryDocument): string[] {
   }
 
   return traits;
+}
+
+/** Parsed language grants from a species document. */
+export interface SpeciesLanguageGrants {
+  /** Languages auto-granted (e.g., ["common"]). */
+  fixed: string[];
+  /** Number of additional language choices. */
+  choiceCount: number;
+  /** Pool of choosable languages (e.g., ["languages:standard:*"]). */
+  choicePool: string[];
+}
+
+/**
+ * Parse a species document's language advancement.
+ *
+ * Species in the 2024 PHB typically grant Common plus one or more
+ * additional language choices (e.g., Human: Common + 1 choice).
+ */
+export function parseSpeciesLanguages(doc: FoundryDocument): SpeciesLanguageGrants {
+  const advancements = getAdvancementArray(doc);
+  const result: SpeciesLanguageGrants = { fixed: [], choiceCount: 0, choicePool: [] };
+
+  const langAdv = findAdvancement(advancements, "Trait", "language");
+  if (!langAdv?.configuration) return result;
+
+  // Fixed language grants
+  const grants = Array.isArray(langAdv.configuration.grants)
+    ? (langAdv.configuration.grants as string[])
+    : [];
+  for (const grant of grants) {
+    if (typeof grant !== "string") continue;
+    const parsed = parseGrantKey(grant);
+    if (parsed && !parsed.includes("*")) {
+      result.fixed.push(parsed);
+    }
+  }
+
+  // Language choices
+  const choices = Array.isArray(langAdv.configuration.choices)
+    ? (langAdv.configuration.choices as Array<Record<string, unknown>>)
+    : [];
+  const firstChoice = choices[0];
+  if (firstChoice) {
+    result.choiceCount = typeof firstChoice.count === "number" ? firstChoice.count : 0;
+    result.choicePool = Array.isArray(firstChoice.pool)
+      ? (firstChoice.pool as string[])
+      : [];
+  }
+
+  return result;
 }

@@ -1,11 +1,12 @@
 /**
  * Character Creator — Step 8: Spells
  *
- * Cantrip + spell selection with level filter tabs and search.
- * Shows spells available from configured packs, filtered by spell level.
+ * Cantrip + spell selection filtered by the chosen class's spell list.
+ * Uses the dnd5e spell list API when available, with fallback to
+ * showing all compendium spells.
  */
 
-import { MOD } from "../../logger";
+import { Log, MOD } from "../../logger";
 import type {
   WizardStepDefinition,
   WizardState,
@@ -14,6 +15,7 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
+import { resolveClassSpellUuids } from "../data/spell-list-resolver";
 
 /* ── Constants ───────────────────────────────────────────── */
 
@@ -31,52 +33,112 @@ const SCHOOL_LABELS: Record<string, string> = {
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
-function getAvailableSpells(state: WizardState): CreatorIndexEntry[] {
+function getAllSpells(state: WizardState): CreatorIndexEntry[] {
   const entries = compendiumIndexer.getIndexedEntries("spell", state.config.packSources);
   return entries.filter((e) => !state.config.disabledUUIDs.has(e.uuid));
 }
 
-function getMaxSpellLevel(characterLevel: number): number {
-  if (characterLevel >= 17) return 9;
-  if (characterLevel >= 15) return 8;
-  if (characterLevel >= 13) return 7;
-  if (characterLevel >= 11) return 6;
-  if (characterLevel >= 9) return 5;
-  if (characterLevel >= 7) return 4;
-  if (characterLevel >= 5) return 3;
-  if (characterLevel >= 3) return 2;
+/**
+ * Max spell slot level available at a given character level,
+ * based on spellcasting progression.
+ */
+function getMaxSpellLevel(characterLevel: number, progression: string): number {
+  if (progression === "pact") {
+    // Pact magic: level = ceil(casterLevel / 2), max 5
+    return Math.min(5, Math.ceil(characterLevel / 2));
+  }
+
+  // Caster level depends on progression
+  let casterLevel = characterLevel;
+  if (progression === "half" || progression === "artificer") casterLevel = Math.ceil(characterLevel / 2);
+  else if (progression === "third") casterLevel = Math.ceil(characterLevel / 3);
+
+  if (casterLevel >= 17) return 9;
+  if (casterLevel >= 15) return 8;
+  if (casterLevel >= 13) return 7;
+  if (casterLevel >= 11) return 6;
+  if (casterLevel >= 9) return 5;
+  if (casterLevel >= 7) return 4;
+  if (casterLevel >= 5) return 3;
+  if (casterLevel >= 3) return 2;
   return 1;
 }
 
 /* ── Step Definition ─────────────────────────────────────── */
 
 export function createSpellsStep(): WizardStepDefinition {
+  /** Cached spell list UUIDs for the current class (avoids re-resolving). */
+  let cachedClassId = "";
+  let cachedSpellUuids: Set<string> | null = null;
+
   return {
     id: "spells",
     label: "Spells",
     icon: "fa-solid fa-wand-sparkles",
     templatePath: `modules/${MOD}/templates/character-creator/cc-step-spells.hbs`,
     dependencies: ["class", "subclass"],
-    isApplicable: () => true,
+
+    isApplicable(state: WizardState): boolean {
+      return state.selections.class?.isSpellcaster === true;
+    },
 
     isComplete(state: WizardState): boolean {
+      const cls = state.selections.class;
+      if (!cls?.isSpellcaster) return true;
       const data = state.selections.spells;
-      if (!data) return true; // Non-casters can skip
+      if (!data) return false;
       return data.cantrips.length > 0 || data.spells.length > 0;
+    },
+
+    getStatusHint(state: WizardState): string {
+      const cls = state.selections.class;
+      if (!cls?.isSpellcaster) return "";
+      const data = state.selections.spells;
+      if (!data || (data.cantrips.length === 0 && data.spells.length === 0)) {
+        return "Select your cantrips and spells";
+      }
+      return "";
     },
 
     async buildViewModel(state: WizardState): Promise<Record<string, unknown>> {
       await compendiumIndexer.loadPacks(state.config.packSources);
 
-      const allSpells = getAvailableSpells(state);
+      const cls = state.selections.class;
+      const className = cls?.name ?? "your class";
+      const classIdentifier = cls?.identifier ?? "";
+      const progression = cls?.spellcastingProgression ?? "full";
+      const maxLevel = getMaxSpellLevel(state.config.startingLevel, progression);
+
+      // Resolve class spell list (cached per class identifier)
+      if (classIdentifier && classIdentifier !== cachedClassId) {
+        cachedClassId = classIdentifier;
+        cachedSpellUuids = await resolveClassSpellUuids(classIdentifier);
+        if (cachedSpellUuids) {
+          Log.debug(`Spells step: resolved ${cachedSpellUuids.size} spells for "${classIdentifier}"`);
+        } else {
+          Log.debug(`Spells step: no spell list API found for "${classIdentifier}", showing all spells`);
+        }
+      }
+
+      // Get and filter spells
+      let allSpells = getAllSpells(state);
+      if (cachedSpellUuids) {
+        allSpells = allSpells.filter((s) => cachedSpellUuids!.has(s.uuid));
+      }
+
+      Log.debug(`Spells step: ${allSpells.length} total spells available for "${className}"`, {
+        withSpellLevel: allSpells.filter((s) => s.spellLevel !== undefined).length,
+        withoutSpellLevel: allSpells.filter((s) => s.spellLevel === undefined).length,
+      });
+
       const data = state.selections.spells ?? { cantrips: [], spells: [] };
       const selectedCantrips = new Set(data.cantrips);
       const selectedSpells = new Set(data.spells);
-      const maxLevel = getMaxSpellLevel(state.config.startingLevel);
 
       // Separate cantrips and leveled spells
       const cantrips = allSpells
         .filter((s) => s.spellLevel === 0)
+        .sort((a, b) => a.name.localeCompare(b.name))
         .map((s) => ({
           ...s,
           selected: selectedCantrips.has(s.uuid),
@@ -85,6 +147,7 @@ export function createSpellsStep(): WizardStepDefinition {
 
       const leveledSpells = allSpells
         .filter((s) => (s.spellLevel ?? 0) > 0 && (s.spellLevel ?? 0) <= maxLevel)
+        .sort((a, b) => a.name.localeCompare(b.name))
         .map((s) => ({
           ...s,
           selected: selectedSpells.has(s.uuid),
@@ -104,6 +167,8 @@ export function createSpellsStep(): WizardStepDefinition {
         }
       }
 
+      const usingClassFilter = cachedSpellUuids !== null;
+
       return {
         cantrips,
         cantripCount: data.cantrips.length,
@@ -112,7 +177,8 @@ export function createSpellsStep(): WizardStepDefinition {
         hasCantrips: cantrips.length > 0,
         hasSpells: leveledSpells.length > 0,
         maxSpellLevel: maxLevel,
-        className: state.selections.class?.name ?? "your class",
+        className,
+        usingClassFilter,
       };
     },
 
@@ -131,10 +197,10 @@ export function createSpellsStep(): WizardStepDefinition {
             cantrips.add(uuid);
           }
 
-          callbacks.setData({
-            cantrips: [...cantrips],
-            spells: current.spells,
-          } as SpellSelection);
+          const newData: SpellSelection = { cantrips: [...cantrips], spells: current.spells };
+          patchSpellCard(card as HTMLElement, cantrips.has(uuid));
+          patchSpellCounter(el, "cantrip", cantrips.size);
+          callbacks.setDataSilent(newData);
         });
       });
 
@@ -152,10 +218,10 @@ export function createSpellsStep(): WizardStepDefinition {
             spells.add(uuid);
           }
 
-          callbacks.setData({
-            cantrips: current.cantrips,
-            spells: [...spells],
-          } as SpellSelection);
+          const newData: SpellSelection = { cantrips: current.cantrips, spells: [...spells] };
+          patchSpellCard(card as HTMLElement, spells.has(uuid));
+          patchSpellCounter(el, "spell", spells.size);
+          callbacks.setDataSilent(newData);
         });
       });
 
@@ -172,4 +238,40 @@ export function createSpellsStep(): WizardStepDefinition {
       }
     },
   };
+}
+
+/* ── DOM Patching ────────────────────────────────────────── */
+
+/** Toggle a spell card's selected state without re-rendering. */
+function patchSpellCard(card: HTMLElement, selected: boolean): void {
+  card.classList.toggle("cc-spell-card--selected", selected);
+  card.setAttribute("aria-selected", String(selected));
+  // Toggle check icon
+  let check = card.querySelector(".cc-spell-card__check");
+  if (selected && !check) {
+    check = document.createElement("div");
+    check.className = "cc-spell-card__check";
+    const icon = document.createElement("i");
+    icon.className = "fa-solid fa-check";
+    check.appendChild(icon);
+    card.appendChild(check);
+  } else if (!selected && check) {
+    check.remove();
+  }
+}
+
+/** Update a spell counter element. */
+function patchSpellCounter(el: HTMLElement, type: "cantrip" | "spell", count: number): void {
+  // Update section header count
+  if (type === "cantrip") {
+    const countEl = el.querySelector(".cc-spell-section__count");
+    if (countEl) countEl.textContent = `${count} selected`;
+  }
+  // Update summary bar
+  const summary = el.querySelector(".cc-spells-summary__value");
+  if (summary) {
+    const cantripCount = type === "cantrip" ? count : parseInt(summary.textContent?.match(/(\d+) cantrips/)?.[1] ?? "0", 10);
+    const spellCount = type === "spell" ? count : parseInt(summary.textContent?.match(/(\d+) spells/)?.[1] ?? "0", 10);
+    summary.textContent = `${cantripCount} cantrips, ${spellCount} spells`;
+  }
 }

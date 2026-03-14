@@ -112,9 +112,9 @@ export function createPortraitStep(): WizardStepDefinition {
         picker.render(true);
       });
 
-      // Clear button
+      // Clear button — already manages DOM manually
       clearBtn?.addEventListener("click", () => {
-        callbacks.setData({
+        callbacks.setDataSilent({
           portraitDataUrl: undefined,
           tokenDataUrl: undefined,
           source: "none",
@@ -167,7 +167,7 @@ function selectPortrait(
   const isDataUrl = dataUrl.startsWith("data:");
   const source: PortraitSelection["source"] = isDataUrl ? "generated" : "uploaded";
 
-  callbacks.setData({
+  callbacks.setDataSilent({
     portraitDataUrl: dataUrl,
     tokenDataUrl: dataUrl, // Token uses same image; cropping handled at actor creation
     source,

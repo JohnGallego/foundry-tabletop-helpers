@@ -154,10 +154,10 @@ export function createSkillsStep(): WizardStepDefinition {
           }
 
           const newData: SkillSelection = { chosen: [...chosen] };
-          callbacks.setData(newData);
 
-          // Patch DOM directly for flicker-free update
+          // Patch DOM directly for flicker-free update, then save state
           patchSkillsDOM(el, chosen, maxPicks);
+          callbacks.setDataSilent(newData);
         });
       });
     },
