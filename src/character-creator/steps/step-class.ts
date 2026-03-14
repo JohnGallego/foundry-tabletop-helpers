@@ -1,10 +1,12 @@
 /**
- * Character Creator — Step 4: Class
+ * Character Creator — Step: Class (2024 PHB)
  *
  * Card grid of available classes from configured compendium packs.
+ * On selection, fetches the full document and parses advancement data
+ * to extract skill proficiency pool and count for downstream steps.
  */
 
-import { MOD } from "../../logger";
+import { Log, MOD } from "../../logger";
 import type {
   WizardStepDefinition,
   WizardState,
@@ -13,6 +15,7 @@ import type {
   CreatorIndexEntry,
 } from "../character-creator-types";
 import { compendiumIndexer } from "../data/compendium-indexer";
+import { parseClassSkillAdvancement } from "../data/advancement-parser";
 
 /* ── Helpers ─────────────────────────────────────────────── */
 
@@ -43,8 +46,11 @@ export function createClassStep(): WizardStepDefinition {
 
       return {
         stepId: "class",
-        stepLabel: "Choose Your Class",
-        stepDescription: "Select the class that defines your character's abilities and fighting style.",
+        stepTitle: "Class",
+        stepLabel: "",
+        stepIcon: "fa-solid fa-shield-halved",
+        stepDescription:
+          "Select the class that defines your character's abilities and fighting style.",
         entries: entries.map((e) => ({
           ...e,
           selected: e.uuid === selected?.uuid,
@@ -57,18 +63,34 @@ export function createClassStep(): WizardStepDefinition {
 
     onActivate(state: WizardState, el: HTMLElement, callbacks: StepCallbacks): void {
       el.querySelectorAll("[data-card-uuid]").forEach((card) => {
-        card.addEventListener("click", () => {
+        card.addEventListener("click", async () => {
           const uuid = (card as HTMLElement).dataset.cardUuid;
           if (!uuid) return;
           const entries = getAvailableClasses(state);
           const entry = entries.find((e) => e.uuid === uuid);
           if (!entry) return;
+
           const selection: ClassSelection = {
             uuid: entry.uuid,
             name: entry.name,
             img: entry.img,
-            identifier: entry.identifier,
+            identifier: entry.identifier ?? "",
+            skillPool: [],
+            skillCount: 2,
           };
+
+          // Fetch full document to parse skill advancement data
+          try {
+            const doc = await compendiumIndexer.fetchDocument(uuid);
+            if (doc) {
+              const { skillPool, skillCount } = parseClassSkillAdvancement(doc);
+              selection.skillPool = skillPool;
+              selection.skillCount = skillCount;
+            }
+          } catch (err) {
+            Log.warn("Failed to parse class skill advancement", err);
+          }
+
           callbacks.setData(selection);
         });
       });
