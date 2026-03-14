@@ -9,8 +9,7 @@
 import { MOD } from "../../logger";
 import type { WizardStepDefinition, WizardState } from "../character-creator-types";
 import { createAbilitiesStep } from "../steps/step-abilities";
-// TODO: createSpeciesStep will be added in Task 4
-// import { createSpeciesStep } from "../steps/step-species";
+import { createSpeciesStep } from "../steps/step-species";
 // TODO: createOriginFeatStep will be added in Task 6
 // import { createOriginFeatStep } from "../steps/step-origin-feat";
 import { createBackgroundStep } from "../steps/step-background";
@@ -139,8 +138,7 @@ export function createPlaceholderStep(
  * Phases 3 & 4 steps are fully implemented; portrait remains as placeholder.
  */
 export function registerAllSteps(): void {
-  // TODO: Species step (Task 4)
-  // registerStep(createSpeciesStep());
+  registerStep(createSpeciesStep());
 
   // Core steps
   registerStep(createBackgroundStep());
