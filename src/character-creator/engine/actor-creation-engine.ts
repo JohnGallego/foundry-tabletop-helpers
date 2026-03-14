@@ -3,24 +3,17 @@
  *
  * Assembles all wizard selections into a real dnd5e Actor via
  * Actor.create() + createEmbeddedDocuments(). Assigns player ownership.
+ *
+ * Rewritten for 2024 PHB rules: species, background (with ASI, origin feat,
+ * languages), class skill proficiencies, and separated assembly steps.
  */
 
 import { Log, MOD } from "../../logger";
 import { getGame, fromUuid } from "../../types";
 import type { FoundryDocument } from "../../types";
 import type { WizardState, PortraitSelection } from "../character-creator-types";
-import { ABILITY_KEYS, abilityModifier } from "../data/dnd5e-constants";
-
-/* ── Types ───────────────────────────────────────────────── */
-
-interface ActorCreateData {
-  name: string;
-  type: "character";
-  img?: string;
-  system: Record<string, unknown>;
-  items?: Record<string, unknown>[];
-  ownership?: Record<string, number>;
-}
+import { ABILITY_KEYS } from "../data/dnd5e-constants";
+import type { AbilityKey } from "../character-creator-types";
 
 /* ── Public API ──────────────────────────────────────────── */
 
@@ -32,22 +25,24 @@ export async function createCharacterFromWizard(
   state: WizardState,
 ): Promise<FoundryDocument | null> {
   const sel = state.selections;
-  const reviewData = sel.review as { characterName?: string } | undefined;
-  const characterName = reviewData?.characterName?.trim();
-
-  if (!characterName) {
-    Log.error("ActorCreationEngine: No character name provided");
-    return null;
-  }
+  const characterName =
+    (sel.review as { characterName?: string } | undefined)?.characterName?.trim() ??
+    "New Character";
 
   try {
-    // 1. Build base actor data
-    const actorData = buildActorData(state, characterName);
+    // 1. Create base Actor
+    const actorData = {
+      name: characterName,
+      type: "character" as const,
+      system: {},
+    };
 
-    // 2. Create the actor
-    const ActorClass = getActorClass();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ActorClass = (getGame()?.actors as any)?.documentClass as
+      | { create(data: Record<string, unknown>): Promise<FoundryDocument | null> }
+      | undefined;
     if (!ActorClass) {
-      Log.error("ActorCreationEngine: Actor class not available");
+      Log.error("ActorCreationEngine: Actor document class not available");
       return null;
     }
 
@@ -59,22 +54,28 @@ export async function createCharacterFromWizard(
 
     Log.info(`ActorCreationEngine: Created actor "${characterName}" (${actor.id})`);
 
-    // 3. Add embedded items (class, subclass, background, race, feats, spells)
-    const items = await collectItems(state);
-    if (items.length > 0) {
-      await actor.createEmbeddedDocuments("Item", items);
-      Log.debug(`ActorCreationEngine: Added ${items.length} items`);
-    }
+    // 2. Apply ability scores + background ASI
+    await applyAbilityScores(actor, sel);
 
-    // 4. Upload and apply portrait if generated
+    // 3. Collect and embed items (species, background, origin feat, class, subclass, feats, spells)
+    await embedItems(actor, sel);
+
+    // 4. Apply proficiencies (background skills + class-chosen skills)
+    await applyProficiencies(actor, sel);
+
+    // 5. Apply languages
+    await applyLanguages(actor, sel);
+
+    // 6. Upload and apply portrait if generated
     await applyPortrait(actor, sel.portrait, characterName);
 
-    // 5. Assign ownership to current user's character
-    await assignOwnership(actor);
+    // 7. Set ownership
+    await setOwnership(actor);
 
-    // 6. Notify GM via socket
+    // 8. Notify GM via socket
     notifyGMCharacterCreated(characterName, actor.id);
 
+    // 9. Return the created actor
     return actor;
   } catch (err) {
     Log.error("ActorCreationEngine: Failed to create character", err);
@@ -82,109 +83,49 @@ export async function createCharacterFromWizard(
   }
 }
 
-/* ── Internal Helpers ────────────────────────────────────── */
+/* ── Step 2: Ability Scores + Background ASI ─────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getActorClass(): { create(data: ActorCreateData): Promise<FoundryDocument | null> } | null {
-  const g = globalThis as Record<string, unknown>;
-  const cfg = g.CONFIG as Record<string, unknown> | undefined;
-  const ActorCls = (cfg?.Actor as Record<string, unknown> | undefined)?.documentClass;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ActorCls as any ?? null;
-}
+async function applyAbilityScores(
+  actor: FoundryDocument,
+  sel: WizardState["selections"],
+): Promise<void> {
+  const baseScores = sel.abilities?.scores ?? ({} as Partial<Record<AbilityKey, number>>);
+  const asiAssignments = sel.background?.asi?.assignments ?? {};
 
-function buildActorData(state: WizardState, name: string): ActorCreateData {
-  const sel = state.selections;
-  const scores = sel.abilities?.scores;
-
-  // Build ability scores object
-  const abilities: Record<string, { value: number }> = {};
+  const abilityUpdates: Record<string, unknown> = {};
   for (const key of ABILITY_KEYS) {
-    const baseScore = scores?.[key] ?? 10;
-
-    // Apply ASI bonuses
-    let bonus = 0;
-    if (sel.feats?.choice === "asi" && sel.feats.asiAbilities?.includes(key)) {
-      bonus = sel.feats.asiAbilities.length === 1 ? 2 : 1;
-    }
-
-    abilities[key] = { value: Math.min(baseScore + bonus, 20) };
+    const base = baseScores[key] ?? 10;
+    const bonus = asiAssignments[key] ?? 0;
+    abilityUpdates[`system.abilities.${key}.value`] = base + bonus;
   }
 
-  // Build skills object
-  const skills: Record<string, { value: number }> = {};
-  for (const skillKey of sel.skills?.chosen ?? []) {
-    skills[skillKey] = { value: 1 }; // 1 = proficient
-  }
-
-  // Build HP
-  const conMod = abilityModifier(scores?.con ?? 10);
-  // HP will be set more accurately after class item is added, but set a baseline
-  const baseHp = 10 + conMod; // Default; real value comes from class hit die
-
-  // Build currency
-  const currency: Record<string, number> = {};
-  if (sel.equipment?.method === "gold") {
-    currency.gp = sel.equipment.goldAmount ?? 0;
-  }
-
-  const data: ActorCreateData = {
-    name,
-    type: "character",
-    img: getPortraitPath(sel.portrait) ?? sel.race?.img ?? sel.class?.img ?? "icons/svg/mystery-man.svg",
-    system: {
-      abilities,
-      attributes: {
-        hp: { value: baseHp, max: baseHp },
-      },
-      details: {
-        level: state.config.startingLevel,
-        xp: { value: 0 },
-      },
-      skills,
-      currency,
-    },
-  };
-
-  // Set ownership for the current user
-  const game = getGame();
-  const userId = game?.userId as string | undefined;
-  if (userId) {
-    data.ownership = { [userId]: 3, default: 0 }; // 3 = OWNER
-  }
-
-  return data;
+  await actor.update(abilityUpdates);
+  Log.debug("ActorCreationEngine: Applied ability scores with background ASI");
 }
 
-/**
- * Collect all compendium items to add to the actor.
- * Fetches full documents from UUIDs selected during the wizard.
- */
-async function collectItems(state: WizardState): Promise<Record<string, unknown>[]> {
-  const sel = state.selections;
+/* ── Step 3: Collect & Embed Items ───────────────────────── */
+
+async function embedItems(
+  actor: FoundryDocument,
+  sel: WizardState["selections"],
+): Promise<void> {
   const uuids: string[] = [];
 
-  // Class
-  if (sel.class?.uuid) uuids.push(sel.class.uuid);
-
-  // Subclass
-  if (sel.subclass?.uuid) uuids.push(sel.subclass.uuid);
-
-  // Race
-  if (sel.race?.uuid) uuids.push(sel.race.uuid);
-
+  // Species
+  if (sel.species?.uuid) uuids.push(sel.species.uuid);
   // Background
   if (sel.background?.uuid) uuids.push(sel.background.uuid);
-
-  // Feat
-  if (sel.feats?.choice === "feat" && sel.feats.featUuid) {
-    uuids.push(sel.feats.featUuid);
-  }
-
-  // Spells (cantrips + leveled)
-  if (sel.spells) {
-    uuids.push(...sel.spells.cantrips);
-    uuids.push(...sel.spells.spells);
+  // Origin feat (from background grants or player swap)
+  if (sel.originFeat?.uuid) uuids.push(sel.originFeat.uuid);
+  // Class
+  if (sel.class?.uuid) uuids.push(sel.class.uuid);
+  // Subclass (if applicable at starting level)
+  if (sel.subclass?.uuid) uuids.push(sel.subclass.uuid);
+  // Feat item (if player chose a feat instead of ASI)
+  if (sel.feats?.featUuid) uuids.push(sel.feats.featUuid);
+  // Spell UUIDs (cantrips + leveled spells)
+  for (const uuid of [...(sel.spells?.cantrips ?? []), ...(sel.spells?.spells ?? [])]) {
+    uuids.push(uuid);
   }
 
   // Fetch full documents and convert to plain data
@@ -192,64 +133,62 @@ async function collectItems(state: WizardState): Promise<Record<string, unknown>
   for (const uuid of uuids) {
     const doc = await fromUuid(uuid);
     if (doc) {
-      // toObject() gives a plain data copy suitable for createEmbeddedDocuments
       const obj = doc.toObject();
       // Remove _id so Foundry generates a new one
       delete obj._id;
       items.push(obj);
+    } else {
+      Log.warn(`ActorCreationEngine: Could not resolve UUID ${uuid}`);
     }
   }
 
-  return items;
-}
-
-/**
- * Assign OWNER permission to the current user on the created actor.
- * Also sets the user's character to this actor if they don't have one.
- */
-async function assignOwnership(actor: FoundryDocument): Promise<void> {
-  const game = getGame();
-  if (!game) return;
-
-  const userId = game.userId as string | undefined;
-  if (!userId) return;
-
-  // Ensure OWNER permission
-  if (!actor.ownership || actor.ownership[userId] !== 3) {
-    await actor.update({ [`ownership.${userId}`]: 3 });
-  }
-
-  // If the user doesn't have a character assigned, assign this one
-  const user = game.user;
-  const currentCharacter = user?.character;
-  if (!currentCharacter) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (user as any)?.update?.({ character: actor.id });
-      Log.info(`ActorCreationEngine: Assigned character to user ${userId}`);
-    } catch {
-      // Not critical — user can assign manually
-      Log.debug("ActorCreationEngine: Could not auto-assign character to user");
-    }
+  if (items.length > 0) {
+    await actor.createEmbeddedDocuments("Item", items);
+    Log.debug(`ActorCreationEngine: Embedded ${items.length} items`);
   }
 }
 
-/**
- * Get the portrait path if it's an uploaded file (not a data URL).
- * Data URLs are handled separately via upload.
- */
-function getPortraitPath(portrait?: PortraitSelection): string | null {
-  if (!portrait?.portraitDataUrl) return null;
-  // If it's a regular file path (uploaded via FilePicker), use directly
-  if (!portrait.portraitDataUrl.startsWith("data:")) {
-    return portrait.portraitDataUrl;
+/* ── Step 4: Apply Proficiencies ─────────────────────────── */
+
+async function applyProficiencies(
+  actor: FoundryDocument,
+  sel: WizardState["selections"],
+): Promise<void> {
+  const skillUpdates: Record<string, unknown> = {};
+
+  // Background-granted skills
+  for (const key of sel.background?.grants.skillProficiencies ?? []) {
+    skillUpdates[`system.skills.${key}.proficient`] = 1;
   }
-  return null; // Data URLs handled by applyPortrait after actor creation
+  // Class-chosen skills
+  for (const key of sel.skills?.chosen ?? []) {
+    skillUpdates[`system.skills.${key}.proficient`] = 1;
+  }
+
+  if (Object.keys(skillUpdates).length > 0) {
+    await actor.update(skillUpdates);
+    Log.debug("ActorCreationEngine: Applied skill proficiencies");
+  }
 }
 
-/**
- * Upload a generated portrait (data URL) to Foundry and update the actor's img.
- */
+/* ── Step 5: Apply Languages ─────────────────────────────── */
+
+async function applyLanguages(
+  actor: FoundryDocument,
+  sel: WizardState["selections"],
+): Promise<void> {
+  const fixed = sel.background?.languages.fixed ?? [];
+  const chosen = sel.background?.languages.chosen ?? [];
+  const allLanguages = [...fixed, ...chosen];
+
+  if (allLanguages.length > 0) {
+    await actor.update({ "system.traits.languages.value": allLanguages });
+    Log.debug(`ActorCreationEngine: Applied ${allLanguages.length} languages`);
+  }
+}
+
+/* ── Step 6: Portrait Upload ─────────────────────────────── */
+
 async function applyPortrait(
   actor: FoundryDocument,
   portrait: PortraitSelection | undefined,
@@ -298,10 +237,18 @@ async function applyPortrait(
   }
 }
 
-/**
- * Emit a socket message + UI notification when a player creates a character.
- * GM sees a notification; other clients can react if needed.
- */
+/* ── Step 7: Set Ownership ───────────────────────────────── */
+
+async function setOwnership(actor: FoundryDocument): Promise<void> {
+  const userId = getGame()?.userId as string | undefined;
+  if (userId) {
+    await actor.update({ [`ownership.${userId}`]: 3 }); // OWNER level
+    Log.debug(`ActorCreationEngine: Set OWNER permission for user ${userId}`);
+  }
+}
+
+/* ── Step 8: Notify GM ───────────────────────────────────── */
+
 function notifyGMCharacterCreated(characterName: string, actorId: string): void {
   try {
     const game = getGame();
@@ -327,6 +274,8 @@ function notifyGMCharacterCreated(characterName: string, actorId: string): void 
     // Non-critical — don't let notification failure block creation
   }
 }
+
+/* ── Utilities ───────────────────────────────────────────── */
 
 function dataUrlToBlob(dataUrl: string): Blob | null {
   try {
