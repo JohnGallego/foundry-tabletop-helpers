@@ -1,0 +1,113 @@
+{{!-- Character Creator — Background Step with Grants Panel --}}
+<div class="cc-card-select" data-step="background">
+
+  <p class="cc-card-select__description">{{stepDescription}}</p>
+
+  {{#if hasEntries}}
+  <div class="cc-card-grid">
+    {{#each entries}}
+    <div class="cc-select-card{{#if selected}} cc-select-card--selected{{/if}}"
+         data-card-uuid="{{uuid}}"
+         role="button"
+         tabindex="0"
+         aria-selected="{{selected}}">
+      <div class="cc-select-card__img-wrap">
+        <img class="cc-select-card__img" src="{{img}}" alt="{{name}}" loading="lazy">
+      </div>
+      <div class="cc-select-card__info">
+        <div class="cc-select-card__name">{{name}}</div>
+        <div class="cc-select-card__source">{{packLabel}}</div>
+      </div>
+      {{#if selected}}
+      <div class="cc-select-card__check">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      {{/if}}
+    </div>
+    {{/each}}
+  </div>
+
+  {{else}}
+  <div class="cc-empty-state">
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <p>{{emptyMessage}}</p>
+  </div>
+  {{/if}}
+
+  {{!-- Grants Panel (only shown when a background is selected) --}}
+  {{#if showGrants}}
+  <div class="cc-bg-grants" data-grants-panel>
+    <h4 class="cc-bg-grants__title">Background Grants</h4>
+
+    {{!-- Proficiency Chips --}}
+    <div class="cc-bg-grants__section">
+      <div class="cc-bg-grants__label">Proficiencies</div>
+      <div class="cc-bg-grants__chips">
+        {{#each grantedSkills}}
+        <span class="cc-chip cc-chip--locked">{{this}}</span>
+        {{/each}}
+        {{#if toolProficiency}}
+        <span class="cc-chip cc-chip--tool">{{toolProficiency}}</span>
+        {{/if}}
+      </div>
+    </div>
+
+    {{!-- Origin Feat --}}
+    {{#if originFeatName}}
+    <div class="cc-bg-grants__section">
+      <div class="cc-bg-grants__label">Origin Feat</div>
+      <span class="cc-chip cc-chip--feat">{{originFeatName}}</span>
+    </div>
+    {{/if}}
+
+    {{!-- ASI Picker --}}
+    {{#if hasASI}}
+    <div class="cc-bg-grants__section">
+      <div class="cc-bg-grants__label">
+        Ability Score Increases
+        <span class="cc-bg-grants__asi-counter" data-asi-counter>{{asiPointsUsed}} / {{asiPoints}}</span>
+      </div>
+      <div class="cc-bg-grants__asi-grid">
+        {{#each asiAbilities}}
+        <div class="cc-bg-grants__asi-row{{#if suggested}} cc-bg-grants__asi-row--suggested{{/if}}">
+          <label>{{label}}</label>
+          <select data-asi-ability="{{key}}">
+            {{#each options}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- Language Picker --}}
+    {{#if hasLanguages}}
+    <div class="cc-bg-grants__section">
+      <div class="cc-bg-grants__label">Languages</div>
+      {{#if fixedLanguages.length}}
+      <div class="cc-bg-grants__lang-chips">
+        {{#each fixedLanguages}}
+        <span class="cc-chip cc-chip--locked">{{this}}</span>
+        {{/each}}
+      </div>
+      {{/if}}
+      {{#if languageSlots}}
+      <div class="cc-bg-grants__lang-picks">
+        {{#each languageSlots}}
+        <select class="cc-bg-grants__lang-select" data-lang-slot="{{index}}">
+          <option value="">— Choose —</option>
+          {{#each options}}
+          <option value="{{id}}" {{#if selected}}selected{{/if}} {{#if disabled}}disabled{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+        {{/each}}
+      </div>
+      {{/if}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+</div>

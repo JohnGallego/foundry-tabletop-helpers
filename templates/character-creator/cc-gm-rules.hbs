@@ -73,6 +73,16 @@
     </div>
   </fieldset>
 
+  {{!-- Custom Backgrounds --}}
+  <fieldset class="cc-gm-fieldset">
+    <legend class="cc-gm-legend">Custom Backgrounds</legend>
+    <label class="cc-gm-checkbox-label">
+      <input type="checkbox" name="allowCustomBackgrounds" {{#if allowCustomBackgrounds}}checked{{/if}} />
+      <span>Allow custom backgrounds</span>
+    </label>
+    <p class="cc-gm-hint">Let players swap the origin feat when creating characters.</p>
+  </fieldset>
+
   {{!-- Save Button --}}
   <div class="cc-gm-actions">
     <button type="button" class="cc-gm-save-btn" data-action="saveRules">

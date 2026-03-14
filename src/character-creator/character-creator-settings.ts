@@ -35,6 +35,8 @@ export const CC_SETTINGS = {
   LEVEL1_HP_METHOD: "ccLevel1HpMethod",
   /** JSON: Per-step and per-item artwork overrides. */
   ARTWORK_OVERRIDES: "ccArtworkOverrides",
+  /** Allow players to swap the origin feat on backgrounds. */
+  ALLOW_CUSTOM_BACKGROUNDS: "ccAllowCustomBackgrounds",
 } as const;
 
 /* ── Registration ─────────────────────────────────────────── */
@@ -149,6 +151,14 @@ export function registerCharacterCreatorSettings(settings: {
       restricted: true,
     });
 
+    settings.register(MOD, CC_SETTINGS.ALLOW_CUSTOM_BACKGROUNDS, {
+      scope: "world",
+      config: false,
+      type: Boolean,
+      default: false,
+      restricted: true,
+    });
+
     settings.register(MOD, CC_SETTINGS.ARTWORK_OVERRIDES, {
       scope: "world",
       config: false,
@@ -248,4 +258,8 @@ export function getLevel1HpMethod(): HpMethod {
   const val = getSetting<string>(MOD, CC_SETTINGS.LEVEL1_HP_METHOD);
   if (val === "max" || val === "roll") return val;
   return "max";
+}
+
+export function allowCustomBackgrounds(): boolean {
+  return getSetting<boolean>(MOD, CC_SETTINGS.ALLOW_CUSTOM_BACKGROUNDS) ?? false;
 }

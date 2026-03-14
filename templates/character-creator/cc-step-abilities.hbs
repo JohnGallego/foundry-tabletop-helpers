@@ -44,8 +44,16 @@
     {{#each abilities}}
     <div class="cc-ability-card">
       <div class="cc-ability-card__abbrev">{{abbrev}}</div>
-      <div class="cc-ability-card__value">{{value}}</div>
+      <div class="cc-ability-card__value">{{total}}</div>
       <div class="cc-ability-card__modifier">{{modifierStr}}</div>
+      {{#if backgroundBonus}}
+      <div class="cc-ability-card__bonus">
+        <span class="cc-ability-card__bonus-base">{{value}}</span>
+        <span class="cc-ability-card__bonus-plus">+{{backgroundBonus}}</span>
+        <span class="cc-ability-card__bonus-eq">=</span>
+        <span class="cc-ability-card__bonus-total">{{total}}</span>
+      </div>
+      {{/if}}
       <div class="cc-ability-card__label">{{label}}</div>
 
       {{!-- Point Buy Controls --}}

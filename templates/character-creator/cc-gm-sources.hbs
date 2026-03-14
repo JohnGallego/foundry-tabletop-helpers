@@ -19,9 +19,9 @@
                  {{#if enabled}}checked{{/if}} />
           <span class="cc-gm-pack-name">{{label}}</span>
           {{#if packageName}}
-          <span class="cc-gm-pack-source">{{packageName}}</span>
+          <span class="cc-gm-pack-source">(Source: {{packageName}})</span>
           {{/if}}
-          <span class="cc-gm-pack-count">{{itemCount}} items</span>
+          <span class="cc-gm-pack-count">&middot; {{itemCount}} items</span>
         </label>
       </li>
       {{/each}}

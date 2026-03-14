@@ -1,4 +1,4 @@
-{{!-- Character Creator — Review & Create Step --}}
+{{!-- Character Creator — Review & Create Step (2024 Rules) --}}
 <div class="cc-review-step" data-step="review">
 
   {{!-- Character Name Input --}}
@@ -47,16 +47,107 @@
       </div>
 
       <div class="cc-review-section__body">
+
+        {{!-- Ability Scores --}}
         {{#if isAbilities}}
         <div class="cc-review-abilities">
           {{#each summary}}
           <div class="cc-review-ability">
             <span class="cc-review-ability__key">{{key}}</span>
-            <span class="cc-review-ability__score">{{score}}</span>
+            <span class="cc-review-ability__score">{{score}}{{#if hasBonus}} <small class="cc-review-ability__bonus">({{baseScore}}+{{bonus}})</small>{{/if}}</span>
             <span class="cc-review-ability__mod{{#if isPositive}} cc-review-ability__mod--positive{{/if}}">{{modifier}}</span>
           </div>
           {{/each}}
         </div>
+
+        {{!-- Background (enriched with grants) --}}
+        {{else if isBackground}}
+        <div class="cc-review-simple">
+          {{#if img}}
+          <img class="cc-review-simple__img" src="{{img}}" alt="{{summary}}">
+          {{/if}}
+          <span class="cc-review-simple__text">{{summary}}</span>
+        </div>
+        {{#if hasBgDetails}}
+        <div class="cc-review-grants">
+          {{#if bgSkills.length}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Skills:</span>
+            <span class="cc-review-grant__chips">
+              {{#each bgSkills}}<span class="cc-review-chip">{{this}}</span>{{/each}}
+            </span>
+          </div>
+          {{/if}}
+          {{#if bgTool}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Tool:</span>
+            <span class="cc-review-grant__value">{{bgTool}}</span>
+          </div>
+          {{/if}}
+          {{#if bgOriginFeat}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Origin Feat:</span>
+            <span class="cc-review-grant__value">{{bgOriginFeat}}</span>
+          </div>
+          {{/if}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Languages:</span>
+            <span class="cc-review-grant__chips">
+              {{#each bgLanguagesFixed}}<span class="cc-review-chip cc-review-chip--fixed">{{this}}</span>{{/each}}
+              {{#each bgLanguagesChosen}}<span class="cc-review-chip">{{this}}</span>{{/each}}
+            </span>
+          </div>
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">ASI:</span>
+            <span class="cc-review-grant__value">{{bgASI}}</span>
+          </div>
+        </div>
+        {{/if}}
+
+        {{!-- Skills (class + background) --}}
+        {{else if isSkills}}
+        <div class="cc-review-skills">
+          {{#if hasBackgroundSkills}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Background:</span>
+            <span class="cc-review-grant__chips">
+              {{#each backgroundSkills}}<span class="cc-review-chip cc-review-chip--fixed">{{this}}</span>{{/each}}
+            </span>
+          </div>
+          {{/if}}
+          {{#if hasClassSkills}}
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Class:</span>
+            <span class="cc-review-grant__chips">
+              {{#each classSkills}}<span class="cc-review-chip">{{this}}</span>{{/each}}
+            </span>
+          </div>
+          {{/if}}
+          {{#unless hasClassSkills}}
+          {{#unless hasBackgroundSkills}}
+          <span class="cc-review-simple__text">None selected</span>
+          {{/unless}}
+          {{/unless}}
+        </div>
+
+        {{!-- Species with traits --}}
+        {{else if hasTraits}}
+        <div class="cc-review-simple">
+          {{#if img}}
+          <img class="cc-review-simple__img" src="{{img}}" alt="{{summary}}">
+          {{/if}}
+          <span class="cc-review-simple__text">{{summary}}</span>
+        </div>
+        <div class="cc-review-grants">
+          <div class="cc-review-grant">
+            <span class="cc-review-grant__label">Traits:</span>
+            <span class="cc-review-grant__chips">
+              {{#each traits}}<span class="cc-review-chip">{{this}}</span>{{/each}}
+            </span>
+          </div>
+        </div>
+
+        {{!-- Simple section (class, subclass, origin feat, feats, spells, equipment) --}}
         {{else if isSimple}}
         <div class="cc-review-simple">
           {{#if img}}
@@ -65,6 +156,7 @@
           <span class="cc-review-simple__text">{{summary}}</span>
         </div>
         {{/if}}
+
       </div>
     </div>
     {{/each}}

@@ -40,7 +40,7 @@ export function createPortraitStep(): WizardStepDefinition {
         portraitDataUrl: sel?.portraitDataUrl ?? "",
         tokenDataUrl: sel?.tokenDataUrl ?? "",
         source: sel?.source ?? "none",
-        raceName: state.selections.race?.name ?? "",
+        raceName: state.selections.species?.name ?? "",
         className: state.selections.class?.name ?? "",
       };
     },
