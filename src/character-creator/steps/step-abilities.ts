@@ -85,21 +85,30 @@ function buildAbilitiesVM(state: WizardState): Record<string, unknown> {
     { id: "standardArray", label: "Standard Array", icon: "fa-solid fa-list-ol", active: data.method === "standardArray" },
   ].filter((m) => methods.includes(m.id as AbilityScoreMethod));
 
+  // Read background ASI assignments (if any)
+  const bgAsi = state.selections.background?.asi?.assignments ?? {};
+
   // Build ability cards
   const abilities = ABILITY_KEYS.map((key) => {
     const value = data.scores[key];
-    const mod = abilityModifier(value);
+    const backgroundBonus = bgAsi[key] ?? 0;
+    const total = value + backgroundBonus;
+    const mod = abilityModifier(total);
     return {
       key,
       label: ABILITY_LABELS[key],
       abbrev: ABILITY_ABBREVS[key],
       value,
+      backgroundBonus,
+      total,
       modifier: mod,
       modifierStr: formatModifier(mod),
       canIncrement: data.method === "pointBuy" && value < POINT_BUY_MAX,
       canDecrement: data.method === "pointBuy" && value > POINT_BUY_MIN,
     };
   });
+
+  const hasBackgroundBonus = abilities.some((a) => a.backgroundBonus > 0);
 
   // Point buy state
   const spent = data.method === "pointBuy" ? pointBuySpent(data.scores) : 0;
@@ -157,6 +166,7 @@ function buildAbilitiesVM(state: WizardState): Record<string, unknown> {
     method: data.method,
     methodTabs,
     abilities,
+    hasBackgroundBonus,
     isPointBuy: data.method === "pointBuy",
     isRoll: data.method === "4d6",
     isStandardArray: data.method === "standardArray",

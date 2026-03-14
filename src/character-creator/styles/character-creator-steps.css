@@ -195,6 +195,25 @@
   color: var(--cc-text-secondary);
 }
 
+.cc-ability-card__bonus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2em;
+  font-size: var(--cc-text-2xs);
+  color: var(--cc-text-secondary);
+  margin-top: var(--cc-space-2xs);
+}
+
+.cc-ability-card__bonus-plus {
+  color: var(--cc-accent, #7ec8e3);
+}
+
+.cc-ability-card__bonus-total {
+  font-weight: 600;
+  color: var(--cc-text-primary);
+}
+
 .cc-ability-card__label {
   font-size: var(--cc-text-2xs);
   color: var(--cc-text-secondary);
