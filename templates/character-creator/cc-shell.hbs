@@ -1,5 +1,5 @@
 {{!-- Character Creator — Wizard Shell --}}
-<div class="cc-wizard-shell {{atmosphereClass}}">
+<div class="cc-wizard-shell {{atmosphereClass}}" data-current-step="{{currentStepId}}">
 
   {{!-- Step Indicator Bar --}}
   <nav class="cc-step-indicator" aria-label="Wizard Steps">
@@ -7,7 +7,7 @@
     <div class="cc-step-indicator__step cc-step-indicator__step--{{status}}{{#if active}} cc-step-indicator__step--active{{/if}}"
          data-step-id="{{id}}"
          title="{{label}}">
-      <span class="cc-step-indicator__number">{{math index "+" 1}}</span>
+      <span class="cc-step-indicator__number">{{number}}</span>
       <i class="cc-step-indicator__icon {{icon}}"></i>
     </div>
     {{#unless @last}}
@@ -17,10 +17,31 @@
   </nav>
 
   {{!-- Step Header --}}
+  {{#if headerTitle}}
+  <header class="cc-step-header cc-step-header--enhanced">
+    {{#if headerIcon}}<i class="cc-step-header__icon cc-step-header__icon--lg {{headerIcon}}"></i>{{/if}}
+    <div class="cc-step-header__text">
+      <h2 class="cc-step-header__title">
+        {{headerTitle}} {{#if headerSubtitle}}<span class="cc-step-header__subtitle">{{headerSubtitle}}</span>{{/if}}
+      </h2>
+      <p class="cc-step-header__description">{{headerDescription}}</p>
+    </div>
+    <div class="cc-selection-preview{{#unless selectedEntry}} cc-selection-preview--empty{{/unless}}" data-selection-preview>
+      <img class="cc-selection-preview__img"
+           src="{{#if selectedEntry}}{{selectedEntry.img}}{{else}}icons/svg/mystery-man.svg{{/if}}"
+           alt="" data-preview-img>
+      <div class="cc-selection-preview__info" data-preview-info>
+        <div class="cc-selection-preview__name" data-preview-name>{{#if selectedEntry}}{{selectedEntry.name}}{{/if}}</div>
+        <div class="cc-selection-preview__source" data-preview-source>{{#if selectedEntry}}{{selectedEntry.packLabel}}{{/if}}</div>
+      </div>
+    </div>
+  </header>
+  {{else}}
   <header class="cc-step-header">
     <i class="cc-step-header__icon {{currentStepIcon}}"></i>
     <h2 class="cc-step-header__title">{{currentStepLabel}}</h2>
   </header>
+  {{/if}}
 
   {{!-- Step Content Area --}}
   <section class="cc-step-content">
@@ -37,7 +58,7 @@
       <span>Back</span>
     </button>
 
-    <div class="cc-navigation__spacer"></div>
+    <div class="cc-navigation__status" data-status-hint>{{statusHint}}</div>
 
     {{#if isReviewStep}}
     {{#if isLevelUp}}

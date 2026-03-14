@@ -137,10 +137,19 @@ export function buildCharacterCreatorAppClass(): void {
 
       // Build step ViewModel and render its template to HTML
       let stepContentHtml = "";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let vmData: Record<string, any> = {};
       if (stepDef) {
-        const vmData = await stepDef.buildViewModel(machine.state);
+        vmData = await stepDef.buildViewModel(machine.state);
         stepContentHtml = await renderTemplate(stepDef.templatePath, vmData);
       }
+
+      // Extract enhanced header fields from card-select steps
+      const headerTitle = vmData.stepTitle as string | undefined;
+      const headerSubtitle = vmData.stepLabel as string | undefined;
+      const headerDescription = vmData.stepDescription as string | undefined;
+      const headerIcon = vmData.stepIcon as string | undefined;
+      const selectedEntry = vmData.selectedEntry as { name: string; img: string; packLabel: string } | null | undefined;
 
       return {
         steps: machine.buildStepIndicatorData(),
@@ -151,7 +160,13 @@ export function buildCharacterCreatorAppClass(): void {
         canGoBack: machine.canGoBack,
         canGoNext: machine.canGoNext,
         isReviewStep: machine.isReviewStep,
+        statusHint: stepDef?.getStatusHint?.(machine.state) ?? "",
         atmosphereClass: getStepAtmosphere(machine.currentStepId),
+        headerTitle,
+        headerSubtitle,
+        headerDescription,
+        headerIcon,
+        selectedEntry,
       };
     }
 
@@ -171,6 +186,17 @@ export function buildCharacterCreatorAppClass(): void {
         setData: (value: unknown) => {
           machine.setStepData(machine.currentStepId, value);
           this.render({ force: true });
+        },
+        setDataSilent: (value: unknown) => {
+          machine.setStepData(machine.currentStepId, value);
+          // Patch nav bar: Next button state + status hint
+          const nextBtn = this.element?.querySelector("[data-action='goNext']") as HTMLButtonElement | null;
+          if (nextBtn) nextBtn.disabled = !machine.canGoNext;
+          const hintEl = this.element?.querySelector("[data-status-hint]");
+          if (hintEl) {
+            const curDef = machine.currentStepDef;
+            hintEl.textContent = curDef?.getStatusHint?.(machine.state) ?? "";
+          }
         },
         rerender: () => {
           this.render({ force: true });

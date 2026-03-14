@@ -238,6 +238,7 @@ export class WizardStateMachine {
     status: StepStatus;
     active: boolean;
     index: number;
+    number: number;
   }> {
     return this.state.applicableSteps.map((id, index) => {
       const def = this.getStepDef(id);
@@ -248,6 +249,7 @@ export class WizardStateMachine {
         status: this.getStepStatus(id),
         active: index === this.state.currentStep,
         index,
+        number: index + 1,
       };
     });
   }

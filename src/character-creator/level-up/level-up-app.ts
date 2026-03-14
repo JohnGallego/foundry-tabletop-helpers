@@ -167,6 +167,7 @@ export function buildLevelUpAppClass(): void {
         canGoBack: machine.canGoBack,
         canGoNext: machine.canGoNext,
         isReviewStep: machine.isReviewStep,
+        statusHint: "",
         atmosphereClass: getStepAtmosphere(stepId),
         isLevelUp: true,
       };

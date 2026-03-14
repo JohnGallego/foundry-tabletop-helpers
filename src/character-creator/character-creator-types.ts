@@ -376,6 +376,8 @@ export interface WizardStepDefinition {
   isApplicable(state: WizardState): boolean;
   /** Is this step's data complete? */
   isComplete(state: WizardState): boolean;
+  /** Short status hint for the navigation bar (e.g., "Choose a species"). */
+  getStatusHint?(state: WizardState): string;
   /** Build the template ViewModel */
   buildViewModel(state: WizardState): Promise<Record<string, unknown>>;
   /** Action handlers merged into the app's actions */
@@ -407,8 +409,17 @@ export interface WizardShellContext {
   canGoBack: boolean;
   canGoNext: boolean;
   isReviewStep: boolean;
+  /** Short status hint for the navigation bar */
+  statusHint: string;
   /** Atmospheric gradient class for current step */
   atmosphereClass: string;
+  /** Enhanced header fields — set by card-select steps to override the default header */
+  headerTitle?: string;
+  headerSubtitle?: string;
+  headerDescription?: string;
+  headerIcon?: string;
+  /** Selected entry preview for card-select steps */
+  selectedEntry?: { name: string; img: string; packLabel: string } | null;
 }
 
 /* ── Content Type Labels ─────────────────────────────────── */
