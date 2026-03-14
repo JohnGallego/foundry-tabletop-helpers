@@ -639,9 +639,48 @@
   flex: 1;
 }
 
+.cc-skill-row--checked .cc-skill-row__name {
+  color: var(--cc-accent-gold);
+}
+
 .cc-skill-row__ability {
   font-size: var(--cc-text-2xs);
   color: var(--cc-text-secondary);
+}
+
+/* ── Skills Counter ──────────────────────────────────── */
+
+.cc-skills__sep,
+.cc-skills__max,
+.cc-skills__counter-label {
+  color: var(--cc-text-secondary);
+  font-size: var(--cc-text-sm);
+}
+
+.cc-skills__counter--full {
+  border-color: var(--cc-accent-gold);
+}
+
+.cc-skills__counter--full .cc-skills__count {
+  color: var(--cc-accent-gold);
+}
+
+/* ── Background Skills (locked chips) ────────────────── */
+
+.cc-skills__background {
+  margin-bottom: var(--cc-space-md);
+}
+
+.cc-skills__background-label {
+  font-size: var(--cc-text-sm);
+  color: var(--cc-text-secondary);
+  margin-bottom: var(--cc-space-xs);
+}
+
+.cc-skills__background-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cc-space-xs);
 }
 
 /* ============================================================

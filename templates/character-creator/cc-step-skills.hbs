@@ -1,34 +1,39 @@
 {{!-- Character Creator — Skills & Proficiencies Step --}}
 <div class="cc-skills">
-
   <div class="cc-skills__header">
     <p class="cc-skills__description">
-      Choose skill proficiencies for your character.
-      {{#if hasClass}}Your class ({{className}}) determines which skills are available.{{/if}}
+      Choose skill proficiencies from your class options.
+      {{#if className}}Your class ({{className}}) allows {{maxPicks}} choices.{{/if}}
     </p>
-    <div class="cc-skills__counter">
-      <span class="cc-skills__count">{{chosenCount}}</span> selected
+    <div class="cc-skills__counter{{#if atMax}} cc-skills__counter--full{{/if}}">
+      <span class="cc-skills__count" data-skill-count>{{chosenCount}}</span>
+      <span class="cc-skills__sep">/</span>
+      <span class="cc-skills__max">{{maxPicks}}</span>
+      <span class="cc-skills__counter-label">proficiencies</span>
     </div>
   </div>
 
-  <div class="cc-skills__grid">
-    {{#each groups}}
-    <div class="cc-skill-group">
-      <div class="cc-skill-group__header">
-        <span class="cc-skill-group__ability">{{abilityLabel}}</span>
-      </div>
-      {{#each skills}}
-      <label class="cc-skill-row">
-        <input type="checkbox"
-               class="cc-skill-row__checkbox"
-               data-skill="{{key}}"
-               {{#if checked}}checked{{/if}}>
-        <span class="cc-skill-row__name">{{label}}</span>
-        <span class="cc-skill-row__ability">({{abilityAbbrev}})</span>
-      </label>
+  {{!-- Background skills (locked) --}}
+  {{#if backgroundSkillChips.length}}
+  <div class="cc-skills__background">
+    <div class="cc-skills__background-label">From your background:</div>
+    <div class="cc-skills__background-chips">
+      {{#each backgroundSkillChips}}
+      <span class="cc-chip cc-chip--locked">{{this}}</span>
       {{/each}}
     </div>
+  </div>
+  {{/if}}
+
+  {{!-- Class skill choices --}}
+  <div class="cc-skills__grid">
+    {{#each availableSkills}}
+    <label class="cc-skill-row{{#if checked}} cc-skill-row--checked{{/if}}">
+      <input type="checkbox" class="cc-skill-row__checkbox" data-skill="{{key}}"
+             {{#if checked}}checked{{/if}} {{#if disabled}}disabled{{/if}}>
+      <span class="cc-skill-row__name">{{label}}</span>
+      <span class="cc-skill-row__ability">({{abilityAbbrev}})</span>
+    </label>
     {{/each}}
   </div>
-
 </div>
