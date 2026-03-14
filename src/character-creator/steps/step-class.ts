@@ -56,7 +56,7 @@ export function createClassStep(): WizardStepDefinition {
           selected: e.uuid === selected?.uuid,
         })),
         selectedEntry: selected
-          ? { ...entries.find((e) => e.uuid === selected.uuid), description: compendiumIndexer.getCachedDescription(selected.uuid) }
+          ? { ...entries.find((e) => e.uuid === selected.uuid), description: await compendiumIndexer.getCachedDescription(selected.uuid) }
           : null,
         hasEntries: entries.length > 0,
         emptyMessage: "No classes available. Check your GM configuration.",

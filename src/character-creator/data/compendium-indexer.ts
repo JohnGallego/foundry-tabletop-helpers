@@ -123,15 +123,26 @@ export class CompendiumIndexer {
   }
 
   /**
-   * Get a cached document's HTML description, if available.
-   * Returns empty string if the document isn't cached or has no description.
+   * Get a cached document's HTML description, enriched via Foundry's TextEditor.
+   * Resolves @UUID links, inline rolls, etc. Returns empty string if unavailable.
    */
-  getCachedDescription(uuid: string): string {
+  async getCachedDescription(uuid: string): Promise<string> {
     const doc = this.docCache.get(uuid);
     if (!doc) return "";
     const system = doc.system as Record<string, unknown> | undefined;
     const desc = system?.description as Record<string, unknown> | undefined;
-    return typeof desc?.value === "string" ? desc.value : "";
+    const raw = typeof desc?.value === "string" ? desc.value : "";
+    if (!raw) return "";
+
+    // Enrich via Foundry's TextEditor to resolve @UUID, @Check, inline rolls, etc.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const TextEditor = (globalThis as any).TextEditor;
+      if (TextEditor?.enrichHTML) {
+        return await TextEditor.enrichHTML(raw, { async: true });
+      }
+    } catch { /* fall through to raw */ }
+    return raw;
   }
 
   /**
