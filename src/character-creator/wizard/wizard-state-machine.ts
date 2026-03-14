@@ -20,11 +20,11 @@ import type {
  * are invalidated (selections cleared, status → "pending").
  */
 const DEPENDENCY_CASCADE: Record<string, string[]> = {
-  abilities: ["feats"],
-  race: ["skills"],
-  background: ["skills"],
+  species: [],
+  background: ["originFeat", "skills", "abilities"],
   class: ["subclass", "skills", "feats", "spells", "equipment"],
   subclass: ["spells"],
+  abilities: ["feats"],
 };
 
 /* ── State Machine ───────────────────────────────────────── */

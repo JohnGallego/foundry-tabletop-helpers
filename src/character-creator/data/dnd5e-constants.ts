@@ -91,8 +91,6 @@ export const POINT_BUY_MAX = 15;
 /** Fixed ability score values for the Standard Array method. */
 export const STANDARD_ARRAY: readonly number[] = [15, 14, 13, 12, 10, 8] as const;
 
-/* ── Default Pack Sources ────────────────────────────────── */
-
 /* ── Ability Helpers ─────────────────────────────────────── */
 
 /** Compute ability score modifier. */
@@ -128,6 +126,39 @@ export const SKILLS: Record<string, { label: string; ability: AbilityKey }> = {
   ste: { label: "Stealth", ability: "dex" },
   sur: { label: "Survival", ability: "wis" },
 };
+
+/* ── Languages ──────────────────────────────────────────── */
+
+/** Standard languages available in the 2024 PHB. */
+export const STANDARD_LANGUAGES: readonly { id: string; label: string }[] = [
+  { id: "common", label: "Common" },
+  { id: "common-sign", label: "Common Sign Language" },
+  { id: "draconic", label: "Draconic" },
+  { id: "dwarvish", label: "Dwarvish" },
+  { id: "elvish", label: "Elvish" },
+  { id: "giant", label: "Giant" },
+  { id: "gnomish", label: "Gnomish" },
+  { id: "goblin", label: "Goblin" },
+  { id: "halfling", label: "Halfling" },
+  { id: "orc", label: "Orc" },
+] as const;
+
+/** Rare languages (typically require DM approval). */
+export const RARE_LANGUAGES: readonly { id: string; label: string }[] = [
+  { id: "abyssal", label: "Abyssal" },
+  { id: "celestial", label: "Celestial" },
+  { id: "deep-speech", label: "Deep Speech" },
+  { id: "infernal", label: "Infernal" },
+  { id: "primordial", label: "Primordial" },
+  { id: "sylvan", label: "Sylvan" },
+  { id: "thieves-cant", label: "Thieves' Cant" },
+  { id: "undercommon", label: "Undercommon" },
+] as const;
+
+/** Lookup map for language display names. */
+export const LANGUAGE_LABELS: Record<string, string> = Object.fromEntries(
+  [...STANDARD_LANGUAGES, ...RARE_LANGUAGES].map(l => [l.id, l.label])
+);
 
 /* ── Default Pack Sources ────────────────────────────────── */
 

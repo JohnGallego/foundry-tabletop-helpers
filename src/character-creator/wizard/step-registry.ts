@@ -9,7 +9,10 @@
 import { MOD } from "../../logger";
 import type { WizardStepDefinition, WizardState } from "../character-creator-types";
 import { createAbilitiesStep } from "../steps/step-abilities";
-import { createRaceStep } from "../steps/step-race";
+// TODO: createSpeciesStep will be added in Task 4
+// import { createSpeciesStep } from "../steps/step-species";
+// TODO: createOriginFeatStep will be added in Task 6
+// import { createOriginFeatStep } from "../steps/step-origin-feat";
 import { createBackgroundStep } from "../steps/step-background";
 import { createClassStep } from "../steps/step-class";
 import { createSkillsStep } from "../steps/step-skills";
@@ -24,11 +27,12 @@ import { createReviewStep } from "../steps/step-review";
 
 /** Canonical step order. Steps not in this list sort to the end. */
 const STEP_ORDER = [
-  "abilities",
-  "race",
+  "species",
   "background",
+  "originFeat",
   "class",
   "subclass",
+  "abilities",
   "skills",
   "feats",
   "spells",
@@ -78,11 +82,12 @@ export function getStep(id: string): WizardStepDefinition | undefined {
 
 /** Atmospheric gradient class per step (maps to CSS). */
 const STEP_ATMOSPHERES: Record<string, string> = {
-  abilities: "cc-atmosphere--arcane",
-  race: "cc-atmosphere--nature",
+  species: "cc-atmosphere--nature",
   background: "cc-atmosphere--shadow",
+  originFeat: "cc-atmosphere--crimson",
   class: "cc-atmosphere--forge",
   subclass: "cc-atmosphere--forge",
+  abilities: "cc-atmosphere--arcane",
   skills: "cc-atmosphere--arcane",
   feats: "cc-atmosphere--crimson",
   spells: "cc-atmosphere--arcane",
@@ -134,22 +139,26 @@ export function createPlaceholderStep(
  * Phases 3 & 4 steps are fully implemented; portrait remains as placeholder.
  */
 export function registerAllSteps(): void {
-  // Phase 3 — Core steps
-  registerStep(createAbilitiesStep());
-  registerStep(createRaceStep());
-  registerStep(createBackgroundStep());
-  registerStep(createClassStep());
-  registerStep(createSkillsStep());
+  // TODO: Species step (Task 4)
+  // registerStep(createSpeciesStep());
 
-  // Phase 4 — Advanced steps
+  // Core steps
+  registerStep(createBackgroundStep());
+
+  // TODO: Origin Feat step (Task 6)
+  // registerStep(createOriginFeatStep());
+
+  registerStep(createClassStep());
   registerStep(createSubclassStep());
+  registerStep(createAbilitiesStep());
+  registerStep(createSkillsStep());
   registerStep(createFeatsStep());
   registerStep(createSpellsStep());
   registerStep(createEquipmentStep());
 
-  // Phase 6 — Portrait (AI generation or manual upload)
+  // Portrait (AI generation or manual upload)
   registerStep(createPortraitStep());
 
-  // Review — fully implemented
+  // Review
   registerStep(createReviewStep());
 }
