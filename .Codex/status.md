@@ -1,0 +1,165 @@
+# Status
+
+## 2026-03-14
+
+- Implemented Phase 1 runtime hardening for global/prototype patches.
+- Added a shared runtime patch registry in `src/runtime/runtime-patches.ts`.
+- Made combat initiative prototype wrapping idempotent in `src/combat/combat-init.ts`.
+- Made Asset Manager FilePicker override idempotent and moved notification suppression to a ref-counted scoped path in `src/asset-manager/asset-manager-picker.ts`.
+- Extracted `window.fth` into a typed API module in `src/fth-api.ts` and attached it from `src/index.ts`.
+- Added regression tests for runtime patch registry behavior and combat wrapper idempotence.
+- Added regression tests for asset-manager FilePicker override idempotence, notification suppression nesting, and standalone open behavior.
+- Started Phase 2 by extracting asset-manager picker rendering helpers into `src/asset-manager/asset-manager-picker-rendering.ts`.
+- Rewired `src/asset-manager/asset-manager-picker.ts` to delegate shell/sidebar/breadcrumb/item markup generation to the new rendering module.
+- Extracted asset-manager preview and tag handling into `src/asset-manager/asset-manager-picker-preview.ts`.
+- Rewired preview open/close and tag interactions in `src/asset-manager/asset-manager-picker.ts` to delegate to the preview controller.
+- Extracted asset-manager upload, create-folder, and batch-optimization orchestration into `src/asset-manager/asset-manager-picker-upload.ts`.
+- Rewired upload and batch optimization entry points in `src/asset-manager/asset-manager-picker.ts` to delegate to the upload controller.
+- Extracted asset-manager selection and keyboard navigation logic into `src/asset-manager/asset-manager-picker-selection.ts`.
+- Rewired selection highlighting, status-bar updates, click multi-select behavior, and keyboard navigation in `src/asset-manager/asset-manager-picker.ts` to delegate to the selection controller.
+- Extracted asset-manager delete flows, thumbnail-cache popup, and context actions into `src/asset-manager/asset-manager-picker-actions.ts`.
+- Rewired delete/context-action handling in `src/asset-manager/asset-manager-picker.ts` to delegate to the action controller.
+- Added focused controller tests in `src/asset-manager/asset-manager-picker-actions.test.ts`.
+- Extracted asset-manager browse/state orchestration into `src/asset-manager/asset-manager-picker-state.ts`.
+- Rewired browse-result parsing, search/sort filtering, refresh/populate flow, and directory-loading UI in `src/asset-manager/asset-manager-picker.ts` to delegate to the state controller.
+- Added focused controller tests in `src/asset-manager/asset-manager-picker-state.test.ts`.
+- Extracted asset-manager toolbar and sidebar event wiring into `src/asset-manager/asset-manager-picker-controls.ts`.
+- Rewired search, sort/view/density controls, upload/create-folder/batch buttons, sidebar filters, and metadata import/export handling in `src/asset-manager/asset-manager-picker.ts` to delegate to the controls controller.
+- Added focused controller tests in `src/asset-manager/asset-manager-picker-controls.test.ts`.
+- Extracted asset-manager close/cleanup lifecycle handling into `src/asset-manager/asset-manager-picker-lifecycle.ts`.
+- Rewired batch-close confirmation and teardown/reset logic in `src/asset-manager/asset-manager-picker.ts` to delegate to the lifecycle controller.
+- Added focused controller tests in `src/asset-manager/asset-manager-picker-lifecycle.test.ts`.
+- Extracted remaining asset-manager file-grid interaction wiring into `src/asset-manager/asset-manager-picker-interactions.ts`.
+- Rewired file selection, directory/breadcrumb navigation, context actions, preview actions, drag/drop, and keyboard navigation in `src/asset-manager/asset-manager-picker.ts` to delegate to the interactions controller.
+- Added focused controller tests in `src/asset-manager/asset-manager-picker-interactions.test.ts`.
+- Started Phase 2 work on LPCS by extracting pure sheet UI helpers into `src/lpcs/lpcs-sheet-ui.ts`.
+- Rewired `src/lpcs/lpcs-sheet.ts` to delegate tab switching, vitals toggling, skill grouping, and HP drawer display helpers to the new module.
+- Added focused helper tests in `src/lpcs/lpcs-sheet-ui.test.ts`.
+- Followed up by extracting `_onRender` listener wiring helpers into `src/lpcs/lpcs-sheet-render.ts`.
+- Rewired base render listeners plus HP drawer, exhaustion dialog, and rest modal listener setup in `src/lpcs/lpcs-sheet.ts` to delegate to the render helper module.
+- Added focused helper tests in `src/lpcs/lpcs-sheet-render.test.ts`.
+- Extended `src/lpcs/lpcs-sheet-render.ts` with generic modal render helpers for combat/skill/item/currency modal setup and item-detail inventory rehydration.
+- Rewired the remaining modal orchestration in `src/lpcs/lpcs-sheet.ts` to delegate to those helpers.
+- Extracted item-detail and currency-editor DOM population into `src/lpcs/lpcs-sheet-modal-content.ts`.
+- Rewired item-detail modal content building and currency-editor display updates in `src/lpcs/lpcs-sheet.ts` to delegate to the modal-content helper module.
+- Added focused helper tests in `src/lpcs/lpcs-sheet-modal-content.test.ts`.
+- Extracted the LPCS `DEFAULT_OPTIONS.actions` map into `src/lpcs/lpcs-sheet-actions.ts`.
+- Rewired `src/lpcs/lpcs-sheet.ts` to use the shared action factory instead of defining the handlers inline.
+- Added focused helper tests in `src/lpcs/lpcs-sheet-actions.test.ts`.
+- Started splitting `src/lpcs/lpcs-view-model.ts` by extracting combat-oriented view-model builders into `src/lpcs/lpcs-view-model-combat.ts`.
+- Rewired `src/lpcs/lpcs-view-model.ts` to delegate combat group assembly and activation-type lookup to the new combat helper module while keeping the top-level view-model shape intact.
+- Added focused helper tests in `src/lpcs/lpcs-view-model-combat.test.ts`.
+- Followed up by extracting inventory and encumbrance builders into `src/lpcs/lpcs-view-model-inventory.ts`.
+- Rewired `src/lpcs/lpcs-view-model.ts` to delegate inventory item shaping, container nesting, and encumbrance calculations to the new inventory helper module.
+- Added focused helper tests in `src/lpcs/lpcs-view-model-inventory.test.ts`.
+- Followed up again by extracting summary-context, feature grouping, traits, and proficiencies into `src/lpcs/lpcs-view-model-character.ts`.
+- Rewired `src/lpcs/lpcs-view-model.ts` to delegate feature/species-trait assembly plus trait/proficiency derivation to the new character helper module.
+- Added focused helper tests in `src/lpcs/lpcs-view-model-character.test.ts`.
+- Started the `src/settings.ts` refactor by extracting submenu/FormApplication registration into `src/settings-menus.ts`.
+- Added `src/settings-utils.ts` for CSV parsing and print-default decoding, and rewired `src/settings.ts` accessors to use those helpers.
+- Added focused helper tests in `src/settings-utils.test.ts`.
+- Continued the `src/settings.ts` refactor by extracting grouped registration blocks into `src/settings-registrations.ts`.
+- Rewired `src/settings.ts` to delegate core settings, print settings, and menu-backing storage registration to those smaller registrars.
+- Started splitting `src/print-sheet/extractors/dnd5e-extractor.ts` by extracting character-specific proficiency, currency, and action/weapon-action helpers into `src/print-sheet/extractors/dnd5e-character-extractor.ts`.
+- Rewired `src/print-sheet/extractors/dnd5e-extractor.ts` to delegate character action, proficiency, and currency extraction to the new helper module.
+- Followed up by extracting NPC manual/embed-context orchestration helpers into `src/print-sheet/extractors/dnd5e-npc-extractor.ts`.
+- Rewired `src/print-sheet/extractors/dnd5e-extractor.ts` to delegate NPC embed-context conversion, manual fallback extraction, and supporting context parsers/gear helpers to the new NPC helper module.
+- Added focused helper tests in `src/print-sheet/extractors/dnd5e-npc-extractor.test.ts`.
+- Started the Character Creator wizard refactor by extracting pure wizard-state helper logic into `src/character-creator/wizard/wizard-state-machine-helpers.ts`.
+- Rewired `src/character-creator/wizard/wizard-state-machine.ts` to delegate applicability recalculation, dependency cascade invalidation, and step-indicator building to the new helper module.
+- Added focused state-machine coverage in `src/character-creator/wizard/wizard-state-machine.test.ts`.
+- Followed up by extracting wizard app render/action orchestration helpers into `src/character-creator/wizard/character-creator-app-helpers.ts`.
+- Rewired `src/character-creator/wizard/character-creator-app.ts` to delegate shell-context building, nav/indicator patching, atmosphere application, and step deactivation to the new helper module.
+- Added focused helper tests in `src/character-creator/wizard/character-creator-app-helpers.test.ts`.
+- Started the Character Creator level-up refactor by extracting pure level-up state-machine helpers into `src/character-creator/level-up/level-up-state-machine-helpers.ts`.
+- Rewired `src/character-creator/level-up/level-up-state-machine.ts` to delegate applicable-step recalculation and step-indicator building to the new helper module.
+- Added focused state-machine coverage in `src/character-creator/level-up/level-up-state-machine.test.ts` for default flow, subclass/feat gating, navigation gating, and indicator output.
+- Followed up by extracting level-up app shell/render helpers into `src/character-creator/level-up/level-up-app-helpers.ts`.
+- Rewired `src/character-creator/level-up/level-up-app.ts` to delegate shell-context building, step activation callbacks, atmosphere/title updates, and apply-button state transitions to the new helper module.
+- Added focused helper tests in `src/character-creator/level-up/level-up-app-helpers.test.ts`.
+- Followed up again by extracting level-up mutation-planning and payload helpers into `src/character-creator/level-up/actor-update-engine-helpers.ts`.
+- Rewired `src/character-creator/level-up/actor-update-engine.ts` to delegate item-operation collection plus class/HP/ASI/spell payload shaping to the new helper module while keeping document writes in the engine layer.
+- Added focused helper tests in `src/character-creator/level-up/actor-update-engine-helpers.test.ts`.
+- Started the next print-sheet refactor by extracting shared transformer formatting helpers into `src/print-sheet/renderers/viewmodels/character-transformer-common.ts`.
+- Extracted combat/action transformation helpers into `src/print-sheet/renderers/viewmodels/character-transformer-combat.ts`.
+- Rewired `src/print-sheet/renderers/viewmodels/character-transformer.ts` to delegate summary-context, combat-stats, and action/mastery transformation to the new helper module.
+- Added focused helper tests in `src/print-sheet/renderers/viewmodels/character-transformer-combat.test.ts`.
+- Followed up by extracting spellcasting and spell-card transformation into `src/print-sheet/renderers/viewmodels/character-transformer-spells.ts`.
+- Rewired `src/print-sheet/renderers/viewmodels/character-transformer.ts` to delegate spellcasting row and spell-card transformation to the new helper module.
+- Added focused helper tests in `src/print-sheet/renderers/viewmodels/character-transformer-spells.test.ts`.
+- Followed up again by extracting inventory and currency transformation into `src/print-sheet/renderers/viewmodels/character-transformer-inventory.ts`.
+- Rewired `src/print-sheet/renderers/viewmodels/character-transformer.ts` to delegate nested inventory row shaping, weight calculation, and currency totaling to the new helper module.
+- Added focused helper tests in `src/print-sheet/renderers/viewmodels/character-transformer-inventory.test.ts`.
+- Followed up again by extracting passive scores, saves, and skill transformation into `src/print-sheet/renderers/viewmodels/character-transformer-saves-skills.ts`.
+- Rewired `src/print-sheet/renderers/viewmodels/character-transformer.ts` to delegate passive-score, save-note, and skill-row transformation to the new helper module.
+- Added focused helper tests in `src/print-sheet/renderers/viewmodels/character-transformer-saves-skills.test.ts`.
+- Followed up again by extracting feature-group and proficiency transformation into `src/print-sheet/renderers/viewmodels/character-transformer-features.ts`.
+- Rewired `src/print-sheet/renderers/viewmodels/character-transformer.ts` to delegate feature filtering/summary formatting and proficiency/language rendering to the new helper module.
+- Added focused helper tests in `src/print-sheet/renderers/viewmodels/character-transformer-features.test.ts`.
+- Started the next asset-manager refactor by extracting upload-planning helpers into `src/asset-manager/asset-manager-upload-helpers.ts`.
+- Rewired `src/asset-manager/asset-manager-upload.ts` to delegate filename sanitizing, preset auto-detection, queue item creation, audio bitrate heuristics, and batch optimizable-file grouping to the new helper module.
+- Added focused helper tests in `src/asset-manager/asset-manager-upload-helpers.test.ts`.
+- Followed up by extracting per-item optimization orchestration into `src/asset-manager/asset-manager-upload-processing.ts`.
+- Rewired `src/asset-manager/asset-manager-upload.ts` to delegate server-vs-client optimization branching for queued uploads to the new processing helper while keeping queue iteration and final upload bookkeeping in `UploadManager`.
+- Added focused helper tests in `src/asset-manager/asset-manager-upload-processing.test.ts`.
+- Followed up again by extracting batch optimization fallback handling into `src/asset-manager/asset-manager-upload-batch.ts`.
+- Rewired `src/asset-manager/asset-manager-upload.ts` to delegate per-file batch server/client optimization decisions to the new batch helper while keeping progress iteration and worker lifecycle management in `batchOptimize`.
+- Added focused helper tests in `src/asset-manager/asset-manager-upload-batch.test.ts`.
+- Started splitting `src/window-rotation/index.ts` by extracting shared rotation/root/persistence helpers into `src/window-rotation/window-rotation-helpers.ts`.
+- Rewired `src/window-rotation/index.ts` to delegate app exclusion checks, root resolution, persistence keys, rotation normalization, and class application to the new helper module.
+- Followed up by extracting V1/V2 hook and button wiring into `src/window-rotation/window-rotation-hook-helpers.ts`.
+- Rewired `src/window-rotation/index.ts` to delegate V1/V2 render/close/header-button hook registration to the new hook helper while keeping toggle/restore and ready-time orchestration in the entry module.
+- Added focused helper coverage in `src/window-rotation/window-rotation-helpers.test.ts`.
+- Continued the `src/window-rotation/index.ts` split by extracting macro-pack and ready/socket orchestration into `src/window-rotation/window-rotation-ready.ts`.
+- Rewired `src/window-rotation/index.ts` to delegate socket listener registration and world macro-pack provisioning to the new ready helper while keeping local rotation API and active-app tracking in the feature shell.
+- Added focused helper coverage in `src/window-rotation/window-rotation-ready.test.ts`.
+- Finished the `src/window-rotation/index.ts` split by extracting the local/public rotation API into `src/window-rotation/window-rotation-api.ts`.
+- Rewired `src/window-rotation/index.ts` to delegate local rotate-all behavior, targeted socket emissions, and public API facade assembly to the new API helper while keeping rotation state and lifecycle hooks in the feature shell.
+- Added focused helper coverage in `src/window-rotation/window-rotation-api.test.ts`.
+- Started the `src/combat/monster-preview/monster-preview-panel.ts` split by extracting stat-block/up-next/panel HTML builders into `src/combat/monster-preview/monster-preview-rendering.ts`.
+- Rewired `src/combat/monster-preview/monster-preview-panel.ts` to delegate content, inline, floating-panel, and up-next rendering to the new helper module while keeping combat-turn state and DOM lifecycle behavior in the panel shell.
+- Added focused helper coverage in `src/combat/monster-preview/monster-preview-rendering.test.ts`.
+- Continued the `src/combat/monster-preview/monster-preview-panel.ts` split by extracting combat-tracker injection into `src/combat/monster-preview/monster-preview-tracker.ts`.
+- Extracted inline/floating button wiring into `src/combat/monster-preview/monster-preview-interactions.ts`.
+- Extracted drag and floating-position persistence into `src/combat/monster-preview/monster-preview-floating.ts`.
+- Rewired `src/combat/monster-preview/monster-preview-panel.ts` to delegate tracker injection, listener wiring, and floating drag/position behavior to those helper modules while keeping turn-change orchestration and preview state in the panel shell.
+- Added focused helper coverage in `src/combat/monster-preview/monster-preview-tracker.test.ts`, `src/combat/monster-preview/monster-preview-interactions.test.ts`, and `src/combat/monster-preview/monster-preview-floating.test.ts`.
+- Started the `src/combat/damage-workflow/damage-workflow-dialog.ts` split by extracting panel HTML, mode classification, and field-visibility helpers into `src/combat/damage-workflow/damage-workflow-dialog-helpers.ts`.
+- Rewired `src/combat/damage-workflow/damage-workflow-dialog.ts` to delegate panel markup building and mode-dependent visibility logic to the new helper module while keeping workflow execution and panel lifecycle in the dialog shell.
+- Added focused helper coverage in `src/combat/damage-workflow/damage-workflow-dialog-helpers.test.ts`.
+- Continued the `src/combat/damage-workflow/damage-workflow-dialog.ts` split by extracting panel event wiring into `src/combat/damage-workflow/damage-workflow-dialog-interactions.ts`.
+- Extracted workflow-input parsing and validation into `src/combat/damage-workflow/damage-workflow-inputs.ts`.
+- Rewired `src/combat/damage-workflow/damage-workflow-dialog.ts` to delegate listener wiring and `applyAction` input assembly/validation to those helper modules while keeping workflow execution and panel lifecycle in the dialog shell.
+- Added focused helper coverage in `src/combat/damage-workflow/damage-workflow-dialog-interactions.test.ts` and `src/combat/damage-workflow/damage-workflow-inputs.test.ts`.
+- Started the `src/character-creator/character-creator-settings.ts` split by extracting settings keys into `src/character-creator/character-creator-settings-shared.ts`.
+- Extracted typed accessors and serialized settings parsing into `src/character-creator/character-creator-settings-accessors.ts`.
+- Rewired `src/character-creator/character-creator-settings.ts` to consume and re-export those shared settings/accessor helpers while keeping menu registration in the main file.
+- Added focused helper coverage in `src/character-creator/character-creator-settings-accessors.test.ts`.
+- Continued the `src/character-creator/character-creator-settings.ts` split by extracting the settings submenu and compendium-select FormApplication registration into `src/character-creator/character-creator-settings-menus.ts`.
+- Rewired `src/character-creator/character-creator-settings.ts` to delegate submenu/menu registration to the new menus module, leaving the main file primarily as a registrar plus shared exports.
+- Finished the planned Phase 2 cleanup pass on `src/character-creator/level-up/level-up-detection.ts` by extracting detection internals into `src/character-creator/level-up/level-up-detection-helpers.ts`.
+- Rewired `src/character-creator/level-up/level-up-detection.ts` to delegate total-level extraction, class-item shaping, advancement parsing, and ASI/subclass level checks to the new helper module.
+- Added focused helper coverage in `src/character-creator/level-up/level-up-detection.test.ts`.
+- Verified with `npm run typecheck`, `npm run test`, and `npm run build`.
+
+## Next Suggested Steps
+
+- Phase 1 runtime hardening and coverage is complete.
+- LPCS sheet orchestration is in a good checkpoint state.
+- `src/lpcs/lpcs-view-model.ts` is now substantially decomposed across combat, inventory, and character helper modules; it is in a good checkpoint state to move on unless there is a specific reason to keep splitting remaining utility/core-stat builders.
+- `src/settings.ts` is now largely a composition/accessor layer; it is in a good checkpoint state to move on unless there is a specific reason to introduce a more declarative settings-definition registry.
+- `src/print-sheet/extractors/dnd5e-extractor.ts` is now substantially decomposed across character and NPC helper modules; it is in a good checkpoint state unless there is a specific reason to extract the remaining damage/formula utility methods.
+- `src/print-sheet/renderers/viewmodels/character-transformer.ts` is now in a good checkpoint state; the major rendering clusters are split across common, combat, spell, inventory, saves/skills, and features helpers.
+- `src/asset-manager/asset-manager-upload.ts` is now in a good checkpoint state; the main remaining inline logic is low-level worker/audio implementation detail rather than high-level upload orchestration.
+- `src/window-rotation/index.ts` is now in a good checkpoint state; the main remaining inline weight is macro-pack setup and ready/socket orchestration rather than button/render wiring.
+- `src/window-rotation/index.ts` is now in a stronger checkpoint state; the main remaining inline weight is the local rotation API plus active-app/toggle bookkeeping rather than setup, render, or ready orchestration.
+- `src/window-rotation/index.ts` is now in a good checkpoint state; the remaining inline logic is mostly stateful toggle/restore bookkeeping, which is an acceptable boundary for the feature shell.
+- `src/combat/monster-preview/monster-preview-panel.ts` is now in a much better checkpoint state; the remaining inline weight is mostly combat-turn/up-next orchestration and small display-mode state transitions.
+- `src/combat/damage-workflow/damage-workflow-dialog.ts` is now in a better checkpoint state; the next best seam is listener wiring and workflow-input assembly inside `applyAction`.
+- `src/combat/damage-workflow/damage-workflow-dialog.ts` is now in a strong checkpoint state; the remaining inline logic is mostly panel lifecycle, drag/position handling, and workflow execution success UX.
+- `src/character-creator/character-creator-settings.ts` is now in a better checkpoint state; the next best seam is the settings submenu and compendium-select FormApplication registration.
+- `src/character-creator/character-creator-settings.ts` is now in a strong checkpoint state; the remaining inline weight is mostly direct setting registration and is a reasonable boundary for the registrar.
+- `src/character-creator/level-up/level-up-detection.ts` is now in a good checkpoint state; the remaining inline logic is small and focused, making this a reasonable end point for the Phase 2 cleanup pass.
+- The Character Creator wizard is in a good checkpoint state.
+- The Character Creator level-up flow now has helper-backed state, app-shell, and mutation coverage; it is in a good checkpoint state.
+- The next best slice in level-up is a lighter cleanup pass on `src/character-creator/level-up/level-up-detection.ts`, or a pivot to another remaining monolith now that the major level-up seams are decomposed.

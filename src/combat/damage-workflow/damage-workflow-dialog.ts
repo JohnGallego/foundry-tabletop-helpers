@@ -24,12 +24,19 @@ import { COMBAT_SETTINGS } from "../combat-settings";
 import {
   type WorkflowInput,
   type WorkflowType,
-  type SaveAbility,
-  SAVE_ABILITIES,
-  DND_CONDITIONS,
 } from "../combat-types";
 import { executeWorkflow } from "./damage-workflow-engine";
 import { postWorkflowChat } from "./damage-workflow-chat";
+import {
+  getDamageWorkflowPanelHTML,
+  isDamageWorkflowDamageMode,
+  updateDamageWorkflowPanelVisibility,
+} from "./damage-workflow-dialog-helpers";
+import { attachDamageWorkflowPanelListeners } from "./damage-workflow-dialog-interactions";
+import {
+  buildDamageWorkflowInput,
+  flashDamageWorkflowInputError,
+} from "./damage-workflow-inputs";
 
 /* ── State ────────────────────────────────────────────────── */
 
@@ -130,26 +137,12 @@ function updateTargetCount(): void {
 
 function focusInputForMode(): void {
   if (!panelEl) return;
-  if (isDamageMode(currentMode)) {
+  if (isDamageWorkflowDamageMode(currentMode)) {
     const amountInput = panelEl.querySelector<HTMLInputElement>("#dwf-amount");
     if (amountInput) {
       setTimeout(() => { amountInput.focus(); amountInput.select(); }, 50);
     }
   }
-}
-
-/* ── Mode Helpers ─────────────────────────────────────────── */
-
-function isDamageMode(mode: WorkflowType): boolean {
-  return mode === "flatDamage" || mode === "saveForHalf" || mode === "saveOrNothing" || mode === "healing";
-}
-
-function isSaveMode(mode: WorkflowType): boolean {
-  return mode === "saveForHalf" || mode === "saveOrNothing" || mode === "saveForCondition";
-}
-
-function isConditionMode(mode: WorkflowType): boolean {
-  return mode === "saveForCondition" || mode === "removeCondition";
 }
 
 /* ── Panel Construction ───────────────────────────────────── */
@@ -158,7 +151,7 @@ function buildPanel(): HTMLElement {
   const el = document.createElement("div");
   el.id = "fth-damage-panel";
   el.className = "fth-damage-panel";
-  el.innerHTML = buildPanelHTML();
+  el.innerHTML = getDamageWorkflowPanelHTML(currentTokenCount, getLastCondition());
   attachPanelListeners(el);
   return el;
 }
@@ -173,243 +166,34 @@ function saveLastCondition(id: string): void {
   try { localStorage.setItem(CONDITION_KEY, id); } catch { /* ignore */ }
 }
 
-function buildPanelHTML(): string {
-  const abilityOptions = SAVE_ABILITIES
-    .map((a, i) => `<option value="${a}"${i === 1 ? " selected" : ""}>${a.toUpperCase()}</option>`)
-    .join("");
-
-  const lastCond = getLastCondition();
-  const conditionOptions = DND_CONDITIONS
-    .map((c) => `<option value="${c.id}"${c.id === lastCond ? " selected" : ""}>${c.label}</option>`)
-    .join("");
-
-  return `
-    <div class="dwf-header" data-dwf-drag>
-      <span class="dwf-title"><i class="fa-solid fa-bolt"></i> Quick Apply</span>
-      <span class="dwf-target-count">${currentTokenCount} targets</span>
-      <button class="dwf-close" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-
-    <div class="dwf-body">
-      <div class="dwf-damage-section">
-        <div class="dwf-fast-row">
-          <input type="number" id="dwf-amount" name="amount" min="1" value="" placeholder="0"
-                 class="dwf-amount-input" autocomplete="off" />
-          <button type="button" class="dwf-action-btn dwf-action-damage" data-action="damage">
-            <i class="fa-solid fa-burst"></i> Dmg
-          </button>
-          <button type="button" class="dwf-action-btn dwf-action-heal" data-action="heal">
-            <i class="fa-solid fa-heart-pulse"></i> Heal
-          </button>
-        </div>
-
-        <div class="dwf-options-row">
-          <input type="text" id="dwf-damage-type" name="damageType" placeholder="type (optional)"
-                 class="dwf-damage-type-input" autocomplete="off" />
-        </div>
-      </div>
-
-      <div class="dwf-mode-section">
-        <div class="dwf-mode-group">
-          <span class="dwf-mode-label">Damage</span>
-          <div class="dwf-mode-tabs">
-            <button type="button" class="dwf-mode-tab active" data-mode="flatDamage">Flat</button>
-            <button type="button" class="dwf-mode-tab" data-mode="saveForHalf">Save ½</button>
-            <button type="button" class="dwf-mode-tab" data-mode="saveOrNothing">Save / 0</button>
-          </div>
-        </div>
-        <div class="dwf-mode-group">
-          <span class="dwf-mode-label">Conditions</span>
-          <div class="dwf-mode-tabs">
-            <button type="button" class="dwf-mode-tab" data-mode="saveForCondition">Save+Cond</button>
-            <button type="button" class="dwf-mode-tab" data-mode="removeCondition">Remove</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="dwf-save-fields" style="display: none;">
-        <div class="dwf-save-field">
-          <label class="dwf-save-label" for="dwf-dc">DC</label>
-          <input type="number" id="dwf-dc" name="dc" min="1" value="15" class="dwf-save-input" />
-        </div>
-        <div class="dwf-save-field">
-          <label class="dwf-save-label" for="dwf-ability">Save</label>
-          <select id="dwf-ability" name="ability" class="dwf-save-input">
-            ${abilityOptions}
-          </select>
-        </div>
-      </div>
-
-      <div class="dwf-condition-fields" style="display: none;">
-        <div class="dwf-save-field" style="width: 100%;">
-          <label class="dwf-save-label" for="dwf-condition">Condition</label>
-          <select id="dwf-condition" name="condition" class="dwf-save-input dwf-condition-select">
-            ${conditionOptions}
-          </select>
-        </div>
-      </div>
-
-      <div class="dwf-condition-action" style="display: none;">
-        <button type="button" class="dwf-action-btn dwf-action-apply" data-action="applyCondition">
-          <i class="fa-solid fa-circle-plus"></i> Apply
-        </button>
-      </div>
-
-      <div class="dwf-remove-action" style="display: none;">
-        <button type="button" class="dwf-action-btn dwf-action-remove" data-action="removeCondition">
-          <i class="fa-solid fa-circle-minus"></i> Remove
-        </button>
-      </div>
-    </div>
-  `;
-}
-
 /* ── Panel Interaction ────────────────────────────────────── */
 
 function attachPanelListeners(el: HTMLElement): void {
-  // Close button
-  el.querySelector(".dwf-close")?.addEventListener("click", () => hidePanel());
-
-  // Damage / Heal action buttons
-  el.querySelector("[data-action='damage']")?.addEventListener("click", () => void applyAction("damage"));
-  el.querySelector("[data-action='heal']")?.addEventListener("click", () => void applyAction("heal"));
-
-  // Condition action buttons
-  el.querySelector("[data-action='applyCondition']")?.addEventListener("click", () => void applyAction("applyCondition"));
-  el.querySelector("[data-action='removeCondition']")?.addEventListener("click", () => void applyAction("removeCondition"));
-
-  // Enter key on amount input triggers damage
-  el.querySelector("#dwf-amount")?.addEventListener("keydown", (e) => {
-    if ((e as KeyboardEvent).key === "Enter") {
-      e.preventDefault();
-      void applyAction("damage");
-    }
-  });
-
-  // Enter key on DC input triggers current action
-  el.querySelector("#dwf-dc")?.addEventListener("keydown", (e) => {
-    if ((e as KeyboardEvent).key === "Enter") {
-      e.preventDefault();
-      if (currentMode === "saveForCondition") {
-        void applyAction("applyCondition");
-      } else {
-        void applyAction("damage");
-      }
-    }
-  });
-
-  // Mode tabs — collect ALL tabs from both groups
-  const allModeTabs = el.querySelectorAll<HTMLButtonElement>(".dwf-mode-tab");
-
-  allModeTabs.forEach((tab) => {
-    tab.addEventListener("click", (e) => {
-      e.preventDefault();
-      // Deactivate all tabs across both groups
-      allModeTabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-
-      currentMode = tab.dataset.mode as WorkflowType;
+  attachDamageWorkflowPanelListeners(el, {
+    onClose: () => hidePanel(),
+    onAction: (action) => { void applyAction(action); },
+    onModeChange: (mode) => {
+      currentMode = mode;
       updatePanelVisibility(el);
-    });
-  });
-
-  // Track last-used condition
-  el.querySelector("#dwf-condition")?.addEventListener("change", (e) => {
-    saveLastCondition((e.target as HTMLSelectElement).value);
+    },
+    onConditionChange: (conditionId) => {
+      saveLastCondition(conditionId);
+    },
   });
 }
 
 function updatePanelVisibility(el: HTMLElement): void {
-  const damageSection = el.querySelector<HTMLElement>(".dwf-damage-section");
-  const saveFields = el.querySelector<HTMLElement>(".dwf-save-fields");
-  const conditionFields = el.querySelector<HTMLElement>(".dwf-condition-fields");
-  const conditionAction = el.querySelector<HTMLElement>(".dwf-condition-action");
-  const removeAction = el.querySelector<HTMLElement>(".dwf-remove-action");
-
-  // Damage section (amount + type): visible for damage modes only
-  if (damageSection) damageSection.style.display = isDamageMode(currentMode) ? "" : "none";
-
-  // Save fields (DC + ability): visible for any save mode
-  if (saveFields) saveFields.style.display = isSaveMode(currentMode) ? "" : "none";
-
-  // Condition selector: visible for condition modes
-  if (conditionFields) conditionFields.style.display = isConditionMode(currentMode) ? "" : "none";
-
-  // Condition action button: only for saveForCondition
-  if (conditionAction) conditionAction.style.display = currentMode === "saveForCondition" ? "" : "none";
-
-  // Remove action button: only for removeCondition
-  if (removeAction) removeAction.style.display = currentMode === "removeCondition" ? "" : "none";
+  updateDamageWorkflowPanelVisibility(el, currentMode);
 }
 
 async function applyAction(action: "damage" | "heal" | "applyCondition" | "removeCondition"): Promise<void> {
   if (!panelEl || currentTokens.length === 0) return;
-
-  let input: WorkflowInput;
-
-  if (action === "applyCondition") {
-    // Save for Condition workflow
-    const dc = parseInt(panelEl.querySelector<HTMLInputElement>("#dwf-dc")?.value ?? "0", 10);
-    const ability = (panelEl.querySelector<HTMLSelectElement>("#dwf-ability")?.value ?? "wis") as SaveAbility;
-    if (!dc || dc <= 0) {
-      panelEl.querySelector<HTMLInputElement>("#dwf-dc")?.classList.add("dwf-input-error");
-      setTimeout(() => panelEl?.querySelector<HTMLInputElement>("#dwf-dc")?.classList.remove("dwf-input-error"), 400);
-      return;
-    }
-    const condSelect = panelEl.querySelector<HTMLSelectElement>("#dwf-condition");
-    const conditionId = condSelect?.value ?? "frightened";
-    const conditionLabel = condSelect?.options?.[condSelect.selectedIndex]?.text ?? conditionId;
-
-    input = { type: "saveForCondition", amount: 0, dc, ability, conditionId, conditionLabel };
-
-  } else if (action === "removeCondition") {
-    // Remove Condition workflow
-    const condSelect = panelEl.querySelector<HTMLSelectElement>("#dwf-condition");
-    const conditionId = condSelect?.value ?? "prone";
-    const conditionLabel = condSelect?.options?.[condSelect.selectedIndex]?.text ?? conditionId;
-
-    input = { type: "removeCondition", amount: 0, conditionId, conditionLabel };
-
-  } else if (action === "heal") {
-    const amountInput = panelEl.querySelector<HTMLInputElement>("#dwf-amount");
-    const amount = parseInt(amountInput?.value ?? "0", 10);
-    if (!amount || amount <= 0) {
-      amountInput?.classList.add("dwf-input-error");
-      setTimeout(() => amountInput?.classList.remove("dwf-input-error"), 400);
-      return;
-    }
-    input = { type: "healing", amount };
-    const damageType = panelEl.querySelector<HTMLInputElement>("#dwf-damage-type")?.value?.trim();
-    if (damageType) input.damageType = damageType;
-
-  } else {
-    // Damage: check the active mode
-    const amountInput = panelEl.querySelector<HTMLInputElement>("#dwf-amount");
-    const amount = parseInt(amountInput?.value ?? "0", 10);
-    if (!amount || amount <= 0) {
-      amountInput?.classList.add("dwf-input-error");
-      setTimeout(() => amountInput?.classList.remove("dwf-input-error"), 400);
-      return;
-    }
-
-    const mode = currentMode as WorkflowType;
-    input = { type: isDamageMode(mode) ? mode : "flatDamage", amount };
-
-    const damageType = panelEl.querySelector<HTMLInputElement>("#dwf-damage-type")?.value?.trim();
-    if (damageType) input.damageType = damageType;
-
-    if (mode === "saveForHalf" || mode === "saveOrNothing") {
-      const dc = parseInt(panelEl.querySelector<HTMLInputElement>("#dwf-dc")?.value ?? "0", 10);
-      const ability = (panelEl.querySelector<HTMLSelectElement>("#dwf-ability")?.value ?? "dex") as SaveAbility;
-      if (!dc || dc <= 0) {
-        panelEl.querySelector<HTMLInputElement>("#dwf-dc")?.classList.add("dwf-input-error");
-        setTimeout(() => panelEl?.querySelector<HTMLInputElement>("#dwf-dc")?.classList.remove("dwf-input-error"), 400);
-        return;
-      }
-      input.dc = dc;
-      input.ability = ability;
-    }
+  const parsed = buildDamageWorkflowInput(panelEl, currentMode, action);
+  if (!parsed.ok) {
+    flashDamageWorkflowInputError(panelEl, parsed.error.field);
+    return;
   }
+  const input = parsed.input;
 
   // Flash the action button green on execution
   const actionBtn = action === "applyCondition"
