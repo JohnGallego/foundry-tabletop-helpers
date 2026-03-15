@@ -22,12 +22,19 @@ import { Log } from "../logger";
 import { formatBytes } from "./asset-manager-preview";
 import { classifyExt, extname } from "./asset-manager-types";
 import {
+  createUploadQueueItems,
+  createUploadQueueItemsWithOptions,
+  OPTIMIZABLE_AUDIO_EXTS,
+  splitOptimizableBatchFiles,
+} from "./asset-manager-upload-helpers";
+import { processUploadQueueItemOptimization } from "./asset-manager-upload-processing";
+import { processBatchOptimizationEntry } from "./asset-manager-upload-batch";
+import {
   checkOptimizerServer,
   serverOptimizeImage,
   serverOptimizeAudio,
   serverOptimizeVideo,
   serverDeleteFile,
-  type OptimizeImageOptions,
 } from "./asset-manager-optimizer-client";
 
 /* ── Types ────────────────────────────────────────────────── */
@@ -112,40 +119,10 @@ export function resetPresets(): void {
   PRESETS = { ...DEFAULT_PRESETS };
 }
 
-/**
- * Sanitize a filename for safe filesystem storage.
- * - Lowercase
- * - Replace spaces and non-alphanumeric characters (except "-" and ".") with "-"
- * - Collapse multiple dashes
- * - Trim leading/trailing dashes from the name (not extension)
- */
-export function sanitizeFilename(name: string): string {
-  const dotIdx = name.lastIndexOf(".");
-  const stem = dotIdx > 0 ? name.slice(0, dotIdx) : name;
-  const ext = dotIdx > 0 ? name.slice(dotIdx) : "";
-
-  const safe = stem
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-{2,}/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return (safe || "file") + ext.toLowerCase();
-}
-
-/** Image extensions we can optimize client-side. */
-const OPTIMIZABLE_EXTS = new Set(["png", "jpg", "jpeg", "bmp", "gif", "tiff", "tif", "webp"]);
-
-/** Audio extensions we can re-encode to Opus. */
-const OPTIMIZABLE_AUDIO_EXTS = new Set(["wav", "flac", "aiff", "aif"]);
-
-/** Audio bitrate presets (bits per second). */
-const AUDIO_BITRATES: Record<string, number> = {
-  ambient: 96_000,
-  sfx: 128_000,
-  music: 160_000,
-  default: 128_000,
-};
+export {
+  autoDetectPreset,
+  sanitizeFilename,
+} from "./asset-manager-upload-helpers";
 
 /* ── Audio Optimization ──────────────────────────────────── */
 
@@ -164,20 +141,6 @@ function getSupportedAudioMime(): string | null {
     if (MediaRecorder.isTypeSupported(t)) return t;
   }
   return null;
-}
-
-/** Get file extension for an audio mime type. */
-function audioMimeToExt(mime: string): string {
-  return mime.startsWith("audio/ogg") ? "ogg" : "webm";
-}
-
-/** Detect audio bitrate from filename heuristics. */
-function detectAudioBitrate(name: string): number {
-  const lower = name.toLowerCase();
-  if (/ambient|background|loop|rain|wind|fire|forest|tavern/i.test(lower)) return AUDIO_BITRATES.ambient!;
-  if (/music|theme|battle|boss|town|tavern.*music/i.test(lower)) return AUDIO_BITRATES.music!;
-  if (/sfx|effect|hit|slash|spell|explosion|footstep/i.test(lower)) return AUDIO_BITRATES.sfx!;
-  return AUDIO_BITRATES.default!;
 }
 
 /**
@@ -296,49 +259,9 @@ export class UploadManager {
 
   /** Add files to the upload queue. */
   enqueue(files: File[], preset: OptPreset): void {
-    for (const file of files) {
-      const ext = extname(file.name);
-      const type = classifyExt(ext);
-      const resolvedPreset = preset === "auto" ? autoDetectPreset(file, type) : preset;
-      const shouldOptimizeImage = resolvedPreset !== "none" && type === "image" && OPTIMIZABLE_EXTS.has(ext);
-      const shouldOptimizeAudio = resolvedPreset !== "none" && type === "audio" && OPTIMIZABLE_AUDIO_EXTS.has(ext);
-
-      // Determine output filename (may be updated at processing time
-      // if server companion handles it differently)
-      let outputName = file.name;
-      if (shouldOptimizeImage) {
-        const config = PRESETS[resolvedPreset as keyof typeof PRESETS];
-        if (config?.toWebP && ext !== "webp") {
-          outputName = file.name.replace(/\.[^.]+$/, ".webp");
-        }
-      } else if (shouldOptimizeAudio) {
-        // Best guess at output ext — server always produces .ogg,
-        // client-side depends on browser (ogg or webm)
-        const mime = getSupportedAudioMime();
-        if (mime) {
-          const outExt = audioMimeToExt(mime);
-          outputName = file.name.replace(/\.[^.]+$/, `.${outExt}`);
-        }
-      } else if (type === "video" && resolvedPreset !== "none") {
-        // Video optimization is server-only, but queue it optimistically
-        outputName = file.name.replace(/\.[^.]+$/, ".webm");
-      }
-
-      // Sanitize output filename: lowercase, no spaces/special chars
-      outputName = sanitizeFilename(outputName);
-
-      this.#queue.push({
-        id: this.#nextId++,
-        file,
-        originalName: file.name,
-        outputName,
-        preset: resolvedPreset,
-        status: "pending",
-        progress: 0,
-        originalSize: file.size,
-        optimizedSize: 0,
-      });
-    }
+    const items = createUploadQueueItems(files, preset, this.#nextId, getSupportedAudioMime(), PRESETS);
+    this.#nextId += items.length;
+    this.#queue.push(...items);
 
     this.#notify();
     if (!this.#processing) this.#processNext();
@@ -346,20 +269,9 @@ export class UploadManager {
 
   /** Enqueue files with pre-configured per-file presets from the upload dialog. */
   enqueueWithOptions(items: UploadDialogResult[]): void {
-    for (const item of items) {
-      this.#queue.push({
-        id: this.#nextId++,
-        file: item.file,
-        originalName: item.file.name,
-        outputName: item.outputName,
-        preset: item.preset,
-        status: "pending",
-        progress: 0,
-        originalSize: item.file.size,
-        optimizedSize: 0,
-        custom: item.custom,
-      });
-    }
+    const queueItems = createUploadQueueItemsWithOptions(items, this.#nextId);
+    this.#nextId += queueItems.length;
+    this.#queue.push(...queueItems);
 
     this.#notify();
     if (!this.#processing) this.#processNext();
@@ -408,153 +320,20 @@ export class UploadManager {
     const totalStart = performance.now();
     const ext = extname(item.file.name);
     const type = classifyExt(ext);
-    const shouldOptimize = item.preset !== "none";
-    const isOptimizableImage = type === "image" && OPTIMIZABLE_EXTS.has(ext);
-    const isOptimizableAudio = type === "audio" && OPTIMIZABLE_AUDIO_EXTS.has(ext);
-    const isVideo = type === "video";
 
     Log.info(`Upload: START "${item.originalName}" (${formatBytes(item.originalSize)}, type=${type}, preset=${item.preset})`);
 
-    let fileToUpload: File = item.file;
-    let serverHandled = false;
-
-    // ── Try server companion first ──────────────────────────
-    if (shouldOptimize && (isOptimizableImage || isOptimizableAudio || isVideo)) {
-      const healthStart = performance.now();
-      const caps = await checkOptimizerServer();
-      Log.info(`Upload: health check ${caps ? "OK" : "UNAVAILABLE"} (${Math.round(performance.now() - healthStart)}ms)`);
-
-      if (caps) {
-        item.status = "optimizing";
-        item.progress = 10;
-        this.#notify();
-
-        if (isOptimizableImage && caps.image) {
-          // Always send explicit dimensions — the server has its own preset
-          // definitions that may differ from the client's configured values
-          const serverOpts: OptimizeImageOptions = {};
-          if (item.custom) {
-            serverOpts.maxWidth = item.custom.maxWidth;
-            serverOpts.maxHeight = item.custom.maxHeight;
-            serverOpts.quality = item.custom.quality;
-          } else {
-            const preset = item.preset as keyof typeof PRESETS;
-            const presetConfig = PRESETS[preset];
-            if (presetConfig) {
-              serverOpts.maxWidth = presetConfig.maxWidth;
-              serverOpts.maxHeight = presetConfig.maxHeight;
-              serverOpts.quality = Math.round(presetConfig.quality * 100);
-            }
-          }
-          const optStart = performance.now();
-          const result = await serverOptimizeImage(item.file, serverOpts);
-          const optMs = Math.round(performance.now() - optStart);
-          if (result && !result.skipped) {
-            Log.info(`Upload: server image optimize ${formatBytes(result.originalSize)} → ${formatBytes(result.optimizedSize)} (${optMs}ms)`);
-            item.optimizedSize = result.optimizedSize;
-            item.progress = 50;
-            item.outputName = sanitizeFilename(item.file.name.replace(/\.[^.]+$/, ".webp"));
-            fileToUpload = new File([result.blob], item.outputName, { type: "image/webp" });
-            serverHandled = true;
-          } else if (result?.skipped) {
-            Log.info(`Upload: server skipped (original smaller) (${optMs}ms)`);
-            serverHandled = true; // Server says original is smaller — upload as-is
-          } else {
-            Log.info(`Upload: server image optimize FAILED (${optMs}ms), falling back`);
-          }
-        } else if (isOptimizableAudio && caps.audio) {
-          const bitrate = detectAudioBitrate(item.file.name);
-          const optStart = performance.now();
-          const result = await serverOptimizeAudio(item.file, { bitrate });
-          const optMs = Math.round(performance.now() - optStart);
-          if (result && !result.skipped) {
-            Log.info(`Upload: server audio optimize ${formatBytes(result.originalSize)} → ${formatBytes(result.optimizedSize)} (${optMs}ms)`);
-            item.optimizedSize = result.optimizedSize;
-            item.progress = 50;
-            item.outputName = sanitizeFilename(item.file.name.replace(/\.[^.]+$/, ".ogg"));
-            fileToUpload = new File([result.blob], item.outputName, { type: "audio/ogg" });
-            serverHandled = true;
-          } else if (result?.skipped) {
-            Log.info(`Upload: server audio skipped (${optMs}ms)`);
-            serverHandled = true;
-          } else {
-            Log.info(`Upload: server audio optimize FAILED (${optMs}ms), falling back`);
-          }
-        } else if (isVideo && caps.video) {
-          const optStart = performance.now();
-          const result = await serverOptimizeVideo(item.file);
-          const optMs = Math.round(performance.now() - optStart);
-          if (result && !result.skipped) {
-            Log.info(`Upload: server video optimize ${formatBytes(result.originalSize)} → ${formatBytes(result.optimizedSize)} (${optMs}ms)`);
-            item.optimizedSize = result.optimizedSize;
-            item.progress = 50;
-            item.outputName = sanitizeFilename(item.file.name.replace(/\.[^.]+$/, ".webm"));
-            fileToUpload = new File([result.blob], item.outputName, { type: "video/webm" });
-            serverHandled = true;
-          } else if (result?.skipped) {
-            Log.info(`Upload: server video skipped (${optMs}ms)`);
-            serverHandled = true;
-          } else {
-            Log.info(`Upload: server video optimize FAILED (${optMs}ms), falling back`);
-          }
-        }
-      }
-    }
-
-    // ── Client-side fallback: image optimization ────────────
-    if (!serverHandled && shouldOptimize && isOptimizableImage && this.#worker) {
-      item.status = "optimizing";
-      item.progress = 10;
-      this.#notify();
-
-      try {
-        const config: OptPresetConfig | undefined = item.custom
-          ? { label: "Custom", maxWidth: item.custom.maxWidth, maxHeight: item.custom.maxHeight, quality: item.custom.quality / 100, toWebP: true }
-          : PRESETS[item.preset as keyof typeof PRESETS];
-        if (config) {
-          const clientStart = performance.now();
-          const optimized = await this.#optimizeImage(item.file, config);
-          Log.info(`Upload: client image optimize ${formatBytes(item.file.size)} → ${formatBytes(optimized.size)} (${Math.round(performance.now() - clientStart)}ms)`);
-          item.optimizedSize = optimized.size;
-          item.progress = 50;
-          fileToUpload = new File([optimized], item.outputName, { type: optimized.type });
-        }
-      } catch (err) {
-        Log.info("Upload: client image optimization failed, uploading original", err);
-        fileToUpload = item.file;
-        item.outputName = item.originalName;
-      }
-    }
-
-    // ── Client-side fallback: audio optimization ────────────
-    if (!serverHandled && shouldOptimize && isOptimizableAudio) {
-      item.status = "optimizing";
-      item.progress = 5;
-      this.#notify();
-
-      try {
-        const bitrate = detectAudioBitrate(item.file.name);
-        const clientStart = performance.now();
-        const result = await optimizeAudio(item.file, bitrate);
-        const clientMs = Math.round(performance.now() - clientStart);
-        if (result && result.blob.size < item.file.size) {
-          Log.info(`Upload: client audio optimize ${formatBytes(item.file.size)} → ${formatBytes(result.blob.size)} (${clientMs}ms)`);
-          item.optimizedSize = result.blob.size;
-          item.progress = 50;
-          const outExt = audioMimeToExt(result.mime);
-          item.outputName = sanitizeFilename(item.file.name.replace(/\.[^.]+$/, `.${outExt}`));
-          fileToUpload = new File([result.blob], item.outputName, { type: result.mime });
-        } else {
-          Log.info(`Upload: client audio no size reduction (${clientMs}ms), uploading original`);
-          fileToUpload = item.file;
-          item.outputName = item.originalName;
-        }
-      } catch (err) {
-        Log.info("Upload: client audio optimization failed, uploading original", err);
-        fileToUpload = item.file;
-        item.outputName = item.originalName;
-      }
-    }
+    const fileToUpload = await processUploadQueueItemOptimization(item, {
+      presets: PRESETS,
+      notify: () => this.#notify(),
+      workerAvailable: !!this.#worker,
+      optimizeImage: (file, config) => this.#optimizeImage(file, config),
+      optimizeAudio,
+      checkOptimizerServer,
+      serverOptimizeImage,
+      serverOptimizeAudio,
+      serverOptimizeVideo,
+    });
 
     // Upload to Foundry
     item.status = "uploading";
@@ -643,21 +422,9 @@ export async function batchOptimize(
   const result: BatchOptResult = { processed: 0, skipped: 0, totalSaved: 0 };
 
   // Separate by type
-  const optimizableImages = files.filter((f) => {
-    const ext = extname(f);
-    return OPTIMIZABLE_EXTS.has(ext) && ext !== "webp";
-  });
-  const optimizableAudio = files.filter((f) => {
-    const ext = extname(f);
-    return OPTIMIZABLE_AUDIO_EXTS.has(ext);
-  });
-  const optimizableVideo = files.filter((f) => {
-    const ext = extname(f);
-    const t = classifyExt(ext);
-    return t === "video";
-  });
-
-  const allOptimizable = [...optimizableImages, ...optimizableAudio, ...optimizableVideo];
+  const splitFiles = splitOptimizableBatchFiles(files);
+  const optimizableImages = splitFiles.images;
+  const allOptimizable = splitFiles.all;
   if (allOptimizable.length === 0) return result;
 
   // Check server companion availability
@@ -697,110 +464,49 @@ export async function batchOptimize(
       const res = await fetch(filePath);
       if (!res.ok) { result.skipped++; continue; }
       const originalBlob = await res.blob();
-      const originalSize = originalBlob.size;
       const inputFile = new File([originalBlob], fileName, { type: originalBlob.type });
-      let optimized = false;
-      let newName = fileName;
+      const outcome = await processBatchOptimizationEntry(
+        filePath,
+        targetDir,
+        fileName,
+        inputFile,
+        isAudio ? "audio" : isVideo ? "video" : "image",
+        {
+          serverCaps,
+          resolvedPreset,
+          config,
+          uploadFn,
+          optimizeAudio,
+          optimizeImageWithWorker: worker && config
+            ? (blob, imageConfig) => new Promise<Blob>((resolve, reject) => {
+              const id = ++taskId;
+              const handler = (e: MessageEvent) => {
+                if (e.data.id !== id) return;
+                worker?.removeEventListener("message", handler);
+                if (e.data.error) reject(new Error(e.data.error));
+                else resolve(e.data.blob as Blob);
+              };
+              worker!.addEventListener("message", handler);
+              worker!.postMessage({
+                id,
+                imageData: blob,
+                maxWidth: imageConfig.maxWidth,
+                maxHeight: imageConfig.maxHeight,
+                quality: imageConfig.quality,
+                toWebP: imageConfig.toWebP,
+              });
+            })
+            : null,
+          serverOptimizeImage,
+          serverOptimizeAudio,
+          serverOptimizeVideo,
+          deleteOriginal: (path) => serverDeleteFile(path),
+        },
+      );
 
-      // ── Try server companion ────────────────────────────
-      if (serverCaps) {
-        let serverResult = null;
-
-        if (!isAudio && !isVideo && serverCaps.image) {
-          const serverOpts: OptimizeImageOptions = {};
-          const p = resolvedPreset as keyof typeof PRESETS;
-          if (p in PRESETS) serverOpts.preset = p;
-          serverResult = await serverOptimizeImage(inputFile, serverOpts);
-          if (serverResult && !serverResult.skipped) {
-            newName = fileName.replace(/\.[^.]+$/, ".webp");
-            await uploadFn(new File([serverResult.blob], newName, { type: "image/webp" }), newName, targetDir);
-            result.processed++;
-            result.totalSaved += originalSize - serverResult.optimizedSize;
-            optimized = true;
-          }
-        } else if (isAudio && serverCaps.audio) {
-          const bitrate = detectAudioBitrate(fileName);
-          serverResult = await serverOptimizeAudio(inputFile, { bitrate });
-          if (serverResult && !serverResult.skipped) {
-            newName = fileName.replace(/\.[^.]+$/, ".ogg");
-            await uploadFn(new File([serverResult.blob], newName, { type: "audio/ogg" }), newName, targetDir);
-            result.processed++;
-            result.totalSaved += originalSize - serverResult.optimizedSize;
-            optimized = true;
-          }
-        } else if (isVideo && serverCaps.video) {
-          serverResult = await serverOptimizeVideo(inputFile);
-          if (serverResult && !serverResult.skipped) {
-            newName = fileName.replace(/\.[^.]+$/, ".webm");
-            await uploadFn(new File([serverResult.blob], newName, { type: "video/webm" }), newName, targetDir);
-            result.processed++;
-            result.totalSaved += originalSize - serverResult.optimizedSize;
-            optimized = true;
-          }
-        }
-
-        if (!optimized && serverResult?.skipped) { result.skipped++; continue; }
-        if (optimized) {
-          // Delete original if extension changed (e.g., .png → .webp)
-          if (newName !== fileName) {
-            serverDeleteFile(filePath).catch(() => { /* best effort */ });
-          }
-          continue;
-        }
-      }
-
-      // ── Client-side fallback ────────────────────────────
-      if (isVideo) {
-        // No client-side video optimization available
-        result.skipped++;
-      } else if (isAudio) {
-        const bitrate = detectAudioBitrate(fileName);
-        const audioResult = await optimizeAudio(inputFile, bitrate);
-        if (audioResult && audioResult.blob.size < originalSize) {
-          const outExt = audioMimeToExt(audioResult.mime);
-          newName = fileName.replace(/\.[^.]+$/, `.${outExt}`);
-          const file = new File([audioResult.blob], newName, { type: audioResult.mime });
-          await uploadFn(file, newName, targetDir);
-          result.processed++;
-          result.totalSaved += originalSize - audioResult.blob.size;
-          if (newName !== fileName) {
-            serverDeleteFile(filePath).catch(() => { /* best effort */ });
-          }
-        } else {
-          result.skipped++;
-        }
-      } else if (worker && config) {
-        const optimizedBlob = await new Promise<Blob>((resolve, reject) => {
-          const id = ++taskId;
-          const handler = (e: MessageEvent) => {
-            if (e.data.id !== id) return;
-            worker?.removeEventListener("message", handler);
-            if (e.data.error) reject(new Error(e.data.error));
-            else resolve(e.data.blob as Blob);
-          };
-          worker!.addEventListener("message", handler);
-          worker!.postMessage({
-            id,
-            imageData: originalBlob,
-            maxWidth: config.maxWidth,
-            maxHeight: config.maxHeight,
-            quality: config.quality,
-            toWebP: config.toWebP,
-          });
-        });
-
-        if (optimizedBlob.size < originalSize) {
-          newName = fileName.replace(/\.[^.]+$/, ".webp");
-          const file = new File([optimizedBlob], newName, { type: "image/webp" });
-          await uploadFn(file, newName, targetDir);
-          result.processed++;
-          result.totalSaved += originalSize - optimizedBlob.size;
-          if (newName !== fileName) {
-            serverDeleteFile(filePath).catch(() => { /* best effort */ });
-          }
-        } else {
-          result.skipped++;
-        }
+      if (outcome.processed) {
+        result.processed++;
+        result.totalSaved += outcome.savedBytes;
       } else {
         result.skipped++;
       }
@@ -811,38 +517,6 @@ export async function batchOptimize(
 
   if (worker) worker.terminate();
   return result;
-}
-
-/* ── Helpers ──────────────────────────────────────────────── */
-
-/** Auto-detect the best preset from file properties. */
-export function autoDetectPreset(file: File, type: string): OptPreset {
-  // Audio files: use "auto" to trigger audio optimization path
-  if (type === "audio") {
-    const ext = extname(file.name);
-    return OPTIMIZABLE_AUDIO_EXTS.has(ext) ? "auto" : "none";
-  }
-
-  if (type !== "image") return "none";
-
-  const name = file.name.toLowerCase();
-  const ext = extname(file.name);
-
-  // Already WebP and small — skip
-  if (ext === "webp" && file.size < 500 * 1024) return "none";
-
-  // Path/name heuristics
-  if (/token/i.test(name)) return "token";
-  if (/portrait|avatar/i.test(name)) return "portrait";
-  if (/icon/i.test(name)) return "icon";
-  if (/map|scene|battlemap/i.test(name)) return "map";
-
-  // Size heuristic: small files are likely tokens/icons
-  if (file.size < 100 * 1024) return "icon";
-  if (file.size < 500 * 1024) return "token";
-  if (file.size > 2 * 1024 * 1024) return "map";
-
-  return "portrait"; // Default for medium images
 }
 
 /* ── Upload Queue HTML Builder ────────────────────────────── */
