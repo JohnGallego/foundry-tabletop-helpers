@@ -8,10 +8,11 @@ import "./combat/styles/combat-party-summary.css";
 import "./combat/styles/combat-rules-reference.css";
 import "./asset-manager/styles/asset-manager.css";
 import "./character-creator/styles/character-creator-styles.css";
+import { attachFthApi } from "./fth-api";
 import { Log, MOD, type Level } from "./logger";
 import { registerSettings } from "./settings";
 import { registerPrintSheetHooks } from "./print-sheet/print-sheet";
-import { registerWindowRotationHooks, initWindowRotationReady, buildRotationApi } from "./window-rotation/index";
+import { registerWindowRotationHooks, initWindowRotationReady } from "./window-rotation/index";
 import { getGame, getHooks, getSetting, isGM } from "./types";
 import { registerLPCSSettings } from "./lpcs/lpcs-settings";
 import { registerLPCSSheet, preloadLPCSTemplates } from "./lpcs/lpcs-sheet";
@@ -19,16 +20,13 @@ import { autoOpenLPCS } from "./lpcs/lpcs-auto-open";
 import { registerInitiativeSettings, registerInitiativeHooks } from "./initiative/initiative-dialog";
 import { initKioskSetup, initKioskReady } from "./kiosk/kiosk-init";
 import { registerCombatSettings } from "./combat/combat-settings";
-import { registerCombatHooks, initCombatReady, buildCombatApi } from "./combat/combat-init";
+import { registerCombatHooks, initCombatReady } from "./combat/combat-init";
 import { registerAssetManagerSettings, isAssetManagerEnabled, loadSavedPresets } from "./asset-manager/asset-manager-settings";
 import { registerAssetManagerPicker, openAssetManager } from "./asset-manager/asset-manager-picker";
 import {
   registerCharacterCreatorSettings,
   registerCharacterCreatorHooks,
   initCharacterCreatorReady,
-  openGMConfigApp,
-  openCharacterCreatorWizard,
-  openLevelUpWizard,
 } from "./character-creator/character-creator-init";
 
 /* ── Hook Registration ─────────────────────────────────────── */
@@ -88,11 +86,10 @@ getHooks()?.on?.("setup", () => {
 });
 
 getHooks()?.on?.("ready", () => {
-  const game = getGame();
   Log.info("ready", {
-    core: game?.version,
-    system: game?.system?.id,
-    user: game?.user?.id,
+    core: getGame()?.version,
+    system: getGame()?.system?.id,
+    user: getGame()?.user?.id,
   });
 
   // Socket listener + macro pack provisioning
@@ -114,17 +111,7 @@ getHooks()?.on?.("ready", () => {
   // Character Creator — ready-phase initialization
   initCharacterCreatorReady();
 
-  // Expose unified API to window for macro and console use
-  (globalThis as unknown as Record<string, unknown>).fth = {
-    setLevel: (lvl: Level) => Log.setLevel(lvl),
-    version: game?.modules?.get(MOD)?.version,
-    ...buildRotationApi(),
-    ...buildCombatApi(),
-    assetManager: () => openAssetManager(),
-    characterCreator: () => openCharacterCreatorWizard(),
-    characterCreatorConfig: () => openGMConfigApp(),
-    levelUp: (actorId: string) => openLevelUpWizard(actorId),
-  };
+  attachFthApi();
 
   Log.debug("window.fth API attached");
 });

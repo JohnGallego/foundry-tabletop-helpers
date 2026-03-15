@@ -15,6 +15,7 @@
  */
 
 import { Log, MOD } from "../logger";
+import { applyRuntimePatchOnce, getRuntimePatchState } from "../runtime/runtime-patches";
 import { getHooks, getSetting, isGM, isDnd5eWorld, isObject } from "../types";
 import { COMBAT_SETTINGS } from "./combat-settings";
 import {
@@ -29,10 +30,13 @@ import { registerPartySummaryHooks, togglePartySummary } from "./party-summary/p
 import { registerRulesReferenceHooks, toggleRulesReference, isRulesReferenceEnabled } from "../rules-reference/rules-reference-panel";
 /* ── Stored originals for prototype wrapping ──────────────── */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _origRollAll: ((...args: any[]) => Promise<any>) | undefined;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _origRollNPC: ((...args: any[]) => Promise<any>) | undefined;
+type CombatRollMethod = (...args: unknown[]) => Promise<unknown>;
+
+interface CombatPrototypePatchState {
+  origRollAll?: CombatRollMethod;
+  origRollNPC?: CombatRollMethod;
+  origRollPC?: CombatRollMethod;
+}
 
 /* ── Feature enabled check ────────────────────────────────── */
 
@@ -104,7 +108,14 @@ export function initCombatReady(): void {
  * Build the combat API object for window.fth.
  * Exposes batch initiative (and future combat features) to macros.
  */
-export function buildCombatApi(): Record<string, unknown> {
+export interface FthCombatApi {
+  quickDamage: () => Promise<void>;
+  partySummary: () => void;
+  rulesReference: () => void;
+  batchInitiative: () => Promise<void>;
+}
+
+export function buildCombatApi(): FthCombatApi {
   return {
     // Quick Damage/Save workflow — opens panel for selected tokens
     quickDamage: async () => void triggerDamagePanel(),
@@ -121,6 +132,10 @@ export function buildCombatApi(): Record<string, unknown> {
     },
   };
 }
+
+export const __combatInternals = {
+  wrapCombatPrototype,
+};
 
 /* ── Combat Prototype Wrapping ────────────────────────────── */
 
@@ -139,36 +154,51 @@ function wrapCombatPrototype(): void {
     return;
   }
 
-  const proto = CombatClass.prototype;
+  const { applied, state } = applyRuntimePatchOnce<CombatPrototypePatchState>(
+    `${MOD}:combat-prototype-rolls`,
+    () => ({}),
+    (patchState) => {
+      const proto = CombatClass.prototype as {
+        rollAll?: CombatRollMethod;
+        rollNPC?: CombatRollMethod;
+        rollPC?: CombatRollMethod;
+      };
 
-  // Store originals
-  _origRollAll = proto.rollAll;
-  _origRollNPC = proto.rollNPC;
+      patchState.origRollAll = proto.rollAll;
+      patchState.origRollNPC = proto.rollNPC;
+      patchState.origRollPC = proto.rollPC;
 
-  // Wrap rollAll
-  proto.rollAll = async function (this: Record<string, unknown>, ...args: unknown[]) {
-    if (isAdvantageInitiativeEnabled()) {
-      return rollWithAdvantage(this, "all");
+      proto.rollAll = async function (this: Record<string, unknown>, ...args: unknown[]) {
+        if (isAdvantageInitiativeEnabled()) {
+          return rollWithAdvantage(this, "all");
+        }
+        return patchState.origRollAll?.apply(this, args) ?? this;
+      };
+
+      proto.rollNPC = async function (this: Record<string, unknown>, ...args: unknown[]) {
+        if (isAdvantageInitiativeEnabled()) {
+          return rollWithAdvantage(this, "npc");
+        }
+        return patchState.origRollNPC?.apply(this, args) ?? this;
+      };
+
+      proto.rollPC = async function (this: Record<string, unknown>) {
+        if (isAdvantageInitiativeEnabled()) {
+          return rollWithAdvantage(this, "pc");
+        }
+        return patchState.origRollPC?.apply(this) ?? rollPCNormal(this);
+      };
     }
-    return _origRollAll!.apply(this, args);
-  };
+  );
 
-  // Wrap rollNPC
-  proto.rollNPC = async function (this: Record<string, unknown>, ...args: unknown[]) {
-    if (isAdvantageInitiativeEnabled()) {
-      return rollWithAdvantage(this, "npc");
-    }
-    return _origRollNPC!.apply(this, args);
-  };
+  if (!applied) {
+    Log.debug("Combat: prototype methods already wrapped");
+    return;
+  }
 
-  // Add rollPC (new method — no original to store)
-  proto.rollPC = async function (this: Record<string, unknown>) {
-    if (isAdvantageInitiativeEnabled()) {
-      return rollWithAdvantage(this, "pc");
-    }
-    // Fallback: roll PCs with normal mode
-    return rollPCNormal(this);
-  };
+  if (!state.origRollAll || !state.origRollNPC) {
+    Log.warn("Combat: one or more original combat roll methods were unavailable during wrapping");
+  }
 
   Log.debug("Combat prototype methods wrapped");
 }
@@ -206,10 +236,15 @@ async function rollWithAdvantage(
   cacheRollsOnCombatants(combat, advMode, filter);
 
   try {
-    if (scope === "all" && _origRollAll) {
-      return await _origRollAll.call(combat);
-    } else if (scope === "npc" && _origRollNPC) {
-      return await _origRollNPC.call(combat);
+    const state = getRuntimePatchState<CombatPrototypePatchState>(
+      `${MOD}:combat-prototype-rolls`,
+      () => ({})
+    );
+
+    if (scope === "all" && state.origRollAll) {
+      return await state.origRollAll.call(combat);
+    } else if (scope === "npc" && state.origRollNPC) {
+      return await state.origRollNPC.call(combat);
     } else if (scope === "pc") {
       return await rollPCNormal(combat);
     }
