@@ -11,9 +11,11 @@ import type { LevelUpState } from "./level-up-types";
 import {
   getTotalLevel,
   getClassItems,
-  isAsiLevel,
-  isSubclassLevel,
 } from "./level-up-detection";
+import {
+  buildLevelUpIndicatorData,
+  recalculateLevelUpApplicableSteps,
+} from "./level-up-state-machine-helpers";
 
 /* ── Step IDs ───────────────────────────────────────────── */
 
@@ -37,7 +39,7 @@ export class LevelUpStateMachine {
       classItems,
     };
 
-    this._recalculateApplicableSteps(allowMulticlass);
+    recalculateLevelUpApplicableSteps(this.state, allowMulticlass);
     Log.debug("LevelUpStateMachine: initialized", {
       currentLevel,
       targetLevel: this.state.targetLevel,
@@ -103,48 +105,6 @@ export class LevelUpStateMachine {
     return this.state.stepStatus.get(stepId) ?? "pending";
   }
 
-  /* ── Step Applicability ───────────────────────────────── */
-
-  private _recalculateApplicableSteps(_allowMulticlass: boolean): void {
-    const steps: string[] = [];
-    const sel = this.state.selections;
-    const classItems = this.state.classItems;
-
-    // Class Choice — always present (even single-class, to confirm which class to level)
-    steps.push("classChoice");
-
-    // HP — always
-    steps.push("hp");
-
-    // Features — always (may be empty if no features at this level)
-    steps.push("features");
-
-    // Determine which class is being leveled for conditional steps
-    const chosenClass = sel.classChoice;
-    const classId = chosenClass?.classIdentifier ?? classItems[0]?.identifier ?? "";
-    const currentClassLevels = classItems.find((c) => c.identifier === classId)?.levels ?? 0;
-    const newClassLevel = chosenClass?.mode === "multiclass" ? 1 : currentClassLevels + 1;
-
-    // Subclass — if this level grants subclass selection and character doesn't have one yet
-    const hasSubclass = classItems.find((c) => c.identifier === classId)?.subclassName;
-    if (isSubclassLevel(classId, newClassLevel) && !hasSubclass) {
-      steps.push("subclass");
-    }
-
-    // ASI/Feat — if this class level grants ASI
-    if (isAsiLevel(classId, newClassLevel)) {
-      steps.push("feats");
-    }
-
-    // Spells — always present (may show "no changes" if not a caster)
-    steps.push("spells");
-
-    // Review — always last
-    steps.push("review");
-
-    this.state.applicableSteps = steps;
-  }
-
   /** Build step indicator data for the shell template. */
   buildStepIndicatorData(): Array<{
     id: string;
@@ -154,33 +114,6 @@ export class LevelUpStateMachine {
     active: boolean;
     index: number;
   }> {
-    const labels: Record<string, string> = {
-      classChoice: "Class",
-      hp: "Hit Points",
-      features: "Features",
-      subclass: "Subclass",
-      feats: "ASI / Feat",
-      spells: "Spells",
-      review: "Review",
-    };
-
-    const icons: Record<string, string> = {
-      classChoice: "fa-solid fa-shield-halved",
-      hp: "fa-solid fa-heart",
-      features: "fa-solid fa-scroll",
-      subclass: "fa-solid fa-book-sparkles",
-      feats: "fa-solid fa-star",
-      spells: "fa-solid fa-wand-sparkles",
-      review: "fa-solid fa-clipboard-check",
-    };
-
-    return this.state.applicableSteps.map((id, index) => ({
-      id,
-      label: labels[id] ?? id,
-      icon: icons[id] ?? "fa-solid fa-circle",
-      status: this.getStepStatus(id),
-      active: index === this.state.currentStep,
-      index,
-    }));
+    return buildLevelUpIndicatorData(this.state);
   }
 }

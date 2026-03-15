@@ -12,21 +12,11 @@ import type {
   StepStatus,
   GMConfig,
 } from "../character-creator-types";
-
-/* ── Dependency Cascade Map ──────────────────────────────── */
-
-/**
- * When a step's selection changes, all downstream steps listed here
- * are invalidated (selections cleared, status → "pending").
- */
-const DEPENDENCY_CASCADE: Record<string, string[]> = {
-  species: ["backgroundGrants"],
-  background: ["backgroundGrants", "originFeat", "skills", "abilities"],
-  backgroundGrants: [],
-  class: ["subclass", "skills", "feats", "spells", "equipment"],
-  subclass: ["spells"],
-  abilities: ["feats"],
-};
+import {
+  buildStepIndicatorData,
+  cascadeInvalidation,
+  recalculateApplicableSteps,
+} from "./wizard-state-machine-helpers";
 
 /* ── State Machine ───────────────────────────────────────── */
 
@@ -48,7 +38,7 @@ export class WizardStateMachine {
       config,
     };
 
-    this._recalculateApplicableSteps();
+    recalculateApplicableSteps(this.state, this._allSteps);
   }
 
   /* ── Getters ──────────────────────────────────────────── */
@@ -151,7 +141,7 @@ export class WizardStateMachine {
     }
 
     // Always recalculate — new data may make previously-inapplicable steps applicable
-    this._recalculateApplicableSteps();
+    recalculateApplicableSteps(this.state, this._allSteps);
     return invalidated;
   }
 
@@ -167,33 +157,9 @@ export class WizardStateMachine {
     const invalidated = this._cascadeInvalidation(stepId);
 
     // Recalculate applicable steps (some steps may appear/disappear)
-    this._recalculateApplicableSteps();
+    recalculateApplicableSteps(this.state, this._allSteps);
 
     return invalidated;
-  }
-
-  /* ── Internal ─────────────────────────────────────────── */
-
-  /** Recalculate which steps are applicable based on current state. */
-  private _recalculateApplicableSteps(): void {
-    const previousId = this.currentStepId;
-    this.state.applicableSteps = this._allSteps
-      .filter((s) => s.isApplicable(this.state))
-      .map((s) => s.id);
-
-    // Try to maintain current position
-    if (previousId) {
-      const newIdx = this.state.applicableSteps.indexOf(previousId);
-      if (newIdx >= 0) {
-        this.state.currentStep = newIdx;
-      } else {
-        // Step disappeared — clamp to last valid
-        this.state.currentStep = Math.min(
-          this.state.currentStep,
-          Math.max(0, this.state.applicableSteps.length - 1),
-        );
-      }
-    }
   }
 
   /**
@@ -201,36 +167,11 @@ export class WizardStateMachine {
    * Clears their selections and sets status to "pending".
    */
   private _cascadeInvalidation(changedStepId: string): Set<string> {
-    const toInvalidate = new Set<string>();
-    const queue = DEPENDENCY_CASCADE[changedStepId] ?? [];
-
-    // BFS to collect all transitively dependent steps
-    const visited = new Set<string>();
-    const bfsQueue = [...queue];
-
-    while (bfsQueue.length > 0) {
-      const stepId = bfsQueue.shift()!;
-      if (visited.has(stepId)) continue;
-      visited.add(stepId);
-
-      // Only invalidate if the step was previously completed
-      if (this.state.stepStatus.get(stepId) === "complete") {
-        toInvalidate.add(stepId);
-      }
-
-      // Continue cascade
-      const downstream = DEPENDENCY_CASCADE[stepId] ?? [];
-      bfsQueue.push(...downstream);
-    }
-
-    // Apply invalidation
-    for (const stepId of toInvalidate) {
-      this.state.selections[stepId] = undefined;
-      this.state.stepStatus.set(stepId, "pending");
+    const invalidated = cascadeInvalidation(this.state, changedStepId);
+    for (const stepId of invalidated) {
       Log.debug(`Wizard: invalidated step "${stepId}" (cascade from "${changedStepId}")`);
     }
-
-    return toInvalidate;
+    return invalidated;
   }
 
   /** Build the step indicator data for the shell template. */
@@ -243,17 +184,6 @@ export class WizardStateMachine {
     index: number;
     number: number;
   }> {
-    return this.state.applicableSteps.map((id, index) => {
-      const def = this.getStepDef(id);
-      return {
-        id,
-        label: def?.label ?? id,
-        icon: def?.icon ?? "fa-solid fa-circle",
-        status: this.getStepStatus(id),
-        active: index === this.state.currentStep,
-        index,
-        number: index + 1,
-      };
-    });
+    return buildStepIndicatorData(this.state, (stepId) => this.getStepDef(stepId));
   }
 }

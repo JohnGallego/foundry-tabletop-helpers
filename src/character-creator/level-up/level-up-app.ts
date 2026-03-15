@@ -8,12 +8,21 @@
 import { MOD, Log } from "../../logger";
 import { getGame, renderTemplate } from "../../types";
 import type { FoundryDocument } from "../../types";
-import type { WizardShellContext } from "../character-creator-types";
 import { LevelUpStateMachine } from "./level-up-state-machine";
 import { applyLevelUp } from "./actor-update-engine";
 import { shouldShowLevelUp } from "./level-up-detection";
 import { getStepAtmosphere } from "../wizard/step-registry";
 import { allowMulticlass as getAllowMulticlass } from "../character-creator-settings";
+import {
+  activateLevelUpStep,
+  applyLevelUpAtmosphere,
+  buildLevelUpShellContext,
+  createLevelUpStepCallbacks,
+  type LevelUpShellContext,
+  resetApplyLevelUpButton,
+  setApplyLevelUpButtonPending,
+  updateLevelUpWindowTitle,
+} from "./level-up-app-helpers";
 
 // Level-up step definitions
 import { createClassChoiceStep } from "./steps/lu-step-class-choice";
@@ -144,33 +153,19 @@ export function buildLevelUpAppClass(): void {
     /* ── Rendering ───────────────────────────────────── */
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async _prepareContext(_options: any): Promise<WizardShellContext & { isLevelUp: boolean }> {
+    async _prepareContext(_options: any): Promise<LevelUpShellContext> {
       const machine = this._ensureMachine();
       const stepId = machine.currentStepId;
       const stepDef = this._getStepDef(stepId);
       const actor = this._getActor();
-
-      let stepContentHtml = "";
-      if (stepDef && actor) {
-        const vmData = await stepDef.buildViewModel(machine.state, actor);
-        stepContentHtml = await renderTemplate(stepDef.templatePath, vmData);
-      }
-
-      const indicatorData = machine.buildStepIndicatorData();
-
-      return {
-        steps: indicatorData,
-        stepContentHtml,
-        currentStepId: stepId,
-        currentStepLabel: stepDef?.label ?? "",
-        currentStepIcon: stepDef?.icon ?? "",
-        canGoBack: machine.canGoBack,
-        canGoNext: machine.canGoNext,
-        isReviewStep: machine.isReviewStep,
-        statusHint: "",
-        atmosphereClass: getStepAtmosphere(stepId),
-        isLevelUp: true,
-      };
+      return buildLevelUpShellContext(
+        machine,
+        stepId,
+        stepDef,
+        actor,
+        renderTemplate,
+        getStepAtmosphere,
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -184,39 +179,13 @@ export function buildLevelUpAppClass(): void {
       const machine = this._ensureMachine();
       const stepDef = this._getStepDef(machine.currentStepId);
 
-      const callbacks = {
-        setData: (value: unknown) => {
-          machine.setStepData(machine.currentStepId, value);
-          machine.markComplete(machine.currentStepId);
-          this.render({ force: true });
-        },
-        rerender: () => {
-          this.render({ force: true });
-        },
-      };
+      const callbacks = createLevelUpStepCallbacks(machine, () => {
+        this.render({ force: true });
+      });
 
-      if (stepDef?.onActivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
-        if (stepEl) {
-          stepDef.onActivate(machine.state, stepEl as HTMLElement, callbacks);
-        }
-      }
-
-      // Apply atmospheric background
-      const shell = this.element?.querySelector(".cc-wizard-shell");
-      if (shell) {
-        shell.classList.forEach((cls: string) => {
-          if (cls.startsWith("cc-atmosphere--")) shell.classList.remove(cls);
-        });
-        shell.classList.add(getStepAtmosphere(machine.currentStepId));
-      }
-
-      // Update window title
-      const actor = this._getActor();
-      if (actor?.name) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this as any).title = `Level Up — ${actor.name}`;
-      }
+      activateLevelUpStep(stepDef, machine, this.element, callbacks);
+      applyLevelUpAtmosphere(this.element, getStepAtmosphere(machine.currentStepId));
+      updateLevelUpWindowTitle(this as { title?: string }, this._getActor());
     }
 
     /* ── Action Handlers ─────────────────────────────── */
@@ -249,10 +218,7 @@ export function buildLevelUpAppClass(): void {
       const machine = this._ensureMachine();
 
       const btn = this.element?.querySelector("[data-action='applyLevelUp']") as HTMLButtonElement | null;
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Applying...</span>';
-      }
+      setApplyLevelUpButtonPending(btn);
 
       try {
         const success = await applyLevelUp(machine.state);
@@ -261,17 +227,11 @@ export function buildLevelUpAppClass(): void {
           await this.close();
         } else {
           Log.error("Level-Up: Failed to apply changes");
-          if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i> <span>Apply Level Up</span>';
-          }
+          resetApplyLevelUpButton(btn);
         }
       } catch (err) {
         Log.error("Level-Up: Error applying changes", err);
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fa-solid fa-arrow-up"></i> <span>Apply Level Up</span>';
-        }
+        resetApplyLevelUpButton(btn);
       }
     }
 

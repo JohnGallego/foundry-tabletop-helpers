@@ -9,7 +9,15 @@ import { Log } from "../../logger";
 import { getGame, fromUuid } from "../../types";
 import type { FoundryDocument } from "../../types";
 import type { LevelUpState, LevelUpClassChoice } from "./level-up-types";
-import { ABILITY_KEYS } from "../data/dnd5e-constants";
+import {
+  buildAsiUpdatePayload,
+  buildClassLevelUpdatePayload,
+  buildHpUpdatePayload,
+  collectLevelUpItemOperations,
+  describeClassLevelTarget,
+  prepareMulticlassItemData,
+  resolveSpellsToDelete,
+} from "./actor-update-engine-helpers";
 
 /* ── Public API ──────────────────────────────────────────── */
 
@@ -25,6 +33,7 @@ export async function applyLevelUp(state: LevelUpState): Promise<boolean> {
   }
 
   const sel = state.selections;
+  const itemOps = collectLevelUpItemOperations(state);
 
   try {
     // 1. Update class levels
@@ -36,39 +45,31 @@ export async function applyLevelUp(state: LevelUpState): Promise<boolean> {
     }
 
     // 3. Grant features
-    if (sel.features && sel.features.acceptedFeatureUuids.length > 0) {
-      await grantItems(actor, sel.features.acceptedFeatureUuids);
+    if (itemOps.featureUuids.length > 0) {
+      await grantItems(actor, itemOps.featureUuids);
     }
 
     // 4. Grant subclass
-    if (sel.subclass?.uuid) {
-      await grantItems(actor, [sel.subclass.uuid]);
+    if (itemOps.subclassUuids.length > 0) {
+      await grantItems(actor, itemOps.subclassUuids);
     }
 
     // 5. Apply ASI or grant feat
     if (sel.feats) {
       if (sel.feats.choice === "asi" && sel.feats.asiAbilities) {
         await applyAsi(actor, sel.feats.asiAbilities);
-      } else if (sel.feats.choice === "feat" && sel.feats.featUuid) {
-        await grantItems(actor, [sel.feats.featUuid]);
+      } else if (itemOps.featUuids.length > 0) {
+        await grantItems(actor, itemOps.featUuids);
       }
     }
 
     // 6. Grant new spells
-    if (sel.spells) {
-      const newUuids = [
-        ...sel.spells.newSpellUuids,
-        ...sel.spells.newCantripUuids,
-        ...sel.spells.swappedInUuids,
-      ];
-      if (newUuids.length > 0) {
-        await grantItems(actor, newUuids);
-      }
+    if (itemOps.spellGrantUuids.length > 0) {
+      await grantItems(actor, itemOps.spellGrantUuids);
+    }
 
-      // Remove swapped-out spells
-      if (sel.spells.swappedOutUuids.length > 0) {
-        await removeSpells(actor, sel.spells.swappedOutUuids);
-      }
+    if (itemOps.swappedOutSpellUuids.length > 0) {
+      await removeSpells(actor, itemOps.swappedOutSpellUuids);
     }
 
     Log.info(`ActorUpdateEngine: Level-up complete for "${actor.name}" → Level ${state.targetLevel}`);
@@ -103,21 +104,18 @@ async function updateClassLevels(
     const classItem = items?.get?.(classChoice.classItemId);
     if (classItem) {
       const currentLevels = classItem.system?.levels ?? 0;
-      await classItem.update({ "system.levels": currentLevels + 1 });
-      Log.debug(`ActorUpdateEngine: ${classChoice.className} → Level ${currentLevels + 1}`);
+      await classItem.update(buildClassLevelUpdatePayload(currentLevels));
+      const description = describeClassLevelTarget(classChoice, currentLevels);
+      if (description) Log.debug(`ActorUpdateEngine: ${description}`);
     }
   } else if (classChoice.mode === "multiclass" && classChoice.newClassUuid) {
     // Add new class item from compendium
     const doc = await fromUuid(classChoice.newClassUuid);
     if (doc) {
-      const obj = doc.toObject();
-      delete obj._id;
-      // Set initial level to 1
-      if (typeof obj.system === "object" && obj.system !== null) {
-        (obj.system as Record<string, unknown>).levels = 1;
-      }
+      const obj = prepareMulticlassItemData(doc.toObject());
       await actor.createEmbeddedDocuments("Item", [obj]);
-      Log.debug(`ActorUpdateEngine: Multiclassed into ${classChoice.className}`);
+      const description = describeClassLevelTarget(classChoice, 0);
+      if (description) Log.debug(`ActorUpdateEngine: ${description}`);
     }
   }
 }
@@ -129,16 +127,9 @@ async function updateHp(actor: FoundryDocument, hpGained: number): Promise<void>
   const system = actor.system as Record<string, unknown> | undefined;
   const attrs = system?.attributes as Record<string, unknown> | undefined;
   const hp = attrs?.hp as { value?: number; max?: number } | undefined;
-
-  const currentMax = hp?.max ?? 0;
-  const currentVal = hp?.value ?? 0;
-
-  await actor.update({
-    "system.attributes.hp.max": currentMax + hpGained,
-    "system.attributes.hp.value": currentVal + hpGained,
-  });
-
-  Log.debug(`ActorUpdateEngine: HP ${currentMax} → ${currentMax + hpGained}`);
+  const updates = buildHpUpdatePayload(hp, hpGained);
+  await actor.update(updates);
+  Log.debug(`ActorUpdateEngine: HP ${(hp?.max ?? 0)} → ${updates["system.attributes.hp.max"]}`);
 }
 
 /**
@@ -167,16 +158,7 @@ async function grantItems(actor: FoundryDocument, uuids: string[]): Promise<void
 async function applyAsi(actor: FoundryDocument, abilities: string[]): Promise<void> {
   const system = actor.system as Record<string, unknown> | undefined;
   const actorAbilities = system?.abilities as Record<string, { value?: number }> | undefined;
-  if (!actorAbilities) return;
-
-  const updates: Record<string, number> = {};
-  const bonus = abilities.length === 1 ? 2 : 1;
-
-  for (const key of abilities) {
-    if (!ABILITY_KEYS.includes(key as typeof ABILITY_KEYS[number])) continue;
-    const current = actorAbilities[key]?.value ?? 10;
-    updates[`system.abilities.${key}.value`] = Math.min(current + bonus, 20);
-  }
+  const updates = buildAsiUpdatePayload(actorAbilities, abilities);
 
   if (Object.keys(updates).length > 0) {
     await actor.update(updates);
@@ -202,14 +184,7 @@ async function removeSpells(actor: FoundryDocument, uuids: string[]): Promise<vo
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const items = (actor as any).items;
   if (!items) return;
-
-  const idsToDelete: string[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const item of items) {
-    if (item.type === "spell" && namesToRemove.has(item.name)) {
-      idsToDelete.push(item.id);
-    }
-  }
+  const idsToDelete = resolveSpellsToDelete(items as Iterable<{ id?: string; type?: string; name?: string }>, namesToRemove);
 
   if (idsToDelete.length > 0) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

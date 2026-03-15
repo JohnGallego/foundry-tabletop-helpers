@@ -12,6 +12,13 @@ import { renderTemplate } from "../../types";
 import type { WizardShellContext, GMConfig } from "../character-creator-types";
 import { WizardStateMachine } from "./wizard-state-machine";
 import { getOrderedSteps, getStepAtmosphere } from "./step-registry";
+import {
+  applyWizardAtmosphere,
+  buildWizardShellContext,
+  deactivateCurrentStep,
+  patchWizardNavState,
+  patchWizardStepIndicators,
+} from "./character-creator-app-helpers";
 import { createCharacterFromWizard } from "../engine/actor-creation-engine";
 import {
   getPackSources,
@@ -133,41 +140,12 @@ export function buildCharacterCreatorAppClass(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async _prepareContext(_options: any): Promise<WizardShellContext> {
       const machine = this._ensureMachine();
-      const stepDef = machine.currentStepDef;
-
-      // Build step ViewModel and render its template to HTML
-      let stepContentHtml = "";
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let vmData: Record<string, any> = {};
-      if (stepDef) {
-        vmData = await stepDef.buildViewModel(machine.state);
-        stepContentHtml = await renderTemplate(stepDef.templatePath, vmData);
-      }
-
-      // Extract enhanced header fields from card-select steps
-      const headerTitle = vmData.stepTitle as string | undefined;
-      const headerSubtitle = vmData.stepLabel as string | undefined;
-      const headerDescription = vmData.stepDescription as string | undefined;
-      const headerIcon = vmData.stepIcon as string | undefined;
-      const selectedEntry = vmData.selectedEntry as { name: string; img: string; packLabel: string } | null | undefined;
-
-      return {
-        steps: machine.buildStepIndicatorData(),
-        stepContentHtml,
-        currentStepId: machine.currentStepId,
-        currentStepLabel: stepDef?.label ?? "",
-        currentStepIcon: stepDef?.icon ?? "",
-        canGoBack: machine.canGoBack,
-        canGoNext: machine.canGoNext,
-        isReviewStep: machine.isReviewStep,
-        statusHint: stepDef?.getStatusHint?.(machine.state) ?? "",
-        atmosphereClass: getStepAtmosphere(machine.currentStepId),
-        headerTitle,
-        headerSubtitle,
-        headerDescription,
-        headerIcon,
-        selectedEntry,
-      };
+      return buildWizardShellContext(
+        machine,
+        machine.currentStepDef,
+        renderTemplate,
+        getStepAtmosphere,
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,29 +167,8 @@ export function buildCharacterCreatorAppClass(): void {
         },
         setDataSilent: (value: unknown) => {
           machine.setStepData(machine.currentStepId, value);
-
-          // Patch nav bar: Next button state + status hint
-          const nextBtn = this.element?.querySelector("[data-action='goNext']") as HTMLButtonElement | null;
-          if (nextBtn) nextBtn.disabled = !machine.canGoNext;
-          const hintEl = this.element?.querySelector("[data-status-hint]");
-          if (hintEl) {
-            const curDef = machine.currentStepDef;
-            hintEl.textContent = curDef?.getStatusHint?.(machine.state) ?? "";
-          }
-
-          // Patch step indicators (complete/pending status)
-          const indicators = (this.element as HTMLElement | null)
-            ?.querySelectorAll(".cc-step-indicator__step") as NodeListOf<HTMLElement> | undefined;
-          if (indicators) {
-            const stepData = machine.buildStepIndicatorData();
-            for (let i = 0; i < indicators.length; i++) {
-              const sd = stepData[i];
-              if (!sd) continue;
-              indicators[i].classList.toggle("cc-step-indicator__step--complete", sd.status === "complete");
-              indicators[i].classList.toggle("cc-step-indicator__step--pending", sd.status === "pending");
-              indicators[i].classList.toggle("cc-step-indicator__step--invalid", sd.status === "invalid");
-            }
-          }
+          patchWizardNavState(this.element as HTMLElement | null, machine);
+          patchWizardStepIndicators(this.element as HTMLElement | null, machine);
         },
         rerender: () => {
           this.render({ force: true });
@@ -227,29 +184,14 @@ export function buildCharacterCreatorAppClass(): void {
       }
 
       // Apply atmospheric background class
-      const shell = this.element?.querySelector(".cc-wizard-shell");
-      if (shell) {
-        // Remove all atmosphere classes
-        shell.classList.forEach((cls: string) => {
-          if (cls.startsWith("cc-atmosphere--")) shell.classList.remove(cls);
-        });
-        // Add current atmosphere
-        const atmosphere = getStepAtmosphere(machine.currentStepId);
-        shell.classList.add(atmosphere);
-      }
+      applyWizardAtmosphere(this.element, getStepAtmosphere(machine.currentStepId));
     }
 
     /* ── Action Handlers ───────────────────────────────── */
 
     static _onGoNext(this: InstanceType<typeof CharacterCreatorApp>): void {
       const machine = this._ensureMachine();
-      const prevDef = machine.currentStepDef;
-
-      // Deactivate current step
-      if (prevDef?.onDeactivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
-        if (stepEl) prevDef.onDeactivate(machine.state, stepEl as HTMLElement);
-      }
+      deactivateCurrentStep(machine.currentStepDef, machine, this.element);
 
       if (machine.goNext()) {
         this.render({ force: true });
@@ -258,13 +200,7 @@ export function buildCharacterCreatorAppClass(): void {
 
     static _onGoBack(this: InstanceType<typeof CharacterCreatorApp>): void {
       const machine = this._ensureMachine();
-      const prevDef = machine.currentStepDef;
-
-      // Deactivate current step
-      if (prevDef?.onDeactivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
-        if (stepEl) prevDef.onDeactivate(machine.state, stepEl as HTMLElement);
-      }
+      deactivateCurrentStep(machine.currentStepDef, machine, this.element);
 
       if (machine.goBack()) {
         this.render({ force: true });
@@ -280,11 +216,7 @@ export function buildCharacterCreatorAppClass(): void {
       // Only allow jumping from the review step
       if (!machine.isReviewStep) return;
 
-      const prevDef = machine.currentStepDef;
-      if (prevDef?.onDeactivate) {
-        const stepEl = this.element?.querySelector(".cc-step-content");
-        if (stepEl) prevDef.onDeactivate(machine.state, stepEl as HTMLElement);
-      }
+      deactivateCurrentStep(machine.currentStepDef, machine, this.element);
 
       if (machine.jumpTo(stepId)) {
         this.render({ force: true });
