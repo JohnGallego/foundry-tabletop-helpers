@@ -12,9 +12,29 @@
 
 import { MOD, Log } from "../logger";
 import { buildLPCSViewModel } from "./lpcs-view-model";
-import { lpcsEnabled, lpcsDefaultTab, isPhysicalMode } from "./lpcs-settings";
+import { lpcsEnabled, lpcsDefaultTab } from "./lpcs-settings";
 import { isDnd5eWorld } from "../types";
-import type { LPCSSkill, LPCSSkillGroup, LPCSInventoryItem } from "./lpcs-types";
+import type { LPCSSkill, LPCSInventoryItem } from "./lpcs-types";
+import { buildLPCSSheetActions } from "./lpcs-sheet-actions";
+import {
+  buildSkillGroups,
+  setLPCSVitalsView,
+} from "./lpcs-sheet-ui";
+import {
+  attachLPCSBaseRenderListeners,
+  buildInventoryModalItems,
+  setupClosableModalRender,
+  setupCurrencyEditorRender,
+  setupItemDetailModalRender,
+  setupExhaustionDialogRender,
+  setupHPDrawerRender,
+  setupRestModalRender,
+} from "./lpcs-sheet-render";
+import {
+  populateCurrencyEditorModal,
+  populateItemDetailModal,
+  updateCurrencyEditorDisplayValue,
+} from "./lpcs-sheet-modal-content";
 
 /* ── Runtime access to Foundry globals ────────────────────── */
 // These are resolved at runtime inside the init hook after Foundry has loaded.
@@ -74,225 +94,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         width: 520,
         height: 780,
       },
-      actions: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        adjustHP(this: any, _event: Event, target: HTMLElement): void {
-          const delta = Number(target.dataset.delta);
-          if (!Number.isFinite(delta)) return;
-          const hp = this.actor.system?.attributes?.hp;
-          if (!hp) return;
-          const clamped = Math.max(0, Math.min(hp.value + delta, hp.max));
-          this.actor.update({ "system.attributes.hp.value": clamped });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rollAbility(this: any, event: Event, target: HTMLElement): void {
-          const ability = (target.closest("[data-ability]") as HTMLElement | null)?.dataset.ability;
-          if (ability) this.actor.rollAbilityCheck?.({ ability, event });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rollSave(this: any, event: Event, target: HTMLElement): void {
-          const ability = (target.closest("[data-ability]") as HTMLElement | null)?.dataset.ability;
-          if (ability) this.actor.rollSavingThrow?.({ ability, event });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rollSkill(this: any, event: Event, target: HTMLElement): void {
-          const skill = (target.closest("[data-skill]") as HTMLElement | null)?.dataset.skill;
-          if (skill) this.actor.rollSkill?.({ event, skill });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rollInitiative(this: any, event: Event): void {
-          this.actor.rollInitiativeDialog?.({ event });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rollDeathSave(this: any, event: Event): void {
-          this.actor.rollDeathSave?.({ event, legacy: false });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        async incrementDeathSave(this: any, _event: Event, target: HTMLElement): Promise<void> {
-          // Defense-in-depth: only execute in physical mode (CSS also suppresses in digital mode).
-          if (!isPhysicalMode("deathSaves")) return;
-          if (!this.actor?.isOwner) return;
-
-          const saveType = (target.closest("[data-save-type]") as HTMLElement | null)?.dataset.saveType;
-          if (saveType !== "success" && saveType !== "failure") return;
-
-          const death = this.actor.system?.attributes?.death as Record<string, number> | undefined;
-          if (!death) return;
-
-          const isSuccess = saveType === "success";
-          const path = isSuccess ? "system.attributes.death.success" : "system.attributes.death.failure";
-          const current = isSuccess ? (death.success ?? 0) : (death.failure ?? 0);
-
-          // Cap at 3 per D&D 5e rules
-          if (current >= 3) return;
-
-          const next = current + 1;
-          const update: Record<string, number> = { [path]: next };
-
-          // On 3rd success: auto-heal to 1 HP, which triggers the existing cross-fade animation.
-          if (isSuccess && next === 3) {
-            update["system.attributes.hp.value"] = 1;
-            update["system.attributes.death.success"] = 0;
-            update["system.attributes.death.failure"] = 0;
-          }
-
-          await this.actor.update(update);
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        useItem(this: any, event: Event, target: HTMLElement): void {
-          const itemId = (target.closest("[data-item-id]") as HTMLElement | null)?.dataset.itemId;
-          const item = this.actor.items?.get(itemId ?? "");
-          if (item) item.use?.({ event });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        toggleDrawer(this: any, _event: Event, target: HTMLElement): void {
-          const drawerId = (target.closest("[data-drawer-id]") as HTMLElement | null)?.dataset.drawerId;
-          if (!drawerId) return;
-          if (!this._expandedDrawers) this._expandedDrawers = new Set<string>();
-          if (this._expandedDrawers.has(drawerId)) {
-            this._expandedDrawers.delete(drawerId);
-          } else {
-            this._expandedDrawers.add(drawerId);
-          }
-          const bodyEl = this.element?.querySelector(`[data-drawer-id="${drawerId}"] .lpcs-drawer-body`);
-          bodyEl?.classList.toggle("expanded");
-          const chevron = this.element?.querySelector(`[data-drawer-id="${drawerId}"] .lpcs-drawer-chevron`);
-          chevron?.classList.toggle("rotated");
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        toggleSpellDetail(this: any, event: Event, target: HTMLElement): void {
-          // Don't toggle if they clicked the cast button
-          if ((event.target as HTMLElement).closest("[data-action='useItem']")) return;
-          const row = target.closest(".lpcs-spell-row") as HTMLElement | null;
-          const itemId = row?.dataset.itemId;
-          if (!itemId) return;
-          const detailRow = this.element?.querySelector(`[data-spell-detail="${itemId}"]`) as HTMLElement | null;
-          if (!detailRow) return;
-          const isHidden = detailRow.hasAttribute("hidden");
-          if (isHidden) {
-            detailRow.removeAttribute("hidden");
-          } else {
-            detailRow.setAttribute("hidden", "");
-          }
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        toggleInspiration(this: any): void {
-          const current = this.actor.system?.attributes?.inspiration;
-          this.actor.update({ "system.attributes.inspiration": !current });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        toggleSpellSlot(this: any, _event: Event, target: HTMLElement): void {
-          const prop = target.dataset.prop;
-          const n = Number(target.dataset.n);
-          if (!prop || !Number.isFinite(n)) return;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const current = (globalThis as any).foundry?.utils?.getProperty(this.actor, prop) ?? 0;
-          this.actor.update({ [prop]: current === n ? n - 1 : n });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        showCombatActionInfo(this: any, _event: Event, target: HTMLElement): void {
-          const actionKey = target.dataset.actionKey;
-          if (!actionKey) return;
-          // Find the matching standard action from the view model's combat groups
-          const vm = this._lastCombatVM;
-          if (!vm?.combatGroups) return;
-          for (const group of vm.combatGroups) {
-            const sa = group.standardActions?.find(
-              (a: { key: string }) => a.key === actionKey
-            );
-            if (sa) {
-              this._openCombatInfoModal(sa.name, sa.description);
-              return;
-            }
-          }
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        showDamageType(this: any, _event: Event, target: HTMLElement): void {
-          const dmgType = target.dataset.damageType;
-          if (!dmgType) return;
-          const title = dmgType.charAt(0).toUpperCase() + dmgType.slice(1);
-          this._openCombatInfoModal(title, `${title} damage`);
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        cycleSkillSort(this: any): void {
-          const modes = ["proficiency", "ability", "alphabetical"] as const;
-          const idx = modes.indexOf(this._skillSortMode);
-          this._skillSortMode = modes[(idx + 1) % modes.length];
-          this.render({ parts: ["skills"] });
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        showSkillInfo(this: any, event: Event, target: HTMLElement): void {
-          event.stopPropagation();
-          const skillKey = (target.closest("[data-skill]") as HTMLElement | null)?.dataset.skill;
-          if (!skillKey) return;
-          const vm = this._lastSkillsVM;
-          const skill = vm?.find((s: LPCSSkill) => s.key === skillKey);
-          if (skill) this._openSkillInfoModal(skill);
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        openRestModal(this: any, _event: Event): void {
-          if (!this.actor?.isOwner) return;
-          this._restModalOpen = true;
-          const modal = (this.element as HTMLElement | null)
-            ?.querySelector<HTMLElement>("[data-rest-modal]");
-          if (!modal) return;
-          modal.classList.add("open");
-          modal.setAttribute("aria-hidden", "false");
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        openExhaustionDialog(this: any, _event: Event): void {
-          if (!this.actor?.isOwner) return;
-          const level = (this.actor.system?.attributes?.exhaustion as number) ?? 0;
-          this._pendingExhaustion = level;
-          this._exhaustionDialogOpen = true;
-          const dialog = (this.element as HTMLElement | null)
-            ?.querySelector<HTMLElement>("[data-exhaustion-dialog]");
-          if (!dialog) return;
-          dialog.classList.add("open");
-          dialog.setAttribute("aria-hidden", "false");
-          this._updateExhaustionDialogUI(dialog, level);
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        editCurrency(this: any, _event: Event, target: HTMLElement): void {
-          if (!this.actor?.isOwner) return;
-          const key = (target.closest("[data-currency-key]") as HTMLElement | null)?.dataset.currencyKey;
-          if (!key) return;
-          this._openCurrencyEditor(key);
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        showItemDetail(this: any, _event: Event, target: HTMLElement): void {
-          const itemId = (target.closest("[data-item-id]") as HTMLElement | null)?.dataset.itemId;
-          if (!itemId) return;
-          const vm = this._lastInventoryVM;
-          const item = vm?.find((i: { id: string }) => i.id === itemId);
-          if (item) this._openItemDetailModal(item);
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        openHPDrawer(this: any, _event: Event): void {
-          if (!this.actor?.isOwner) return;
-          // Death saves are showing at HP 0 — suppress the drawer.
-          const hp = this.actor?.system?.attributes?.hp;
-          if ((hp?.value ?? 0) === 0) return;
-          this._hpDrawerOpen = !this._hpDrawerOpen;
-          // Cast through HTMLElement so generic querySelector calls are valid.
-          const sheetEl = this.element as HTMLElement | null;
-          const drawer  = sheetEl?.querySelector<HTMLElement>("[data-hp-drawer]");
-          if (!drawer) return;
-          drawer.classList.toggle("open", this._hpDrawerOpen);
-          drawer.setAttribute("aria-hidden", String(!this._hpDrawerOpen));
-          if (!this._hpDrawerOpen) {
-            const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
-            if (input) input.value = "";
-          } else {
-            // Reset to damage mode on open and refresh UI
-            this._hpDrawerMode = "damage";
-            this._updateHPDrawerModeUI(drawer, "damage");
-            this._updateHPDrawerPreview(drawer);
-            // Focus the amount input for immediate keyboard entry
-            drawer.querySelector<HTMLInputElement>("[data-amount]")?.focus();
-          }
-        },
-      },
+      actions: buildLPCSSheetActions(),
     };
 
     static PARTS = {
@@ -488,7 +290,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         const vm = context.vm as Record<string, unknown> | undefined;
         const skills = (vm?.skills as LPCSSkill[] | undefined) ?? [];
         this._lastSkillsVM = skills;
-        context.skillGroups = this._buildSkillGroups(skills, this._skillSortMode);
+        context.skillGroups = buildSkillGroups(skills, this._skillSortMode);
         context.skillSortMode = this._skillSortMode;
       }
 
@@ -510,92 +312,22 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       const el = (this as any).element as HTMLElement | undefined;
       if (!el) return;
 
-      // HP inline input — supports "+5" / "-3" delta mode
-      el.querySelectorAll<HTMLInputElement>(".lpcs-hp-input").forEach((input) => {
-        input.addEventListener("change", (e) => this._onHPInputChange(e));
-        input.addEventListener("focus", () => input.select());
+      attachLPCSBaseRenderListeners({
+        el,
+        tabGroups: this.tabGroups,
+        onHPInputChange: (event) => this._onHPInputChange(event),
       });
 
-      // Tab navigation — pure DOM switching for instant feedback (no re-render needed).
-      // Toggles .active / [hidden] on panels and updates nav-button ARIA state.
-      el.querySelectorAll<HTMLElement>(".lpcs-tab-btn[data-tab]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const tab = btn.dataset.tab;
-          if (tab) this._switchTab(el, tab);
-        });
+      this._hpDrawerAbortCtrl = setupHPDrawerRender({
+        el,
+        previousAbortController: this._hpDrawerAbortCtrl,
+        drawerOpen: this._hpDrawerOpen,
+        getMode: () => this._hpDrawerMode,
+        hp: this.actor?.system?.attributes?.hp,
+        setMode: (mode) => { this._hpDrawerMode = mode; },
+        applyHPChange: (mode, amount) => this._applyHPChange(mode, amount),
+        closeHPDrawer: () => this._closeHPDrawer(),
       });
-
-      // HP bar keyboard activation (data-action handles click; we add keyboard here).
-      const hpBar = el.querySelector<HTMLElement>(".lpcs-hp-bar-widget[data-action]");
-      hpBar?.addEventListener("keydown", (e: KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); hpBar.click(); }
-      });
-
-      // ── HP Drawer listeners ───────────────────────────────────
-      // Abort previous listeners so they never accumulate across re-renders.
-      this._hpDrawerAbortCtrl?.abort();
-      this._hpDrawerAbortCtrl = new AbortController();
-      const { signal } = this._hpDrawerAbortCtrl;
-
-      const drawer = el.querySelector<HTMLElement>("[data-hp-drawer]");
-      if (drawer) {
-        // Restore open/mode state after a re-render caused by actor.update().
-        drawer.classList.toggle("open", this._hpDrawerOpen);
-        drawer.setAttribute("aria-hidden", String(!this._hpDrawerOpen));
-        this._updateHPDrawerModeUI(drawer, this._hpDrawerMode);
-        this._updateHPDrawerPreview(drawer);
-
-        // Mode toggle pills
-        drawer.querySelectorAll<HTMLElement>("[data-mode]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const mode = btn.dataset.mode as "damage" | "heal" | "temp";
-            if (!mode) return;
-            this._hpDrawerMode = mode;
-            this._updateHPDrawerModeUI(drawer, mode);
-            this._updateHPDrawerPreview(drawer);
-          }, { signal });
-        });
-
-        // Preset quick-tap buttons — accumulate into the amount input
-        drawer.querySelectorAll<HTMLElement>("[data-preset]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const preset = Number(btn.dataset.preset);
-            const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
-            if (input && Number.isFinite(preset)) {
-              input.value = String((Number(input.value) || 0) + preset);
-              this._updateHPDrawerPreview(drawer);
-            }
-          }, { signal });
-        });
-
-        // Clear button — resets the accumulator
-        drawer.querySelector<HTMLElement>("[data-clear]")?.addEventListener("click", () => {
-          const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
-          if (input) { input.value = ""; }
-          this._updateHPDrawerPreview(drawer);
-        }, { signal });
-
-        // Amount input — updates live preview on every keystroke
-        drawer.querySelector<HTMLInputElement>("[data-amount]")
-          ?.addEventListener("input", () => this._updateHPDrawerPreview(drawer), { signal });
-
-        // Apply button
-        drawer.querySelector<HTMLElement>("[data-apply]")?.addEventListener("click", async () => {
-          const input = drawer.querySelector<HTMLInputElement>("[data-amount]");
-          const amount = Number(input?.value) || 0;
-          if (amount <= 0) return;
-          await this._applyHPChange(this._hpDrawerMode, amount);
-        }, { signal });
-
-        // Outside-click dismiss — closes the drawer if user taps elsewhere
-        document.addEventListener("click", (e: MouseEvent) => {
-          if (!this._hpDrawerOpen) return;
-          const outer = el.querySelector<HTMLElement>(".lpcs-hp-outer");
-          if (outer && !outer.contains(e.target as Node)) {
-            this._closeHPDrawer();
-          }
-        }, { signal });
-      }
 
       // ── Vitals cross-fade (HP ↔ Death Saves) ──────────────────────
       const vm = (context as { vm?: { deathSaves?: { show?: boolean } } }).vm;
@@ -612,7 +344,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
           // Healing detected: dramatic 800ms pause before cross-fading back.
           this._deathSaveAnimating = true;
           // Keep death saves visible and non-interactive during the pause.
-          this._setVitalsView(hpView, dsView, "ds");
+          setLPCSVitalsView(hpView, dsView, "ds");
           dsView.style.pointerEvents = "none";
 
           window.setTimeout(() => {
@@ -624,7 +356,7 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
             if (!hv || !dv) { this._deathSaveAnimating = false; return; }
 
             // Cross-fade to HP view and play healing-surge glow.
-            this._setVitalsView(hv, dv, "hp");
+            setLPCSVitalsView(hv, dv, "hp");
             dv.style.pointerEvents = "";
             hv.classList.add("healed-animation");
 
@@ -637,11 +369,11 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         } else if (this._deathSaveAnimating) {
           // A re-render fired while the animation was running — abort gracefully.
           this._deathSaveAnimating = false;
-          this._setVitalsView(hpView, dsView, deathSavesShow ? "ds" : "hp");
+          setLPCSVitalsView(hpView, dsView, deathSavesShow ? "ds" : "hp");
 
         } else {
           // Normal sync — apply the correct active/hidden state immediately.
-          this._setVitalsView(hpView, dsView, deathSavesShow ? "ds" : "hp");
+          setLPCSVitalsView(hpView, dsView, deathSavesShow ? "ds" : "hp");
         }
 
         this._wasShowingDeathSaves = deathSavesShow;
@@ -711,236 +443,80 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
 
       this._prevHPValue = newHPValue;
 
-      // ── Exhaustion dialog ───────────────────────────────────────────
-      // Abort previous listeners so they never accumulate across re-renders.
-      this._exhaustionDialogAbortCtrl?.abort();
-      this._exhaustionDialogAbortCtrl = new AbortController();
-      const exhSignal = this._exhaustionDialogAbortCtrl.signal;
-
-      const exhDialog = el.querySelector<HTMLElement>("[data-exhaustion-dialog]");
-      if (exhDialog) {
-        exhDialog.classList.toggle("open", this._exhaustionDialogOpen);
-        exhDialog.setAttribute("aria-hidden", String(!this._exhaustionDialogOpen));
-        if (this._exhaustionDialogOpen) {
-          this._updateExhaustionDialogUI(exhDialog, this._pendingExhaustion);
-        }
-
-        exhDialog.querySelector<HTMLElement>("[data-exh-dec]")?.addEventListener("click", () => {
-          if (this._pendingExhaustion > 0) this._pendingExhaustion--;
-          this._updateExhaustionDialogUI(exhDialog, this._pendingExhaustion);
-        }, { signal: exhSignal });
-
-        exhDialog.querySelector<HTMLElement>("[data-exh-inc]")?.addEventListener("click", () => {
-          if (this._pendingExhaustion < 6) this._pendingExhaustion++;
-          this._updateExhaustionDialogUI(exhDialog, this._pendingExhaustion);
-        }, { signal: exhSignal });
-
-        exhDialog.querySelector<HTMLElement>("[data-exh-confirm]")?.addEventListener("click", async () => {
-          const level = this._pendingExhaustion;
+      this._exhaustionDialogAbortCtrl = setupExhaustionDialogRender({
+        el,
+        previousAbortController: this._exhaustionDialogAbortCtrl,
+        isOpen: this._exhaustionDialogOpen,
+        getPendingLevel: () => this._pendingExhaustion,
+        setPendingLevel: (level) => { this._pendingExhaustion = level; },
+        updateDialogUI: (dialog, level) => this._updateExhaustionDialogUI(dialog, level),
+        closeDialog: () => this._closeExhaustionDialog(),
+        confirmLevel: async (level) => {
           this._closeExhaustionDialog();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (this as any).actor?.update({ "system.attributes.exhaustion": level });
-        }, { signal: exhSignal });
+          await this.actor?.update({ "system.attributes.exhaustion": level });
+        },
+      });
 
-        // Outside-click dismiss — close when tapping anything outside .lpcs-qstat-row
-        document.addEventListener("click", (e: MouseEvent) => {
-          if (!this._exhaustionDialogOpen) return;
-          const qstatRow = el.querySelector<HTMLElement>(".lpcs-qstat-row");
-          if (qstatRow && !qstatRow.contains(e.target as Node)) {
-            this._closeExhaustionDialog();
-          }
-        }, { signal: exhSignal });
-      }
-
-      // ── Rest modal ────────────────────────────────────────────────────
-      // Abort previous listeners so they never accumulate across re-renders.
-      this._restModalAbortCtrl?.abort();
-      this._restModalAbortCtrl = new AbortController();
-      const restSignal = this._restModalAbortCtrl.signal;
-
-      const restModal = el.querySelector<HTMLElement>("[data-rest-modal]");
-      if (restModal) {
-        restModal.classList.toggle("open", this._restModalOpen);
-        restModal.setAttribute("aria-hidden", String(!this._restModalOpen));
-
-        // Close triggers — backdrop and × button both carry [data-rest-close]
-        restModal.querySelectorAll<HTMLElement>("[data-rest-close]").forEach((btn) => {
-          btn.addEventListener("click", () => this._closeRestModal(), { signal: restSignal });
-        });
-
-        // Escape key dismiss
-        document.addEventListener("keydown", (e: KeyboardEvent) => {
-          if (e.key === "Escape" && this._restModalOpen) this._closeRestModal();
-        }, { signal: restSignal });
-
-        // HD roll buttons — tap to roll one hit die and recover HP
-        restModal.querySelectorAll<HTMLButtonElement>("[data-hd-roll]").forEach((btn) => {
-          btn.addEventListener("click", async () => {
-            const denom = btn.dataset.denomination;
-            if (!denom) return;
-            btn.disabled = true;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (this as any).actor?.rollHitDie?.({ denomination: denom });
-            // _onRender fires after actor update; btn is replaced — no need to re-enable.
-          }, { signal: restSignal });
-        });
-
-        // Long rest hold button
-        const longBtn = restModal.querySelector<HTMLElement>("[data-long-rest]");
-        if (longBtn) {
-          const startHold = (e: Event) => {
-            e.preventDefault();
-            longBtn.classList.add("is-holding");
-            this._longRestHoldTimer = setTimeout(async () => {
-              this._longRestHoldTimer = null;
-              longBtn.classList.remove("is-holding");
-              longBtn.classList.add("confirmed");
-              await this._doLongRest();
-            }, 2000);
-          };
-
-          const cancelHold = () => {
-            if (this._longRestHoldTimer !== null) {
-              clearTimeout(this._longRestHoldTimer);
-              this._longRestHoldTimer = null;
-            }
-            longBtn.classList.remove("is-holding");
-          };
-
-          longBtn.addEventListener("mousedown", startHold, { signal: restSignal });
-          longBtn.addEventListener("touchstart", startHold, { signal: restSignal });
-          longBtn.addEventListener("mouseup", cancelHold, { signal: restSignal });
-          longBtn.addEventListener("mouseleave", cancelHold, { signal: restSignal });
-          longBtn.addEventListener("touchend", cancelHold, { signal: restSignal });
-          longBtn.addEventListener("touchcancel", cancelHold, { signal: restSignal });
-        }
-      }
+      this._restModalAbortCtrl = setupRestModalRender({
+        el,
+        previousAbortController: this._restModalAbortCtrl,
+        isOpen: this._restModalOpen,
+        getLongRestHoldTimer: () => this._longRestHoldTimer,
+        setLongRestHoldTimer: (timer) => { this._longRestHoldTimer = timer; },
+        closeModal: () => this._closeRestModal(),
+        rollHitDie: async (denomination) => {
+          await this.actor?.rollHitDie?.({ denomination });
+        },
+        doLongRest: () => this._doLongRest(),
+      });
 
       // ── Combat info modal ──────────────────────────────────────────
       // Cache VM for action handler lookup (also satisfies TS unused-local check).
       this._lastCombatVM = (context as { vm?: unknown }).vm;
-      this._combatInfoModalAbortCtrl?.abort();
-      this._combatInfoModalAbortCtrl = new AbortController();
-      const combatInfoSignal = this._combatInfoModalAbortCtrl.signal;
-
-      const combatInfoModal = el.querySelector<HTMLElement>("[data-combat-info-modal]");
-      if (combatInfoModal) {
-        combatInfoModal.classList.toggle("open", this._combatInfoModalOpen);
-        combatInfoModal.setAttribute("aria-hidden", String(!this._combatInfoModalOpen));
-
-        // Close triggers
-        combatInfoModal.querySelectorAll<HTMLElement>("[data-combat-info-close]").forEach((btn) => {
-          btn.addEventListener("click", () => this._closeCombatInfoModal(), { signal: combatInfoSignal });
-        });
-
-        // Escape key dismiss
-        document.addEventListener("keydown", (e: KeyboardEvent) => {
-          if (e.key === "Escape" && this._combatInfoModalOpen) this._closeCombatInfoModal();
-        }, { signal: combatInfoSignal });
-      }
+      this._combatInfoModalAbortCtrl = setupClosableModalRender({
+        el,
+        previousAbortController: this._combatInfoModalAbortCtrl,
+        selector: "[data-combat-info-modal]",
+        closeSelector: "[data-combat-info-close]",
+        isOpen: this._combatInfoModalOpen,
+        closeModal: () => this._closeCombatInfoModal(),
+      });
 
       // ── Skill info modal ──────────────────────────────────────────
-      this._skillInfoModalAbortCtrl?.abort();
-      this._skillInfoModalAbortCtrl = new AbortController();
-      const skillInfoSignal = this._skillInfoModalAbortCtrl.signal;
-
-      const skillInfoModal = el.querySelector<HTMLElement>("[data-skill-info-modal]");
-      if (skillInfoModal) {
-        skillInfoModal.classList.toggle("open", this._skillInfoModalOpen);
-        skillInfoModal.setAttribute("aria-hidden", String(!this._skillInfoModalOpen));
-
-        skillInfoModal.querySelectorAll<HTMLElement>("[data-skill-info-close]").forEach((btn) => {
-          btn.addEventListener("click", () => this._closeSkillInfoModal(), { signal: skillInfoSignal });
-        });
-
-        document.addEventListener("keydown", (e: KeyboardEvent) => {
-          if (e.key === "Escape" && this._skillInfoModalOpen) this._closeSkillInfoModal();
-        }, { signal: skillInfoSignal });
-      }
+      this._skillInfoModalAbortCtrl = setupClosableModalRender({
+        el,
+        previousAbortController: this._skillInfoModalAbortCtrl,
+        selector: "[data-skill-info-modal]",
+        closeSelector: "[data-skill-info-close]",
+        isOpen: this._skillInfoModalOpen,
+        closeModal: () => this._closeSkillInfoModal(),
+      });
 
       // ── Item detail modal ──────────────────────────────────────────
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const vmData = (context as { vm?: any }).vm;
-      const containers = vmData?.containers ?? [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const containerContents = containers.flatMap((c: any) => c.contents ?? []);
-      this._lastInventoryVM = [...(vmData?.inventory ?? []), ...containers, ...containerContents];
-      this._itemDetailModalAbortCtrl?.abort();
-      this._itemDetailModalAbortCtrl = new AbortController();
-      const itemDetailSignal = this._itemDetailModalAbortCtrl.signal;
-
-      const itemDetailModal = el.querySelector<HTMLElement>("[data-item-detail-modal]");
-      if (itemDetailModal) {
-        // Re-populate the modal if it was open (e.g. after equip toggle triggers re-render)
-        if (this._itemDetailModalOpen && this._itemDetailModalItemId) {
-          const openItem = this._lastInventoryVM.find(
-            (i: { id: string }) => i.id === this._itemDetailModalItemId
-          );
-          if (openItem) {
-            this._openItemDetailModal(openItem);
-          } else {
-            this._closeItemDetailModal();
-          }
-        }
-
-        itemDetailModal.classList.toggle("open", this._itemDetailModalOpen);
-        itemDetailModal.setAttribute("aria-hidden", String(!this._itemDetailModalOpen));
-
-        itemDetailModal.querySelectorAll<HTMLElement>("[data-item-detail-close]").forEach((btn) => {
-          btn.addEventListener("click", () => this._closeItemDetailModal(), { signal: itemDetailSignal });
-        });
-
-        document.addEventListener("keydown", (e: KeyboardEvent) => {
-          if (e.key === "Escape" && this._itemDetailModalOpen) this._closeItemDetailModal();
-        }, { signal: itemDetailSignal });
-      }
+      this._lastInventoryVM = buildInventoryModalItems(vmData) as LPCSInventoryItem[];
+      this._itemDetailModalAbortCtrl = setupItemDetailModalRender({
+        el,
+        previousAbortController: this._itemDetailModalAbortCtrl,
+        isOpen: this._itemDetailModalOpen,
+        openItemId: this._itemDetailModalItemId,
+        inventoryItems: this._lastInventoryVM,
+        reopenItem: (item) => this._openItemDetailModal(item),
+        closeModal: () => this._closeItemDetailModal(),
+      });
 
       // ── Currency editor modal ────────────────────────────────────
-      this._currencyEditorAbortCtrl?.abort();
-      this._currencyEditorAbortCtrl = new AbortController();
-      const currencySignal = this._currencyEditorAbortCtrl.signal;
-
-      const currencyEditor = el.querySelector<HTMLElement>("[data-currency-editor]");
-      if (currencyEditor) {
-        currencyEditor.classList.toggle("open", this._currencyEditorOpen);
-        currencyEditor.setAttribute("aria-hidden", String(!this._currencyEditorOpen));
-
-        // Close triggers
-        currencyEditor.querySelectorAll<HTMLElement>("[data-currency-editor-close]").forEach((btn) => {
-          btn.addEventListener("click", () => this._closeCurrencyEditor(), { signal: currencySignal });
-        });
-
-        // Delta buttons
-        currencyEditor.querySelectorAll<HTMLElement>("[data-currency-delta]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const delta = Number(btn.dataset.currencyDelta);
-            if (!Number.isFinite(delta)) return;
-            this._adjustCurrency(delta);
-          }, { signal: currencySignal });
-        });
-
-        // Direct input
-        const input = currencyEditor.querySelector<HTMLInputElement>("[data-currency-editor-input]");
-        if (input) {
-          input.addEventListener("change", () => {
-            const val = Number(input.value);
-            if (Number.isFinite(val) && val >= 0) {
-              this._setCurrency(Math.floor(val));
-            }
-            input.value = "";
-          }, { signal: currencySignal });
-        }
-
-        // Escape key dismiss
-        document.addEventListener("keydown", (e: KeyboardEvent) => {
-          if (e.key === "Escape" && this._currencyEditorOpen) this._closeCurrencyEditor();
-        }, { signal: currencySignal });
-
-        // Restore display if re-rendering while open
-        if (this._currencyEditorOpen && this._currencyEditorKey) {
-          this._updateCurrencyEditorDisplay();
-        }
-      }
+      this._currencyEditorAbortCtrl = setupCurrencyEditorRender({
+        el,
+        previousAbortController: this._currencyEditorAbortCtrl,
+        isOpen: this._currencyEditorOpen,
+        currencyKey: this._currencyEditorKey,
+        closeModal: () => this._closeCurrencyEditor(),
+        adjustCurrency: (delta) => this._adjustCurrency(delta),
+        setCurrency: (value) => this._setCurrency(value),
+        updateDisplay: () => this._updateCurrencyEditorDisplay(),
+      });
 
       // Ensure TS sees these as used (called via `any`-typed action handlers).
       void this._openCombatInfoModal;
@@ -950,22 +526,6 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       void this._openItemDetailModal;
       void this._lastInventoryVM;
       void this._openCurrencyEditor;
-    }
-
-    /**
-     * Toggle the active/hidden CSS classes on both vitals view elements.
-     * The active element is in-flow (position: static); the hidden element is
-     * absolutely positioned over the container so it does not affect layout.
-     */
-    private _setVitalsView(
-      hpView: HTMLElement,
-      dsView: HTMLElement,
-      active: "hp" | "ds"
-    ): void {
-      hpView.classList.toggle("active", active === "hp");
-      hpView.classList.toggle("hidden", active === "ds");
-      dsView.classList.toggle("active", active === "ds");
-      dsView.classList.toggle("hidden", active === "hp");
     }
 
     private _onHPInputChange(event: Event): void {
@@ -985,96 +545,6 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (this as any).actor.update({ "system.attributes.hp.value": clamped });
       }
-    }
-
-    /**
-     * Switch the visible tab without triggering a full re-render.
-     * Updates internal state, nav-button active/ARIA markers, and shows/hides
-     * the matching panel — all synchronously so the response feels instant on
-     * touch devices during live play.
-     */
-    private _switchTab(el: HTMLElement, tab: string): void {
-      // Persist selection so future partial re-renders use the correct tab.
-      this.tabGroups.primary = tab;
-
-      // Nav buttons — toggle .active + aria-selected
-      el.querySelectorAll<HTMLElement>(".lpcs-tab-btn[data-tab]").forEach((btn) => {
-        const active = btn.dataset.tab === tab;
-        btn.classList.toggle("active", active);
-        btn.setAttribute("aria-selected", String(active));
-      });
-
-      // Tab panels — toggle .active and the HTML [hidden] attribute
-      el.querySelectorAll<HTMLElement>(".lpcs-tab[data-tab]").forEach((panel) => {
-        const active = panel.dataset.tab === tab;
-        panel.classList.toggle("active", active);
-        if (active) {
-          panel.removeAttribute("hidden");
-        } else {
-          panel.setAttribute("hidden", "");
-        }
-      });
-    }
-
-    /* ── HP Drawer Helpers ───────────────────────────────────── */
-
-    /**
-     * Update mode toggle pill active states, the drawer's data-mode attribute
-     * (used by CSS for contextual colours on presets/apply), and the apply
-     * button label — all without a re-render.
-     */
-    private _updateHPDrawerModeUI(drawer: HTMLElement, mode: "damage" | "heal" | "temp"): void {
-      drawer.dataset.mode = mode;
-      drawer.querySelectorAll<HTMLElement>("[data-mode]").forEach((btn) => {
-        const isActive = btn.dataset.mode === mode;
-        btn.classList.toggle("active", isActive);
-        btn.setAttribute("aria-pressed", String(isActive));
-      });
-      const applyBtn = drawer.querySelector<HTMLElement>("[data-apply]");
-      if (applyBtn) {
-        const labels: Record<string, string> = {
-          damage: "Apply Damage",
-          heal:   "Apply Heal",
-          temp:   "Set Temp HP",
-        };
-        applyBtn.textContent = labels[mode] ?? "Apply";
-      }
-    }
-
-    /**
-     * Recompute and display the live preview line showing current HP → result
-     * based on the active mode and the current accumulator value.
-     */
-    private _updateHPDrawerPreview(drawer: HTMLElement): void {
-      const input   = drawer.querySelector<HTMLInputElement>("[data-amount]");
-      const preview = drawer.querySelector<HTMLElement>("[data-preview]");
-      if (!input || !preview) return;
-
-      const amount = Number(input.value) || 0;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hp = (this as any).actor?.system?.attributes?.hp;
-      if (!hp || amount <= 0) { preview.textContent = ""; return; }
-
-      const temp = hp.temp ?? 0;
-      let text: string;
-      if (this._hpDrawerMode === "damage") {
-        const tempDmg  = Math.min(amount, temp);
-        const realDmg  = amount - tempDmg;
-        const newHp    = Math.max(0, hp.value - realDmg);
-        const newTemp  = temp - tempDmg;
-        if (tempDmg > 0 && realDmg > 0) {
-          text = `HP ${hp.value}→${newHp}  ·  Temp ${temp}→${newTemp}`;
-        } else if (tempDmg > 0) {
-          text = `Temp ${temp} → ${newTemp}`;
-        } else {
-          text = `${hp.value} → ${newHp}`;
-        }
-      } else if (this._hpDrawerMode === "heal") {
-        text = `${hp.value} → ${Math.min(hp.max, hp.value + amount)}`;
-      } else {
-        text = `Temp ${temp} → ${Math.max(temp, amount)}`;
-      }
-      preview.textContent = text;
     }
 
     /**
@@ -1250,166 +720,11 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       const modal = el?.querySelector<HTMLElement>("[data-item-detail-modal]");
       if (!modal) return;
 
-      const denomClasses: Record<string, string> = {
-        pp: "lpcs-coin-icon--pp", gp: "lpcs-coin-icon--gp",
-        ep: "lpcs-coin-icon--ep", sp: "lpcs-coin-icon--sp", cp: "lpcs-coin-icon--cp",
-      };
-
-      // Populate content
-      const img = modal.querySelector<HTMLImageElement>("[data-item-detail-img]");
-      const nameEl = modal.querySelector<HTMLElement>("[data-item-detail-name]");
-      const typeEl = modal.querySelector<HTMLElement>("[data-item-detail-type]");
-      const descEl = modal.querySelector<HTMLElement>("[data-item-detail-desc]");
-      const qtyEl = modal.querySelector<HTMLElement>("[data-item-detail-qty]");
-      const rarityEl = modal.querySelector<HTMLElement>("[data-item-detail-rarity]");
-      const weightEl = modal.querySelector<HTMLElement>("[data-item-detail-weight]");
-      const priceEl = modal.querySelector<HTMLElement>("[data-item-detail-price]");
-      const statsEl = modal.querySelector<HTMLElement>("[data-item-detail-stats]");
-      const containerInfoEl = modal.querySelector<HTMLElement>("[data-item-detail-container-info]");
-      const capacityEl = modal.querySelector<HTMLElement>("[data-item-detail-capacity]");
-      const containerCurrencyEl = modal.querySelector<HTMLElement>("[data-item-detail-container-currency]");
-      const contentsEl = modal.querySelector<HTMLElement>("[data-item-detail-contents]");
-      const contentsGridEl = modal.querySelector<HTMLElement>("[data-item-detail-contents-grid]");
-
-      if (img) img.src = item.img || "";
-      if (nameEl) nameEl.textContent = item.name || "";
-      if (typeEl) typeEl.textContent = item.typeLabel || item.type || "";
-      if (descEl) descEl.textContent = item.description || "No description available.";
-
-      // Stats block (weapons/armor)
-      if (statsEl) {
-        if (item.statsBlock) {
-          statsEl.textContent = item.statsBlock;
-          statsEl.hidden = false;
-        } else {
-          statsEl.hidden = true;
-        }
-      }
-
-      // Quantity badge
-      if (qtyEl) {
-        if (item.quantity > 1) {
-          qtyEl.textContent = `×${item.quantity}`;
-          qtyEl.hidden = false;
-        } else {
-          qtyEl.hidden = true;
-        }
-      }
-
-      // Rarity
-      if (rarityEl) {
-        if (item.rarityLabel) {
-          rarityEl.textContent = item.rarityLabel;
-          rarityEl.className = `lpcs-item-detail-rarity rarity--${item.rarity}`;
-          rarityEl.hidden = false;
-        } else {
-          rarityEl.hidden = true;
-        }
-      }
-
-      // Container info (capacity + currency)
-      if (containerInfoEl) {
-        if (item.isContainer) {
-          containerInfoEl.hidden = false;
-          if (capacityEl) capacityEl.textContent = item.capacityLabel || "";
-
-          if (containerCurrencyEl) {
-            containerCurrencyEl.replaceChildren();
-            for (const coin of (item.containerCurrency || [])) {
-              const span = document.createElement("span");
-              span.className = "lpcs-container-coin";
-              const icon = document.createElement("i");
-              icon.className = `fas fa-coins ${denomClasses[coin.key] ?? denomClasses.gp}`;
-              span.appendChild(icon);
-              const val = document.createElement("span");
-              val.textContent = ` ${coin.amount}`;
-              span.appendChild(val);
-              containerCurrencyEl.appendChild(span);
-            }
-          }
-        } else {
-          containerInfoEl.hidden = true;
-        }
-      }
-
-      // Container contents grid
-      if (contentsEl && contentsGridEl) {
-        if (item.isContainer && item.contents?.length > 0) {
-          contentsEl.hidden = false;
-          contentsGridEl.replaceChildren();
-          for (const child of item.contents) {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "lpcs-container-content-item";
-            btn.title = child.name;
-
-            const childImg = document.createElement("img");
-            childImg.src = child.img || "";
-            childImg.alt = "";
-            childImg.className = "lpcs-container-content-img";
-            childImg.loading = "lazy";
-            btn.appendChild(childImg);
-
-            const nameSpan = document.createElement("span");
-            nameSpan.className = "lpcs-container-content-name";
-            nameSpan.textContent = child.name;
-            btn.appendChild(nameSpan);
-
-            if (child.quantity > 1) {
-              const qtySpan = document.createElement("span");
-              qtySpan.className = "lpcs-container-content-qty";
-              qtySpan.textContent = `×${child.quantity}`;
-              btn.appendChild(qtySpan);
-            }
-
-            // Tap to navigate into the child item's detail
-            btn.addEventListener("click", () => this._openItemDetailModal(child));
-            contentsGridEl.appendChild(btn);
-          }
-        } else {
-          contentsEl.hidden = true;
-        }
-      }
-
-      // Weight
-      if (weightEl) {
-        weightEl.textContent = item.weight ? `${item.weight} lb` : "";
-      }
-
-      // Price with coin icon
-      if (priceEl) {
-        priceEl.replaceChildren();
-        if (item.price) {
-          const icon = document.createElement("i");
-          icon.className = `fas fa-coins ${denomClasses[item.price.denomination] ?? denomClasses.gp}`;
-          priceEl.appendChild(icon);
-          const val = document.createElement("span");
-          val.textContent = ` ${item.price.value}`;
-          priceEl.appendChild(val);
-        }
-      }
-
-      // Equip / Unequip button
-      const equipBtn = modal.querySelector<HTMLElement>("[data-item-detail-equip]");
-      if (equipBtn) {
-        const labelEl = equipBtn.querySelector<HTMLElement>("[data-item-detail-equip-label]");
-        const iconEl = equipBtn.querySelector<HTMLElement>("[data-item-detail-equip-icon]");
-        if (item.isEquippable) {
-          equipBtn.hidden = false;
-          const equipped = item.equipped;
-          if (labelEl) labelEl.textContent = equipped ? "Unequip" : "Equip";
-          if (iconEl) iconEl.className = equipped
-            ? "fas fa-shield-xmark"
-            : "fas fa-shield-halved";
-          equipBtn.classList.toggle("is-equipped", equipped);
-          // Wire click — use the abort controller so it's cleaned up on re-render
-          equipBtn.addEventListener("click", async () => {
-            await this._toggleEquipItem(item.id, !equipped);
-          }, { signal: this._itemDetailModalAbortCtrl?.signal });
-        } else {
-          equipBtn.hidden = true;
-        }
-      }
+      populateItemDetailModal(modal, item, {
+        equipSignal: this._itemDetailModalAbortCtrl?.signal,
+        onToggleEquip: (itemId, equip) => this._toggleEquipItem(itemId, equip),
+        onOpenChildItem: (child) => this._openItemDetailModal(child),
+      });
 
       modal.classList.add("open");
       modal.setAttribute("aria-hidden", "false");
@@ -1447,9 +762,6 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     /* ── Currency Editor ─────────────────────────────────────── */
 
     private _openCurrencyEditor(key: string): void {
-      const LABELS: Record<string, string> = {
-        pp: "Platinum", gp: "Gold", ep: "Electrum", sp: "Silver", cp: "Copper",
-      };
       this._currencyEditorOpen = true;
       this._currencyEditorKey = key;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1457,17 +769,9 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       const modal = el?.querySelector<HTMLElement>("[data-currency-editor]");
       if (!modal) return;
 
-      const titleEl = modal.querySelector<HTMLElement>("[data-currency-editor-title]");
-      if (titleEl) titleEl.textContent = LABELS[key] ?? key.toUpperCase();
-
-      this._updateCurrencyEditorDisplay();
-
+      populateCurrencyEditorModal(modal, key, this._getCurrencyValue());
       modal.classList.add("open");
       modal.setAttribute("aria-hidden", "false");
-
-      // Focus the input for immediate keyboard entry
-      const input = modal.querySelector<HTMLInputElement>("[data-currency-editor-input]");
-      if (input) { input.value = ""; input.focus(); }
     }
 
     private _closeCurrencyEditor(): void {
@@ -1489,8 +793,8 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
     private _updateCurrencyEditorDisplay(): void {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const el = (this as any).element as HTMLElement | null;
-      const display = el?.querySelector<HTMLElement>("[data-currency-editor-display]");
-      if (display) display.textContent = String(this._getCurrencyValue());
+      const modal = el?.querySelector<HTMLElement>("[data-currency-editor]") ?? null;
+      updateCurrencyEditorDisplayValue(modal, this._getCurrencyValue());
     }
 
     private _adjustCurrency(delta: number): void {
@@ -1507,37 +811,8 @@ export function buildLPCSSheetClass(): (new (...args: unknown[]) => unknown) | n
       // Optimistic UI update
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const el = (this as any).element as HTMLElement | null;
-      const display = el?.querySelector<HTMLElement>("[data-currency-editor-display]");
-      if (display) display.textContent = String(value);
-    }
-
-    /* ── Skill Grouping ───────────────────────────────────────── */
-
-    private _buildSkillGroups(
-      skills: LPCSSkill[],
-      mode: "proficiency" | "ability" | "alphabetical",
-    ): LPCSSkillGroup[] {
-      if (mode === "alphabetical") {
-        return [{ label: "", skills: [...skills].sort((a, b) => a.label.localeCompare(b.label)) }];
-      }
-
-      if (mode === "proficiency") {
-        const prof = skills.filter((s) => s.profLevel > 0).sort((a, b) => a.label.localeCompare(b.label));
-        const other = skills.filter((s) => s.profLevel === 0).sort((a, b) => a.label.localeCompare(b.label));
-        const groups: LPCSSkillGroup[] = [];
-        if (prof.length) groups.push({ label: "Proficient", skills: prof });
-        if (other.length) groups.push({ label: "Other Skills", skills: other });
-        return groups;
-      }
-
-      // mode === "ability"
-      const abilityOrder = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
-      const groups: LPCSSkillGroup[] = [];
-      for (const ab of abilityOrder) {
-        const matched = skills.filter((s) => s.ability === ab).sort((a, b) => a.label.localeCompare(b.label));
-        if (matched.length) groups.push({ label: ab, skills: matched });
-      }
-      return groups;
+      const modal = el?.querySelector<HTMLElement>("[data-currency-editor]") ?? null;
+      updateCurrencyEditorDisplayValue(modal, value);
     }
 
     /** Execute a long rest via the dnd5e actor method, bypassing dnd5e's own dialog. */
@@ -1677,4 +952,3 @@ export async function preloadLPCSTemplates(): Promise<void> {
     Log.warn("LPCS: template preload failed", err);
   }
 }
-
